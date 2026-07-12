@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { ensurePrakmeSeeded } from "@/db/seed";
+import { ensureParkmeSeeded } from "@/db/seed";
 import { bookings, parkingSpaces, walletTransactions } from "@/db/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -12,7 +12,7 @@ function error(message: string, status = 400) {
 }
 
 export async function GET(request: NextRequest) {
-  await ensurePrakmeSeeded();
+  await ensureParkmeSeeded();
   let userId: string;
   try { userId = await requireUserId(); } catch { return error("Please log in.", 401); }
 
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  await ensurePrakmeSeeded();
+  await ensureParkmeSeeded();
   let userId: string;
   try { userId = await requireUserId(); } catch { return error("Please log in to book.", 401); }
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
   if (!Number.isInteger(parkingSpaceId) || parkingSpaceId < 1) return error("Choose a valid parking space.");
   if (!Number.isInteger(durationHours) || durationHours < 1 || durationHours > 12) return error("Parking duration must be between 1 and 12 hours.");
-  if (paymentMethod !== "wallet" && paymentMethod !== "telebirr") return error("Choose PrakmeWallet or telebirr for payment.");
+  if (paymentMethod !== "wallet" && paymentMethod !== "telebirr") return error("Choose ParkmeWallet or telebirr for payment.");
 
   try {
     const created = await db.transaction(async (tx) => {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       if (!spot || !spot.isActive) throw new Error("PARKING_NOT_FOUND");
       if (spot.availableSpots < 1) throw new Error("PARKING_FULL");
 
-      const discountEtb = couponCode === "PRAKME20" ? 20 : 0;
+      const discountEtb = couponCode === "PARKME20" ? 20 : 0;
       const amountEtb = Math.max(0, spot.priceHourlyEtb * durationHours - discountEtb);
       if (paymentMethod === "wallet") {
         const [balanceRow] = await tx
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
           userId,
           type: "parking_charge",
           amountEtb: -amountEtb,
-          provider: "PrakmeWallet",
+          provider: "ParkmeWallet",
           note: `${spot.name} parking pass`,
         });
       }
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     const code = caught instanceof Error ? caught.message : "BOOKING_FAILED";
     if (code === "PARKING_NOT_FOUND") return error("That parking space is no longer available.", 404);
     if (code === "PARKING_FULL") return error("This space just filled up.", 409);
-    if (code === "INSUFFICIENT_BALANCE") return error("Insufficient PrakmeWallet balance.", 409);
+    if (code === "INSUFFICIENT_BALANCE") return error("Insufficient ParkmeWallet balance.", 409);
     return error("Could not create booking.", 500);
   }
 }

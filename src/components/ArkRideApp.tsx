@@ -90,7 +90,7 @@ function AuthModal({ onClose, onAuth }: { onClose: () => void; onAuth: (u: User)
     <div className="overlay" role="dialog" aria-modal="true">
       <div className="booking-modal auth-modal">
         <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button>
-        <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"}</p><h2>{mode === "login" ? "Log in to Prakme" : "Sign up for Prakme"}</h2></div></div>
+        <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"}</p><h2>{mode === "login" ? "Log in to Parkme" : "Sign up for Parkme"}</h2></div></div>
         {mode === "signup" && <div className="auth-field"><label>Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" /></div>}
         <div className="auth-field"><label>Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
         <div className="auth-field"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" /></div>
@@ -277,9 +277,9 @@ function WalletView() {
 
   return (
     <section className="view-panel">
-      <div className="view-header"><h2>PrakmeWallet</h2></div>
+      <div className="view-header"><h2>ParkmeWallet</h2></div>
       <section className="wallet-card">
-        <FlagRibbon /><span>PRAKMEWALLET BALANCE</span>
+        <FlagRibbon /><span>PARKMEWALLET BALANCE</span>
         <h3>{balance.toLocaleString()} <small>ETB</small></h3>
         <p><i /> Ready to park anywhere</p>
         <button onClick={() => setDepositAmount(depositAmount > 0 ? 0 : 100)}><Icon name="plus" size={17} /> Add money</button>
@@ -362,16 +362,16 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
           <div className="modal-heading"><span className="modal-icon"><Icon name="car" size={22} /></span><div><p className="eyebrow">RESERVE A SPACE</p><h2>Book your parking</h2></div></div>
           <div className="booking-place"><div className="booking-map-mini"><Icon name="pin" size={20} /><i /></div><div><h3>{spot.name}</h3><p>{spot.address}</p><StatusDot text={`${spot.availableSpots} spaces available`} /></div><b>{spot.price}<small> ETB/hr</small></b></div>
           <section className="booking-section"><div className="section-title"><span><Icon name="clock" size={18} /> How long?</span><b>{duration} {duration === 1 ? "hour" : "hours"}</b></div><input className="duration-range" type="range" min="1" max="8" value={duration} onChange={(e) => setDuration(Number(e.target.value))} style={{ "--range-progress": `${((duration - 1) / 7) * 100}%` } as React.CSSProperties} /><div className="range-labels"><span>1 hr</span><span>4 hrs</span><span>8 hrs</span></div><div className="duration-presets">{[1, 2, 3, 4].map((h) => <button key={h} className={duration === h ? "active" : ""} onClick={() => setDuration(h)}>{h}h</button>)}</div></section>
-          <section className="booking-section"><div className="section-title"><span><Icon name="wallet" size={18} /> Payment</span></div><div className="payment-options"><button className={payment === "wallet" ? "selected" : ""} onClick={() => setPayment("wallet")}><span className="payment-symbol wallet-symbol"><Icon name="wallet" size={17} /></span><span>PrakmeWallet</span><i className="radio" /></button><button className={payment === "telebirr" ? "selected" : ""} onClick={() => setPayment("telebirr")}><span className="payment-symbol telebirr-symbol">t</span><span>telebirr</span><i className="radio" /></button></div></section>
-          <section className="coupon-row"><Icon name="sparkle" size={17} /><input value={coupon} onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); }} placeholder="Promo code (try PRAKME20)" /><button onClick={() => coupon.trim().toUpperCase() === "PRAKME20" && setCouponApplied(true)}>{couponApplied ? "Applied!" : "Apply"}</button></section>
-          {couponApplied && <p className="coupon-success"><Icon name="check" size={15} /> PRAKME20 saved you 20 ETB</p>}
+          <section className="booking-section"><div className="section-title"><span><Icon name="wallet" size={18} /> Payment</span></div><div className="payment-options"><button className={payment === "wallet" ? "selected" : ""} onClick={() => setPayment("wallet")}><span className="payment-symbol wallet-symbol"><Icon name="wallet" size={17} /></span><span>ParkmeWallet</span><i className="radio" /></button><button className={payment === "telebirr" ? "selected" : ""} onClick={() => setPayment("telebirr")}><span className="payment-symbol telebirr-symbol">t</span><span>telebirr</span><i className="radio" /></button></div></section>
+          <section className="coupon-row"><Icon name="sparkle" size={17} /><input value={coupon} onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); }} placeholder="Promo code (try PARKME20)" /><button onClick={() => coupon.trim().toUpperCase() === "PARKME20" && setCouponApplied(true)}>{couponApplied ? "Applied!" : "Apply"}</button></section>
+          {couponApplied && <p className="coupon-success"><Icon name="check" size={15} /> PARKME20 saved you 20 ETB</p>}
           <div className="booking-total"><span>Total due</span><b>{total} <small>ETB</small></b></div>
           {error && <p className="booking-error" role="alert">{error}</p>}
           <button className="confirm-booking" disabled={submitting} onClick={() => void confirmBooking()}>{submitting ? "Confirming..." : `Confirm & pay ${total} ETB`} <Icon name="arrow" size={18} /></button>
-          <p className="secure-note"><Icon name="shield" size={15} /> Secured by Prakme payments</p>
+          <p className="secure-note"><Icon name="shield" size={15} /> Secured by Parkme payments</p>
         </> : <>
           <div className="ticket-celebration"><span><Icon name="sparkle" size={20} /></span><div><p>YOU&apos;RE ALL SET!</p><h2>Parking confirmed</h2></div></div>
-          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PRAKME PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{spot.name}</h3><p>{spot.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>{formatTime(new Date())}</b><span>{formatDate(new Date())}</span></div><div><small>DURATION</small><b>{duration} hours</b></div><div><small>SPACE</small><b>{bookingGateCode ? `${bookingGateCode.slice(0, 2)} · ${bookingGateCode.slice(2)}` : "B · 27"}</b></div></div><div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Check in"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Checked in!" : "CHECK IN AT GATE"}</p><b>{scanned ? `Welcome! Code: ${bookingGateCode}` : "Scan your ticket"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Done" : "Open scanner"}</button></div></div></div>
+          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PARKME PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{spot.name}</h3><p>{spot.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>{formatTime(new Date())}</b><span>{formatDate(new Date())}</span></div><div><small>DURATION</small><b>{duration} hours</b></div><div><small>SPACE</small><b>{bookingGateCode ? `${bookingGateCode.slice(0, 2)} · ${bookingGateCode.slice(2)}` : "B · 27"}</b></div></div><div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Check in"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Checked in!" : "CHECK IN AT GATE"}</p><b>{scanned ? `Welcome! Code: ${bookingGateCode}` : "Scan your ticket"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Done" : "Open scanner"}</button></div></div></div>
           <button className="confirm-booking" onClick={() => { onBooked(); onClose(); }}>Done <Icon name="arrow" size={18} /></button>
         </>}
       </div>
@@ -391,7 +391,7 @@ function ProfileDrawer({ user, onClose, onOwner, onLogout }: { user: User; onClo
   return (
     <div className="drawer-overlay" role="dialog" aria-modal="true">
       <aside className="profile-drawer">
-        <div className="drawer-header"><div><p className="eyebrow">YOUR PRAKME</p><h2>Account & parking</h2></div><button className="icon-button" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button></div>
+        <div className="drawer-header"><div><p className="eyebrow">YOUR PARKME</p><h2>Account & parking</h2></div><button className="icon-button" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button></div>
         <div className="profile-identity"><Avatar name={user.name} /><div><h3>{user.name}</h3><p>{user.email}</p></div><span className="verified"><Icon name="check" size={13} /></span></div>
         <div className="profile-tabs"><button className={tab === "wallet" ? "active" : ""} onClick={() => setTab("wallet")}>Wallet</button><button className={tab === "passes" ? "active" : ""} onClick={() => setTab("passes")}>Passes</button></div>
         {tab === "wallet" && <div className="drawer-content"><WalletView /></div>}
@@ -427,7 +427,7 @@ function OwnerPortal({ onClose }: { onClose: () => void }) {
     <div className="owner-overlay" role="dialog" aria-modal="true">
       <section className="owner-portal">
         <header className="owner-header">
-          <div className="owner-logo"><span>Prak</span><b>me</b><i>host</i></div>
+          <div className="owner-logo"><span>Park</span><b>me</b><i>host</i></div>
           <div className="owner-nav"><button className="active">Overview</button><button>Spaces</button><button>Bookings</button></div>
           <button className="icon-button" onClick={onClose} aria-label="Close"><Icon name="close" size={20} /></button>
         </header>
@@ -468,7 +468,7 @@ function OwnerPortal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export default function PrakmeApp() {
+export default function ParkmeApp() {
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
@@ -530,15 +530,15 @@ export default function PrakmeApp() {
   ];
 
   return (
-    <main className="prakme-shell">
+    <main className="parkme-shell">
       <aside className={`sidebar ${menuOpen ? "mobile-visible" : ""}`}>
-        <div className="brand"><div className="brand-mark"><span>Prak</span><b>me</b></div><em>ethiopia</em></div>
+        <div className="brand"><div className="brand-mark"><span>Park</span><b>me</b></div><em>ethiopia</em></div>
         <button className="sidebar-close" onClick={() => setMenuOpen(false)}><Icon name="close" size={20} /></button>
         <nav>{navItems.map((item) => <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setView(item.view); setMenuOpen(false); }}><Icon name={item.icon} size={20} /><span>{item.label}</span>{item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}</button>)}</nav>
         <div className="sidebar-bottom">
           {user ? (
             <>
-              <button className="host-callout" onClick={() => setOwnerOpen(true)}><span><Icon name="building" size={20} /></span><div><b>List your space</b><small>Earn with Prakme</small></div><Icon name="chevron" size={16} /></button>
+              <button className="host-callout" onClick={() => setOwnerOpen(true)}><span><Icon name="building" size={20} /></span><div><b>List your space</b><small>Earn with Parkme</small></div><Icon name="chevron" size={16} /></button>
               <div className="side-user"><Avatar name={user.name} size="sm" /><div><b>{user.name}</b><small>{user.email}</small></div><button onClick={() => setProfileOpen(true)} aria-label="Open profile"><Icon name="chevron" size={16} /></button></div>
             </>
           ) : (
@@ -550,7 +550,7 @@ export default function PrakmeApp() {
       <div className="app-content">
         <header className="topbar">
           <button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Icon name="menu" size={22} /></button>
-          <div className="mobile-brand"><span>Prak</span><b>me</b></div>
+          <div className="mobile-brand"><span>Park</span><b>me</b></div>
           <div className="top-location"><Icon name="pin" size={18} /><span>Addis Ababa</span></div>
           <div className="top-actions">
             {user ? (

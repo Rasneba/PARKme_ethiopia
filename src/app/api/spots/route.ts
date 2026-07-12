@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { ensurePrakmeSeeded } from "@/db/seed";
+import { ensureParkmeSeeded } from "@/db/seed";
 import { parkingSpaces } from "@/db/schema";
 import { and, asc, eq, ilike, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  await ensurePrakmeSeeded();
+  await ensureParkmeSeeded();
 
   const query = request.nextUrl.searchParams.get("q")?.trim();
   const onlyAvailable = request.nextUrl.searchParams.get("available") !== "false";

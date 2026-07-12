@@ -3,7 +3,7 @@ import { sessions, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 
-const SESSION_COOKIE = "prakme_session";
+const SESSION_COOKIE = "parkme_session";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function getCurrentUser() {

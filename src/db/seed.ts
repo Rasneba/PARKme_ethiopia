@@ -4,7 +4,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { hashSync } from "bcryptjs";
 
-export async function ensurePrakmeSeeded() {
+export async function ensureParkmeSeeded() {
   const [existing] = await db.select({ id: users.id }).from(users).limit(1);
   if (existing) return;
 
@@ -12,7 +12,7 @@ export async function ensurePrakmeSeeded() {
   const [demoUser] = await db
     .insert(users)
     .values({
-      email: "miki@prakme.et",
+      email: "miki@parkme.et",
       name: "Miki Tadesse",
       passwordHash,
       phone: "+251911234567",
@@ -24,7 +24,7 @@ export async function ensurePrakmeSeeded() {
   if (demoUser) {
     userId = demoUser.id;
   } else {
-    const [existingUser] = await db.select({ id: users.id }).from(users).where(eq(users.email, "miki@prakme.et")).limit(1);
+    const [existingUser] = await db.select({ id: users.id }).from(users).where(eq(users.email, "miki@parkme.et")).limit(1);
     userId = existingUser!.id;
   }
 
@@ -132,7 +132,7 @@ export async function ensurePrakmeSeeded() {
       type: "deposit",
       amountEtb: 500,
       provider: "telebirr",
-      note: "PrakmeWallet opening balance",
+      note: "ParkmeWallet opening balance",
     })
     .onConflictDoNothing({ target: walletTransactions.reference });
 
@@ -168,4 +168,4 @@ export async function ensurePrakmeSeeded() {
     .onConflictDoNothing({ target: bookings.reference });
 }
 
-export const DEMO_USER_EMAIL = "miki@prakme.et";
+export const DEMO_USER_EMAIL = "miki@parkme.et";

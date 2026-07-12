@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { ensurePrakmeSeeded } from "@/db/seed";
+import { ensureParkmeSeeded } from "@/db/seed";
 import { availabilityBlocks, bookings, parkingSpaces } from "@/db/schema";
 import { asc, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -8,7 +8,7 @@ import { requireUserId } from "@/lib/auth-helpers";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await ensurePrakmeSeeded();
+  await ensureParkmeSeeded();
   let userId: string;
   try { userId = await requireUserId(); } catch {
     return NextResponse.json({ error: "Please log in." }, { status: 401 });

@@ -26,7 +26,7 @@ button, input { font: inherit; }
 button { border: 0; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74, .28); outline-offset: 2px; }
 
-.prakme-shell { min-height: 100vh; background: var(--canvas); }
+.parkme-shell { min-height: 100vh; background: var(--canvas); }
 .sidebar { position: fixed; z-index: 10; inset: 0 auto 0 0; width: 248px; padding: 28px 16px 18px; display: flex; flex-direction: column; background: #fff; border-right: 1px solid var(--line); }
 .brand { display: flex; align-items: baseline; gap: 6px; padding: 0 12px 35px; color: var(--ink); }
 .brand-mark, .mobile-brand, .owner-logo { letter-spacing: -.09em; font-size: 25px; font-weight: 800; }
@@ -156,7 +156,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 @media (max-width: 860px) { .sidebar { transform: translateX(-100%); transition: transform .22s ease; box-shadow: 10px 0 35px rgba(15,20,16,.15); }.sidebar.mobile-visible { transform: translateX(0); }.sidebar-close { position: absolute; display: grid; place-items: center; top: 19px; right: 12px; color: var(--muted); background: transparent; }.app-content { margin-left: 0; }.mobile-menu { display: grid; place-items: center; padding: 4px; margin-right: 14px; color: #4a524b; background: transparent; }.mobile-brand { display: block; font-size: 20px; }.top-location { margin-left: 18px; }.top-actions { gap: 11px; }.top-profile span, .top-profile > svg { display: none; }.workspace { padding: 27px 22px 35px; }.content-grid { grid-template-columns: 1fr; }.map-column { min-height: 470px; }.active-pass-card { width: 100%; }.owner-header { padding: 0 16px; gap: 15px; }.owner-nav { gap: 12px; }.owner-main { padding: 22px; }.owner-grid, .owner-grid.lower { grid-template-columns: 1fr; }.next-payout { min-height: auto; } }
 @media (max-width: 560px) { .topbar { height: 62px; padding: 0 14px; }.top-location { margin-left: auto; font-size: 11px; }.top-location > svg:last-child { display: none; }.workspace { padding: 23px 13px 30px; }.welcome-line h1 { font-size: 28px; }.date-strip { gap: 7px; }.date-pill { padding: 10px 8px; gap: 7px; }.date-pill small { display: none; }.place-card { grid-template-columns: 75px minmax(0,1fr); gap: 9px; padding: 8px; }.place-image { height: 80px; }.place-meta span:last-child { display: none; }.place-price { min-width: 0; }.active-pass-card { min-height: 214px; padding: 23px 18px 14px; }.timer-display { position: static; margin-top: 14px; text-align: left; }.pass-divider { margin-top: 11px; }.booking-modal { padding: 22px 18px; border-radius: 15px; }.ticket-complete { padding: 0 0 19px; }.booking-place { padding: 10px; }.ticket-dates { grid-template-columns: 1fr 1fr; }.ticket-dates div:last-child { display: none; }.profile-drawer { width: 100%; }.owner-overlay { padding: 0; }.owner-portal { width: 100%; height: 100%; border-radius: 0; }.owner-header { height: 59px; }.owner-nav { display: none; }.owner-main { padding: 20px 14px 30px; }.owner-intro { gap: 14px; align-items: start; }.owner-intro h1 { font-size: 22px; }.owner-intro p:not(.eyebrow) { max-width: 220px; }.add-space { padding: 9px; font-size: 0; }.add-space svg { margin: 0; }.owner-metrics { gap: 8px; }.owner-metrics article { padding: 11px; }.owner-metrics h2 { font-size: 19px; }.earnings-chart, .active-spaces, .availability-calendar, .next-payout { padding: 14px; }.chart-summary { margin-left: 30px; }.chart-wrap { padding-left: 24px; }.chart-x { left: 24px; }.owner-space-row { flex-wrap: wrap; }.space-price { margin-left: 53px; }.row-more { margin-left: auto; }.dates button { height: 23px; } }
 
-/* Prakme vivid color pass */
+/* Parkme vivid color pass */
 :root {
   --canvas: #f7f5ec;
   --paper: #fffefa;
@@ -176,7 +176,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
   --shadow: 0 16px 38px rgba(39, 48, 31, .1);
 }
 
-.prakme-shell {
+.parkme-shell {
   background: radial-gradient(circle at 87% 8%, rgba(247, 197, 49, .13), transparent 23%), radial-gradient(circle at 52% 87%, rgba(15, 162, 75, .09), transparent 28%), var(--canvas);
 }
 .sidebar {
@@ -277,7 +277,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 .owner-grid > section { border-color: #d5e7d5; }.earnings-chart { background: linear-gradient(150deg, #fffefa, #f3fff3); }.next-payout { background: linear-gradient(150deg, #fffefa, #fff8e2); }.payout-status { color: #a13d2b; background: #ffe1d6; }.chart-line { stroke: #e24c3b; }.chart-point { fill: var(--yellow); }.owner-space-row:nth-of-type(2) .owner-space-photo { background: linear-gradient(135deg, #0c8e42, #f1c12a); }.owner-space-row:nth-of-type(3) .owner-space-photo { background: linear-gradient(135deg, #df6247, #8c62c7); }.space-price button { color: #b0472e; background: #ffe4d7; }.availability-calendar { background: linear-gradient(150deg, #fffefa, #f0f7ff); }.dates button.blocked { color: #b7352d; background: #ffdfda; }.dates button.today { background: linear-gradient(135deg, #0e9247, #4fbf70); }
 
 @media (max-width: 560px) {
-  .prakme-shell { background: radial-gradient(circle at 100% 0%, rgba(247,197,49,.18), transparent 32%), var(--canvas); }
+  .parkme-shell { background: radial-gradient(circle at 100% 0%, rgba(247,197,49,.18), transparent 32%), var(--canvas); }
   .topbar { background: linear-gradient(90deg, #fff, #edfff1 70%, #fff3cd); }
   .map-column { border-radius: 13px; }
   .owner-metrics article:nth-child(4) { border-top-width: 2px; }

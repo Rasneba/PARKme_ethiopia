@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { ensurePrakmeSeeded } from "@/db/seed";
+import { ensureParkmeSeeded } from "@/db/seed";
 import { parkingSpaces } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ spaceId: string }> };
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  await ensurePrakmeSeeded();
+  await ensureParkmeSeeded();
   const { spaceId } = await context.params;
   const id = Number(spaceId);
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;

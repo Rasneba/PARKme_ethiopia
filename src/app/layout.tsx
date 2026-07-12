@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Prakme Ethiopia | Park simply",
+  title: "Parkme Ethiopia | Park simply",
   description: "Find, reserve, and manage parking spaces across Ethiopia.",
 };
 

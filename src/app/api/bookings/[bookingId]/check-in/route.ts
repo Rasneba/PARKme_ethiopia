@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { ensurePrakmeSeeded } from "@/db/seed";
+import { ensureParkmeSeeded } from "@/db/seed";
 import { bookings } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ bookingId: string }> };
 
 export async function POST(_: Request, context: RouteContext) {
-  await ensurePrakmeSeeded();
+  await ensureParkmeSeeded();
   let userId: string;
   try { userId = await requireUserId(); } catch {
     return NextResponse.json({ error: "Please log in." }, { status: 401 });

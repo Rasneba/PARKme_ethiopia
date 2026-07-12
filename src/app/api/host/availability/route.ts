@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { ensurePrakmeSeeded } from "@/db/seed";
+import { ensureParkmeSeeded } from "@/db/seed";
 import { availabilityBlocks, parkingSpaces } from "@/db/schema";
 import { and, asc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -7,13 +7,13 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await ensurePrakmeSeeded();
+  await ensureParkmeSeeded();
   const blocks = await db.select().from(availabilityBlocks).orderBy(asc(availabilityBlocks.blockedDate));
   return NextResponse.json({ blocks });
 }
 
 export async function POST(request: NextRequest) {
-  await ensurePrakmeSeeded();
+  await ensureParkmeSeeded();
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const parkingSpaceId = Number(body?.parkingSpaceId);
   const blockedDate = body?.blockedDate;
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  await ensurePrakmeSeeded();
+  await ensureParkmeSeeded();
   const parkingSpaceId = Number(request.nextUrl.searchParams.get("parkingSpaceId"));
   const blockedDate = request.nextUrl.searchParams.get("blockedDate");
   if (!Number.isInteger(parkingSpaceId) || !blockedDate) return NextResponse.json({ error: "Provide a space and date." }, { status: 400 });

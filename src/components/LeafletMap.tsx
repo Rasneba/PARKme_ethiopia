@@ -39,7 +39,7 @@ export default function LeafletMap({
             <span style="font-weight:800;color:#0fa24b;font-size:13px;">${spot.price} ETB/hr</span>
             <span style="font-size:10px;color:#888;">${spot.availableSpots} spots</span>
           </div>
-          <button onclick="window.__prakmeSelectSpot?.(${spot.id})" style="margin-top:8px;width:100%;padding:8px;background:linear-gradient(135deg,#111a13,#168b45);color:white;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;transition:.15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">Select & Reserve</button>
+          <button onclick="window.__parkmeSelectSpot?.(${spot.id})" style="margin-top:8px;width:100%;padding:8px;background:linear-gradient(135deg,#111a13,#168b45);color:white;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;transition:.15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">Select & Reserve</button>
         </div>`;
     },
     [],
@@ -201,22 +201,22 @@ export default function LeafletMap({
   }, [selectedSpotId, spots, createSpotPopup]);
 
   useEffect(() => {
-    (window as unknown as Record<string, unknown>).__prakmeSelectSpot = (id: number) => {
+    (window as unknown as Record<string, unknown>).__parkmeSelectSpot = (id: number) => {
       const spot = spots.find((s) => s.id === id);
       if (spot) onSelectSpot(spot);
     };
     return () => {
-      delete (window as unknown as Record<string, unknown>).__prakmeSelectSpot;
+      delete (window as unknown as Record<string, unknown>).__parkmeSelectSpot;
     };
   }, [spots, onSelectSpot]);
 
   useEffect(() => {
-    (window as unknown as Record<string, unknown>).__prakmeBookSpot = (id: number) => {
+    (window as unknown as Record<string, unknown>).__parkmeBookSpot = (id: number) => {
       const spot = spots.find((s) => s.id === id);
       if (spot) onBookSpot(spot);
     };
     return () => {
-      delete (window as unknown as Record<string, unknown>).__prakmeBookSpot;
+      delete (window as unknown as Record<string, unknown>).__parkmeBookSpot;
     };
   }, [spots, onBookSpot]);
 
