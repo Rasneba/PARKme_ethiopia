@@ -1,10 +1,33 @@
 import { db } from "@/db";
 import { bookings, parkingSpaces, walletTransactions } from "@/db/schema";
+import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-
-const demoUserId = "demo-miki";
+import { hashSync } from "bcryptjs";
 
 export async function ensurePrakmeSeeded() {
+  const [existing] = await db.select({ id: users.id }).from(users).limit(1);
+  if (existing) return;
+
+  const passwordHash = hashSync("demo1234", 10);
+  const [demoUser] = await db
+    .insert(users)
+    .values({
+      email: "miki@prakme.et",
+      name: "Miki Tadesse",
+      passwordHash,
+      phone: "+251911234567",
+    })
+    .onConflictDoNothing({ target: users.email })
+    .returning();
+
+  let userId: string;
+  if (demoUser) {
+    userId = demoUser.id;
+  } else {
+    const [existingUser] = await db.select({ id: users.id }).from(users).where(eq(users.email, "miki@prakme.et")).limit(1);
+    userId = existingUser!.id;
+  }
+
   await db
     .insert(parkingSpaces)
     .values([
@@ -20,6 +43,8 @@ export async function ensurePrakmeSeeded() {
         availableSpots: 12,
         totalSpots: 36,
         hostName: "Miki Tadesse",
+        lat: 9.0355,
+        lng: 38.7468,
       },
       {
         slug: "bole-medhanialem",
@@ -33,6 +58,8 @@ export async function ensurePrakmeSeeded() {
         availableSpots: 6,
         totalSpots: 18,
         hostName: "Miki Tadesse",
+        lat: 9.0115,
+        lng: 38.7892,
       },
       {
         slug: "meskel-square-lot",
@@ -46,6 +73,8 @@ export async function ensurePrakmeSeeded() {
         availableSpots: 18,
         totalSpots: 50,
         hostName: "Miki Tadesse",
+        lat: 9.0113,
+        lng: 38.7614,
       },
       {
         slug: "mexico-square-space-4",
@@ -59,6 +88,38 @@ export async function ensurePrakmeSeeded() {
         availableSpots: 4,
         totalSpots: 10,
         hostName: "Miki Tadesse",
+        lat: 9.0288,
+        lng: 38.7578,
+      },
+      {
+        slug: "edna-mall-parking",
+        name: "Edna Mall Parking",
+        address: "Bole Road, Addis Ababa",
+        neighborhood: "Bole",
+        kind: "Covered",
+        tone: "sage",
+        priceHourlyEtb: 50,
+        ratingTenths: 47,
+        availableSpots: 8,
+        totalSpots: 24,
+        hostName: "Miki Tadesse",
+        lat: 9.0073,
+        lng: 38.7815,
+      },
+      {
+        slug: "piassa-parking-lot",
+        name: "Piassa Parking Lot",
+        address: "Piazza, Addis Ababa",
+        neighborhood: "Piassa",
+        kind: "Open air",
+        tone: "rose",
+        priceHourlyEtb: 25,
+        ratingTenths: 44,
+        availableSpots: 15,
+        totalSpots: 30,
+        hostName: "Miki Tadesse",
+        lat: 9.0340,
+        lng: 38.7500,
       },
     ])
     .onConflictDoNothing({ target: parkingSpaces.slug });
@@ -67,9 +128,9 @@ export async function ensurePrakmeSeeded() {
     .insert(walletTransactions)
     .values({
       reference: "seed-wallet-opening-balance",
-      userId: demoUserId,
+      userId,
       type: "deposit",
-      amountEtb: 250,
+      amountEtb: 500,
       provider: "telebirr",
       note: "PrakmeWallet opening balance",
     })
@@ -92,7 +153,7 @@ export async function ensurePrakmeSeeded() {
     .insert(bookings)
     .values({
       reference: "seed-active-unity-pass",
-      userId: demoUserId,
+      userId,
       parkingSpaceId: unityPark.id,
       parkingDate: today,
       startAt: start,
@@ -107,4 +168,4 @@ export async function ensurePrakmeSeeded() {
     .onConflictDoNothing({ target: bookings.reference });
 }
 
-export const DEMO_USER_ID = demoUserId;
+export const DEMO_USER_EMAIL = "miki@prakme.et";

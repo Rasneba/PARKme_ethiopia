@@ -1,8 +1,9 @@
 import { db } from "@/db";
-import { DEMO_USER_ID, ensurePrakmeSeeded } from "@/db/seed";
+import { ensurePrakmeSeeded } from "@/db/seed";
 import { bookings, parkingSpaces, walletTransactions } from "@/db/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { requireUserId } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,9 @@ function error(message: string, status = 400) {
 
 export async function GET(request: NextRequest) {
   await ensurePrakmeSeeded();
+  let userId: string;
+  try { userId = await requireUserId(); } catch { return error("Please log in.", 401); }
+
   const requestedStatus = request.nextUrl.searchParams.get("status");
   const rows = await db
     .select({
@@ -36,8 +40,8 @@ export async function GET(request: NextRequest) {
     .innerJoin(parkingSpaces, eq(bookings.parkingSpaceId, parkingSpaces.id))
     .where(
       requestedStatus
-        ? and(eq(bookings.userId, DEMO_USER_ID), eq(bookings.status, requestedStatus))
-        : eq(bookings.userId, DEMO_USER_ID),
+        ? and(eq(bookings.userId, userId), eq(bookings.status, requestedStatus))
+        : eq(bookings.userId, userId),
     )
     .orderBy(desc(bookings.createdAt));
 
@@ -46,6 +50,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   await ensurePrakmeSeeded();
+  let userId: string;
+  try { userId = await requireUserId(); } catch { return error("Please log in to book.", 401); }
+
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const parkingSpaceId = Number(body?.parkingSpaceId);
   const durationHours = Number(body?.durationHours);
@@ -58,12 +65,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const created = await db.transaction(async (tx) => {
-      const [spot] = await tx
-        .select()
-        .from(parkingSpaces)
-        .where(eq(parkingSpaces.id, parkingSpaceId))
-        .limit(1);
-
+      const [spot] = await tx.select().from(parkingSpaces).where(eq(parkingSpaces.id, parkingSpaceId)).limit(1);
       if (!spot || !spot.isActive) throw new Error("PARKING_NOT_FOUND");
       if (spot.availableSpots < 1) throw new Error("PARKING_FULL");
 
@@ -73,13 +75,13 @@ export async function POST(request: NextRequest) {
         const [balanceRow] = await tx
           .select({ balance: sql<string>`coalesce(sum(${walletTransactions.amountEtb}), 0)` })
           .from(walletTransactions)
-          .where(eq(walletTransactions.userId, DEMO_USER_ID));
+          .where(eq(walletTransactions.userId, userId));
         if (Number(balanceRow?.balance ?? 0) < amountEtb) throw new Error("INSUFFICIENT_BALANCE");
       }
 
       const startAt = new Date();
       const endAt = new Date(startAt.getTime() + durationHours * 60 * 60 * 1000);
-      const reference = `AR-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+      const reference = `PR-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
       const gateCode = String(Math.floor(1000 + Math.random() * 9000));
       const spaceLabel = `B · ${Math.floor(10 + Math.random() * 30)}`;
 
@@ -87,7 +89,7 @@ export async function POST(request: NextRequest) {
         .insert(bookings)
         .values({
           reference,
-          userId: DEMO_USER_ID,
+          userId,
           parkingSpaceId: spot.id,
           parkingDate: startAt.toISOString().slice(0, 10),
           startAt,
@@ -103,16 +105,13 @@ export async function POST(request: NextRequest) {
 
       await tx
         .update(parkingSpaces)
-        .set({
-          availableSpots: Math.max(0, spot.availableSpots - 1),
-          updatedAt: new Date(),
-        })
+        .set({ availableSpots: Math.max(0, spot.availableSpots - 1), updatedAt: new Date() })
         .where(eq(parkingSpaces.id, spot.id));
 
       if (paymentMethod === "wallet") {
         await tx.insert(walletTransactions).values({
           reference: `wallet-${reference}`,
-          userId: DEMO_USER_ID,
+          userId,
           type: "parking_charge",
           amountEtb: -amountEtb,
           provider: "PrakmeWallet",
@@ -123,21 +122,14 @@ export async function POST(request: NextRequest) {
       return { booking, spot };
     });
 
-    return NextResponse.json(
-      {
-        booking: {
-          ...created.booking,
-          spotName: created.spot.name,
-          spotAddress: created.spot.address,
-        },
-      },
-      { status: 201 },
-    );
+    return NextResponse.json({
+      booking: { ...created.booking, spotName: created.spot.name, spotAddress: created.spot.address },
+    }, { status: 201 });
   } catch (caught) {
     const code = caught instanceof Error ? caught.message : "BOOKING_FAILED";
     if (code === "PARKING_NOT_FOUND") return error("That parking space is no longer available.", 404);
-    if (code === "PARKING_FULL") return error("This space just filled up. Please choose another spot.", 409);
-    if (code === "INSUFFICIENT_BALANCE") return error("Your PrakmeWallet balance is too low for this booking.", 409);
-    return error("We could not create the booking. Please try again.", 500);
+    if (code === "PARKING_FULL") return error("This space just filled up.", 409);
+    if (code === "INSUFFICIENT_BALANCE") return error("Insufficient PrakmeWallet balance.", 409);
+    return error("Could not create booking.", 500);
   }
 }

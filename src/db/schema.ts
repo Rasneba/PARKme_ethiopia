@@ -8,7 +8,35 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
+  real,
 } from "drizzle-orm/pg-core";
+
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    email: text("email").notNull(),
+    name: text("name").notNull(),
+    passwordHash: text("password_hash").notNull(),
+    phone: text("phone"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("users_email_unique").on(table.email)],
+);
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("sessions_token_unique").on(table.token)],
+);
 
 export const parkingSpaces = pgTable(
   "parking_spaces",
@@ -24,7 +52,9 @@ export const parkingSpaces = pgTable(
     ratingTenths: integer("rating_tenths").notNull().default(48),
     availableSpots: integer("available_spots").notNull().default(0),
     totalSpots: integer("total_spots").notNull().default(0),
-    hostName: text("host_name").notNull().default("Miki Tadesse"),
+    hostName: text("host_name").notNull().default("Host"),
+    lat: real("lat").notNull().default(9.0192),
+    lng: real("lng").notNull().default(38.7525),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -37,7 +67,9 @@ export const bookings = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     reference: text("reference").notNull(),
-    userId: text("user_id").notNull().default("demo-miki"),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     parkingSpaceId: integer("parking_space_id")
       .notNull()
       .references(() => parkingSpaces.id, { onDelete: "restrict" }),
@@ -61,7 +93,9 @@ export const walletTransactions = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     reference: text("reference").notNull(),
-    userId: text("user_id").notNull().default("demo-miki"),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     type: text("type").notNull(),
     amountEtb: integer("amount_etb").notNull(),
     provider: text("provider"),

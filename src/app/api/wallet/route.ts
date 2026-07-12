@@ -1,21 +1,27 @@
 import { db } from "@/db";
-import { DEMO_USER_ID, ensurePrakmeSeeded } from "@/db/seed";
+import { ensurePrakmeSeeded } from "@/db/seed";
 import { walletTransactions } from "@/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { requireUserId } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   await ensurePrakmeSeeded();
+  let userId: string;
+  try { userId = await requireUserId(); } catch {
+    return NextResponse.json({ error: "Please log in." }, { status: 401 });
+  }
+
   const [totals] = await db
     .select({ balance: sql<string>`coalesce(sum(${walletTransactions.amountEtb}), 0)` })
     .from(walletTransactions)
-    .where(eq(walletTransactions.userId, DEMO_USER_ID));
+    .where(eq(walletTransactions.userId, userId));
   const transactions = await db
     .select()
     .from(walletTransactions)
-    .where(eq(walletTransactions.userId, DEMO_USER_ID))
+    .where(eq(walletTransactions.userId, userId))
     .orderBy(desc(walletTransactions.createdAt))
     .limit(20);
 
@@ -24,6 +30,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   await ensurePrakmeSeeded();
+  let userId: string;
+  try { userId = await requireUserId(); } catch {
+    return NextResponse.json({ error: "Please log in." }, { status: 401 });
+  }
+
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const amountEtb = Number(body?.amountEtb);
   const provider = body?.provider === "bank" ? "Commercial Bank of Ethiopia" : "telebirr";
@@ -36,7 +47,7 @@ export async function POST(request: NextRequest) {
     .insert(walletTransactions)
     .values({
       reference: `topup-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`,
-      userId: DEMO_USER_ID,
+      userId,
       type: "deposit",
       amountEtb,
       provider,
@@ -47,7 +58,7 @@ export async function POST(request: NextRequest) {
   const [totals] = await db
     .select({ balance: sql<string>`coalesce(sum(${walletTransactions.amountEtb}), 0)` })
     .from(walletTransactions)
-    .where(eq(walletTransactions.userId, DEMO_USER_ID));
+    .where(eq(walletTransactions.userId, userId));
 
   return NextResponse.json({ transaction, balanceEtb: Number(totals?.balance ?? 0) }, { status: 201 });
 }

@@ -1,49 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 
 type IconName =
-  | "search"
-  | "bell"
-  | "calendar"
-  | "clock"
-  | "chevron"
-  | "car"
-  | "pin"
-  | "star"
-  | "filter"
-  | "wallet"
-  | "plus"
-  | "arrow"
-  | "close"
-  | "check"
-  | "lock"
-  | "grid"
-  | "home"
-  | "receipt"
-  | "help"
-  | "settings"
-  | "building"
-  | "chart"
-  | "edit"
-  | "copy"
-  | "scan"
-  | "sparkle"
-  | "shield"
-  | "menu";
+  | "search" | "bell" | "calendar" | "clock" | "chevron" | "car" | "pin"
+  | "star" | "filter" | "wallet" | "plus" | "arrow" | "close" | "check"
+  | "lock" | "grid" | "home" | "receipt" | "help" | "settings" | "building"
+  | "chart" | "edit" | "copy" | "scan" | "sparkle" | "shield" | "menu" | "logout";
 
 function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number; stroke?: number }) {
-  const shared = {
-    width: size,
-    height: size,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: stroke,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-  };
+  const shared = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: stroke, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
   const paths: Record<IconName, React.ReactNode> = {
     search: <><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></>,
     bell: <><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
@@ -73,116 +42,226 @@ function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number
     sparkle: <path d="m12 3 1.45 5.55L19 10l-5.55 1.45L12 17l-1.45-5.55L5 10l5.55-1.45L12 3ZM19 16l.65 2.35L22 19l-2.35.65L19 22l-.65-2.35L16 19l2.35-.65L19 16Z" />,
     shield: <><path d="M12 3 19 6v5c0 4.7-3 7.6-7 10-4-2.4-7-5.3-7-10V6l7-3Z" /><path d="m9 12 2 2 4-4" /></>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
+    logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>,
   };
   return <svg {...shared}>{paths[name]}</svg>;
 }
 
-const places = [
-  { id: 1, name: "Unity Park Garage", address: "Arat Kilo, Addis Ababa", walk: "3 min walk", price: 35, rating: "4.9", spaces: "12 spots", tone: "sage", label: "Best value" },
-  { id: 2, name: "Bole Medhanialem", address: "Bole Road, Addis Ababa", walk: "6 min walk", price: 45, rating: "4.8", spaces: "6 spots", tone: "sand", label: "Covered" },
-  { id: 3, name: "Meskel Square Lot", address: "Meskel Square, Addis", walk: "8 min walk", price: 30, rating: "4.7", spaces: "18 spots", tone: "rose", label: "Open air" },
-];
+type User = { id: string; email: string; name: string };
+type ApiSpot = { id: number; slug: string; name: string; address: string; neighborhood: string; label: string; tone: string; price: number; rating: string; availableSpots: number; totalSpots: number; spaces: string; hostName: string; lat: number; lng: number };
+type Booking = { id: string; reference: string; status: string; parkingDate: string; startAt: string; endAt: string; durationHours: number; spaceLabel: string; paymentMethod: string; amountEtb: number; gateCode: string; checkInAt: string | null; createdAt: string; spotId: number; spotName: string; spotAddress: string };
+type WalletTx = { id: string; reference: string; type: string; amountEtb: number; provider: string | null; note: string; createdAt: string };
 
-const navItems = [
-  { icon: "grid" as IconName, label: "Find a spot", active: true },
-  { icon: "calendar" as IconName, label: "My bookings" },
-  { icon: "wallet" as IconName, label: "Wallet" },
-  { icon: "receipt" as IconName, label: "History" },
-];
+function formatDate(d: Date) { return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); }
+function formatTime(d: Date) { return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }); }
+function greetByHour() { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; }
 
-function Avatar({ size = "md" }: { size?: "sm" | "md" }) {
-  return <div className={`avatar avatar-${size}`} aria-label="Miki Tadesse profile">MT</div>;
+function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
+  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  return <div className={`avatar avatar-${size}`} aria-label={`${name} profile`}>{initials}</div>;
 }
 
-function FlagRibbon() {
-  return <div className="flag-ribbon" aria-hidden="true"><i /><i /><i /></div>;
+function FlagRibbon() { return <div className="flag-ribbon" aria-hidden="true"><i /><i /><i /></div>; }
+function StatusDot({ text, color = "green" }: { text: string; color?: "green" | "yellow" }) { return <span className={`status-dot ${color}`}><i />{text}</span>; }
+
+function AuthModal({ onClose, onAuth }: { onClose: () => void; onAuth: (u: User) => void }) {
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit() {
+    setLoading(true); setError("");
+    try {
+      const url = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
+      const body = mode === "login" ? { email, password } : { name, email, password };
+      const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = (await r.json()) as { user?: User; error?: string };
+      if (!r.ok || !data.user) throw new Error(data.error ?? "Failed");
+      onAuth(data.user);
+      onClose();
+    } catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div className="overlay" role="dialog" aria-modal="true">
+      <div className="booking-modal auth-modal">
+        <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button>
+        <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"}</p><h2>{mode === "login" ? "Log in to Prakme" : "Sign up for Prakme"}</h2></div></div>
+        {mode === "signup" && <div className="auth-field"><label>Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" /></div>}
+        <div className="auth-field"><label>Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
+        <div className="auth-field"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" /></div>
+        {error && <p className="booking-error" role="alert">{error}</p>}
+        <button className="confirm-booking" disabled={loading} onClick={() => void submit()}>{loading ? "Please wait..." : mode === "login" ? "Log in" : "Create account"} <Icon name="arrow" size={18} /></button>
+        <p className="auth-toggle">{mode === "login" ? "Don't have an account?" : "Already have an account?"} <button onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "Sign up" : "Log in"}</button></p>
+      </div>
+    </div>
+  );
 }
 
-function StatusDot({ text, color = "green" }: { text: string; color?: "green" | "yellow" }) {
-  return <span className={`status-dot ${color}`}><i />{text}</span>;
-}
-
-function BookingTimerCard({ onOpen }: { onOpen: () => void }) {
-  const [elapsed, setElapsed] = useState(78 * 60 + 32);
+function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () => void }) {
+  const [elapsed, setElapsed] = useState(() => Math.max(0, Math.floor((Date.now() - new Date(booking.startAt).getTime()) / 1000)));
   const [gateOpen, setGateOpen] = useState(false);
-  useEffect(() => {
-    const interval = window.setInterval(() => setElapsed((value) => value + 1), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
-  const time = `${String(Math.floor(elapsed / 3600)).padStart(2, "0")}:${String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { const i = window.setInterval(() => setElapsed((v) => v + 1), 1000); return () => window.clearInterval(i); }, []);
+  const h = String(Math.floor(elapsed / 3600)).padStart(2, "0");
+  const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
+  const s = String(elapsed % 60).padStart(2, "0");
+  const time = `${h}:${m}:${s}`;
+  const active = booking.status === "active" || booking.status === "confirmed";
+
   return (
     <section className="active-pass-card">
       <FlagRibbon />
       <span className="ticket-notch notch-left" /><span className="ticket-notch notch-right" />
-      <div className="pass-kicker"><span className="pulse" /> ACTIVE PARKING</div>
+      <div className="pass-kicker"><span className="pulse" /> {active ? "ACTIVE PARKING" : "BOOKING"}</div>
       <div className="pass-title-row">
-        <div><h2>Unity Park Garage</h2><p>Level B · Space 27</p></div>
+        <div><h2>{booking.spotName}</h2><p>{booking.spaceLabel}</p></div>
         <div className="parking-mark">P</div>
       </div>
       <div className="timer-display"><span>{time}</span><small>elapsed</small></div>
       <div className="pass-divider" />
       <button className={`gate-code ${gateOpen ? "revealed" : ""}`} onClick={() => setGateOpen(!gateOpen)}>
         <span className="gate-lock"><Icon name={gateOpen ? "check" : "lock"} size={16} /></span>
-        <span>{gateOpen ? "Gate code: 4 8 2 6" : "Tap to reveal gate code"}</span>
+        <span>{gateOpen ? `Gate code: ${booking.gateCode.split("").join(" ")}` : "Tap to reveal gate code"}</span>
         <Icon name={gateOpen ? "copy" : "chevron"} size={16} />
       </button>
+      {gateOpen && <button className="copy-gate-btn" onClick={() => { navigator.clipboard.writeText(booking.gateCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}><Icon name="copy" size={14} /> {copied ? "Copied!" : "Copy code"}</button>}
       <button className="pass-details" onClick={onOpen}>View parking pass <Icon name="arrow" size={16} /></button>
     </section>
   );
 }
 
-function SearchPanel({ onBook }: { onBook: (place?: typeof places[number]) => void }) {
-  const [query, setQuery] = useState("Bole, Addis Ababa");
-  const [selected, setSelected] = useState(0);
+function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, totalCount }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; totalCount: number }) {
   const [filterOpen, setFilterOpen] = useState(false);
   return (
     <section className="search-column">
-      <div className="welcome-line"><p>Good morning, Miki</p><h1>Where are you parking today?</h1></div>
+      <div className="welcome-line"><p>{greetByHour()}</p><h1>Where are you parking today?</h1></div>
       <div className="search-box">
         <Icon name="search" size={20} />
-        <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search parking location" />
-        <button className="filter-button" aria-label="Open parking filters" onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" size={19} /></button>
-        {filterOpen && <div className="filter-popover"><b>Parking filters</b><label><input type="checkbox" defaultChecked /> Covered spaces</label><label><input type="checkbox" /> EV charging</label><label><input type="checkbox" defaultChecked /> Under 50 ETB/hr</label></div>}
+        <input value={searchQuery} onChange={(e) => onSearch(e.target.value)} placeholder="Search by name, area, or address..." aria-label="Search parking location" />
+        <button className="filter-button" aria-label="Open filters" onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" size={19} /></button>
+        {filterOpen && <div className="filter-popover"><b>Filters</b><label><input type="checkbox" defaultChecked /> Available only</label><label><input type="checkbox" /> Covered</label><label><input type="checkbox" defaultChecked /> Under 50 ETB/hr</label></div>}
       </div>
-      <div className="date-strip" aria-label="Parking date and arrival time">
-        <button className="date-pill"><Icon name="calendar" size={19} /><span><b>Today</b><small>Thu, 27 June</small></span><Icon name="chevron" size={16} /></button>
-        <button className="date-pill"><Icon name="clock" size={19} /><span><b>Arrive now</b><small>10:30 AM</small></span><Icon name="chevron" size={16} /></button>
-      </div>
-      <div className="results-heading"><div><span className="eyebrow">AVAILABLE NEARBY</span><h2>18 spots found</h2></div><button className="text-button">Map view</button></div>
-      <div className="place-list">
-        {places.map((place, index) => (
-          <article className={`place-card ${selected === index ? "selected" : ""}`} key={place.id} onClick={() => setSelected(index)}>
-            <div className={`place-image ${place.tone}`}><span>{place.label}</span><div className="car-shape"><Icon name="car" size={29} /></div></div>
-            <div className="place-info"><div className="place-name-line"><h3>{place.name}</h3><span className="rating"><Icon name="star" size={13} stroke={2.4} /> {place.rating}</span></div><p>{place.address}</p><div className="place-meta"><span><Icon name="pin" size={14} />{place.walk}</span><span>{place.spaces}</span></div></div>
-            <div className="place-price"><b>{place.price} <small>ETB</small></b><span>/ hour</span><button onClick={(event) => { event.stopPropagation(); onBook(place); }}>Reserve</button></div>
-          </article>
-        ))}
-      </div>
-      <button className="load-more">Show more spaces <Icon name="chevron" size={16} /></button>
+      <div className="results-heading"><div><span className="eyebrow">AVAILABLE NEARBY</span><h2>{totalCount} spots found</h2></div></div>
+      {loading ? <div className="loading-state">Searching...</div> : (
+        <div className="place-list">
+          {spots.map((spot) => (
+            <article className="place-card" key={spot.id} onClick={() => onSelectSpot(spot)}>
+              <div className={`place-image ${spot.tone}`}><span>{spot.label}</span><div className="car-shape"><Icon name="car" size={29} /></div></div>
+              <div className="place-info"><div className="place-name-line"><h3>{spot.name}</h3><span className="rating"><Icon name="star" size={13} stroke={2.4} /> {spot.rating}</span></div><p>{spot.address}</p><div className="place-meta"><span><Icon name="pin" size={14} />{spot.availableSpots} spots available</span></div></div>
+              <div className="place-price"><b>{spot.price} <small>ETB</small></b><span>/ hour</span><button onClick={(e) => { e.stopPropagation(); onBook(spot); }}>Reserve</button></div>
+            </article>
+          ))}
+          {spots.length === 0 && <p className="empty-state">No parking spots found nearby.</p>}
+        </div>
+      )}
     </section>
   );
 }
 
-function CityMap({ onBook }: { onBook: (place?: typeof places[number]) => void }) {
-  const [mapSpot, setMapSpot] = useState(0);
-  const labels = ["Unity Park Garage", "Bole Medhanialem", "Meskel Square Lot"];
+function CityMap({ spots, onSelectSpot, onBook }: { spots: ApiSpot[]; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void }) {
   return (
-    <section className="map-column" aria-label="Map of available parking spots in Addis Ababa">
-      <div className="map-toolbar"><span><Icon name="pin" size={15} /> Addis Ababa</span><button aria-label="Map settings"><Icon name="settings" size={17} /></button></div>
-      <div className="map-label landmark-one">National Palace</div><div className="map-label landmark-two">Unity Park</div><div className="map-label landmark-three">Bole Rd</div>
-      <div className="map-road road-a" /><div className="map-road road-b" /><div className="map-road road-c" /><div className="map-road road-d" /><div className="map-road road-e" />
-      {[{ left: "22%", top: "27%" }, { left: "66%", top: "23%" }, { left: "52%", top: "66%" }, { left: "77%", top: "56%" }, { left: "30%", top: "74%" }].map((point, index) => (
-        <button key={index} className={`map-pin ${mapSpot === index % 3 ? "active" : ""}`} style={point} aria-label={`View ${labels[index % 3]}`} onClick={() => setMapSpot(index % 3)}><span>P</span></button>
-      ))}
-      <div className="you-are-here"><i /><span>You are here</span></div>
-      <div className="map-spot-popover"><span className="map-popover-kicker">{places[mapSpot].spaces} available</span><b>{labels[mapSpot]}</b><div><span>from <strong>{places[mapSpot].price} ETB/hr</strong></span><button onClick={() => onBook(places[mapSpot])}>Reserve <Icon name="arrow" size={14} /></button></div></div>
-      <div className="map-controls"><button>+</button><button>−</button></div>
-      <div className="map-attribution">© OpenStreetMap · Prakme map</div>
+    <section className="map-column" aria-label="Map of parking spots">
+      <LeafletMap spots={spots} onSelectSpot={onSelectSpot} />
     </section>
   );
 }
 
-function BookingModal({ place, onClose, onBooked }: { place: typeof places[number]; onClose: () => void; onBooked: () => void }) {
+function BookingsView({ onBook }: { onBook: () => void }) {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { fetch("/api/bookings").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { setBookings(d.bookings ?? []); setLoading(false); }).catch(() => setLoading(false)); }, []);
+  const active = bookings.filter((b) => b.status === "active" || b.status === "confirmed");
+  const upcoming = bookings.filter((b) => b.status === "confirmed" && new Date(b.startAt) > new Date());
+
+  if (loading) return <div className="view-loading"><Icon name="clock" size={24} /><p>Loading your bookings...</p></div>;
+
+  return (
+    <section className="view-panel">
+      <div className="view-header"><h2>My Bookings</h2><button className="add-space" onClick={onBook}><Icon name="plus" size={16} /> New booking</button></div>
+      {active.length > 0 && <div className="view-section"><h3>Active Now</h3>{active.map((b) => (
+        <div className="booking-row" key={b.id}><span className="booking-status active"><Icon name="car" size={16} /></span><div><b>{b.spotName}</b><small>{b.spaceLabel} · {b.durationHours}h · {b.amountEtb} ETB</small></div><StatusDot text={b.status} /></div>
+      ))}</div>}
+      {upcoming.length > 0 && <div className="view-section"><h3>Upcoming</h3>{upcoming.map((b) => (
+        <div className="booking-row" key={b.id}><span className="booking-status upcoming"><Icon name="calendar" size={16} /></span><div><b>{b.spotName}</b><small>{formatDate(new Date(b.startAt))} · {formatTime(new Date(b.startAt))} · {b.amountEtb} ETB</small></div><span className="booking-ref">{b.reference}</span></div>
+      ))}</div>}
+      {bookings.length === 0 && <div className="empty-view"><Icon name="receipt" size={40} /><h3>No bookings yet</h3><p>Find and reserve a parking spot to get started.</p><button className="confirm-booking" onClick={onBook}>Find a spot <Icon name="arrow" size={16} /></button></div>}
+    </section>
+  );
+}
+
+function WalletView() {
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState<WalletTx[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [depositAmount, setDepositAmount] = useState(0);
+
+  function loadWallet() { fetch("/api/wallet").then((r) => r.ok ? r.json() : null).then((d) => { if (d) { setBalance(d.balanceEtb); setTransactions(d.transactions ?? []); } setLoading(false); }).catch(() => setLoading(false)); }
+  useEffect(() => { loadWallet(); }, []);
+
+  async function addFunds(amount: number) {
+    setAdding(true);
+    try {
+      const r = await fetch("/api/wallet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amountEtb: amount, provider: "telebirr" }) });
+      const d = (await r.json()) as { balanceEtb?: number };
+      if (r.ok && typeof d.balanceEtb === "number") { setBalance(d.balanceEtb); setDepositAmount(0); loadWallet(); }
+    } finally { setAdding(false); }
+  }
+
+  if (loading) return <div className="view-loading"><Icon name="clock" size={24} /><p>Loading wallet...</p></div>;
+
+  return (
+    <section className="view-panel">
+      <div className="view-header"><h2>PrakmeWallet</h2></div>
+      <section className="wallet-card">
+        <FlagRibbon /><span>PRAKMEWALLET BALANCE</span>
+        <h3>{balance.toLocaleString()} <small>ETB</small></h3>
+        <p><i /> Ready to park anywhere</p>
+        <button onClick={() => setDepositAmount(depositAmount > 0 ? 0 : 100)}><Icon name="plus" size={17} /> Add money</button>
+      </section>
+      {depositAmount > 0 && <div className="deposit-sheet"><p>Choose amount</p><div>{[50, 100, 250, 500].map((a) => <button key={a} disabled={adding} onClick={() => void addFunds(a)}>{adding ? "Adding..." : `+${a} ETB`}</button>)}</div></div>}
+      <section className="view-section"><h3>Recent Activity</h3>
+        {transactions.map((tx) => (
+          <div className="activity-row" key={tx.id}>
+            <span className={`activity-icon ${tx.amountEtb > 0 ? "green" : "yellow"}`}><Icon name={tx.amountEtb > 0 ? "plus" : "car"} size={17} /></span>
+            <div><b>{tx.note}</b><small>{formatDate(new Date(tx.createdAt))} · {tx.provider ?? ""}</small></div>
+            <strong className={tx.amountEtb > 0 ? "positive" : ""}>{tx.amountEtb > 0 ? "+" : ""}{tx.amountEtb} ETB</strong>
+          </div>
+        ))}
+        {transactions.length === 0 && <p className="empty-state">No transactions yet.</p>}
+      </section>
+    </section>
+  );
+}
+
+function HistoryView() {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { fetch("/api/bookings").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { setBookings(d.bookings ?? []); setLoading(false); }).catch(() => setLoading(false)); }, []);
+  const past = bookings.filter((b) => b.status === "completed" || b.status === "active" || b.checkInAt);
+
+  if (loading) return <div className="view-loading"><Icon name="clock" size={24} /><p>Loading history...</p></div>;
+
+  return (
+    <section className="view-panel">
+      <div className="view-header"><h2>Parking History</h2></div>
+      {past.length > 0 ? past.map((b) => (
+        <div className="booking-row history-row" key={b.id}>
+          <span className="booking-date"><b>{new Date(b.createdAt).getDate()}</b><small>{new Date(b.createdAt).toLocaleDateString("en-US", { month: "short" })}</small></span>
+          <div><b>{b.spotName}</b><small>{b.durationHours}h · {b.amountEtb} ETB · {b.reference}</small></div>
+          <span className={`history-status ${b.status}`}>{b.status}</span>
+        </div>
+      )) : <div className="empty-view"><Icon name="receipt" size={40} /><h3>No history yet</h3><p>Your past parking sessions will appear here.</p></div>}
+    </section>
+  );
+}
+
+function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClose: () => void; onBooked: () => void; user: User | null }) {
   const [duration, setDuration] = useState(2);
   const [payment, setPayment] = useState("wallet");
   const [coupon, setCoupon] = useState("");
@@ -190,150 +269,235 @@ function BookingModal({ place, onClose, onBooked }: { place: typeof places[numbe
   const [complete, setComplete] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [bookingGateCode, setBookingGateCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [bookingError, setBookingError] = useState("");
-  const total = duration * place.price - (couponApplied ? 20 : 0);
+  const [error, setError] = useState("");
+  const total = duration * spot.price - (couponApplied ? 20 : 0);
 
   async function confirmBooking() {
-    setSubmitting(true);
-    setBookingError("");
+    if (!user) { setError("Please log in to book."); return; }
+    setSubmitting(true); setError("");
     try {
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          parkingSpaceId: place.id,
-          durationHours: duration,
-          paymentMethod: payment,
-          couponCode: couponApplied ? coupon : undefined,
-        }),
-      });
-      const data = (await response.json()) as { booking?: { id: string }; error?: string };
-      if (!response.ok || !data.booking) throw new Error(data.error ?? "Booking could not be created.");
-      setBookingId(data.booking.id);
+      const r = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ parkingSpaceId: spot.id, durationHours: duration, paymentMethod: payment, couponCode: couponApplied ? coupon : undefined }) });
+      const d = (await r.json()) as { booking?: { id: string; gateCode: string }; error?: string };
+      if (!r.ok || !d.booking) throw new Error(d.error ?? "Booking failed.");
+      setBookingId(d.booking.id);
+      setBookingGateCode(d.booking.gateCode);
       setComplete(true);
-    } catch (caught) {
-      setBookingError(caught instanceof Error ? caught.message : "Booking could not be created.");
-    } finally {
-      setSubmitting(false);
-    }
+    } catch (e) { setError(e instanceof Error ? e.message : "Booking failed."); }
+    finally { setSubmitting(false); }
   }
 
   async function checkIn() {
-    if (!bookingId) {
-      setScanned(true);
-      return;
-    }
-    const response = await fetch(`/api/bookings/${bookingId}/check-in`, { method: "POST" });
-    if (response.ok) setScanned(true);
+    if (!bookingId) { setScanned(true); return; }
+    const r = await fetch(`/api/bookings/${bookingId}/check-in`, { method: "POST" });
+    if (r.ok) setScanned(true);
   }
 
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label="Reserve your parking space">
       <div className={`booking-modal ${complete ? "ticket-complete" : ""}`}>
-        <button className="modal-close" onClick={onClose} aria-label="Close booking modal"><Icon name="close" size={21} /></button>
+        <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button>
         {!complete ? <>
           <div className="modal-heading"><span className="modal-icon"><Icon name="car" size={22} /></span><div><p className="eyebrow">RESERVE A SPACE</p><h2>Book your parking</h2></div></div>
-          <div className="booking-place"><div className="booking-map-mini"><Icon name="pin" size={20} /><i /></div><div><h3>{place.name}</h3><p>{place.address} · Level B</p><StatusDot text="12 spaces available" /></div><b>{place.price}<small> ETB/hr</small></b></div>
-          <section className="booking-section"><div className="section-title"><span><Icon name="clock" size={18} /> How long will you stay?</span><b>{duration} {duration === 1 ? "hour" : "hours"}</b></div><input className="duration-range" type="range" min="1" max="8" value={duration} onChange={(event) => setDuration(Number(event.target.value))} style={{ "--range-progress": `${((duration - 1) / 7) * 100}%` } as React.CSSProperties} /><div className="range-labels"><span>1 hr</span><span>4 hrs</span><span>8 hrs</span></div><div className="duration-presets">{[1, 2, 3, 4].map((hours) => <button key={hours} className={duration === hours ? "active" : ""} onClick={() => setDuration(hours)}>{hours}h</button>)}</div></section>
-          <section className="booking-section"><div className="section-title"><span><Icon name="wallet" size={18} /> Payment method</span><button className="tiny-action">+ Add</button></div><div className="payment-options"><button className={payment === "wallet" ? "selected" : ""} onClick={() => setPayment("wallet")}><span className="payment-symbol wallet-symbol"><Icon name="wallet" size={17} /></span><span>PrakmeWallet <small>Balance: 250 ETB</small></span><i className="radio" /></button><button className={payment === "telebirr" ? "selected" : ""} onClick={() => setPayment("telebirr")}><span className="payment-symbol telebirr-symbol">t</span><span>telebirr <small>Instant payment</small></span><i className="radio" /></button></div></section>
-          <section className="coupon-row"><Icon name="sparkle" size={17} /><input value={coupon} onChange={(event) => { setCoupon(event.target.value); setCouponApplied(false); }} placeholder="Promo or coupon code" /><button onClick={() => setCouponApplied(coupon.trim().toUpperCase() === "PRAKME20")}>{couponApplied ? "Applied" : "Apply"}</button></section>
+          <div className="booking-place"><div className="booking-map-mini"><Icon name="pin" size={20} /><i /></div><div><h3>{spot.name}</h3><p>{spot.address}</p><StatusDot text={`${spot.availableSpots} spaces available`} /></div><b>{spot.price}<small> ETB/hr</small></b></div>
+          <section className="booking-section"><div className="section-title"><span><Icon name="clock" size={18} /> How long?</span><b>{duration} {duration === 1 ? "hour" : "hours"}</b></div><input className="duration-range" type="range" min="1" max="8" value={duration} onChange={(e) => setDuration(Number(e.target.value))} style={{ "--range-progress": `${((duration - 1) / 7) * 100}%` } as React.CSSProperties} /><div className="range-labels"><span>1 hr</span><span>4 hrs</span><span>8 hrs</span></div><div className="duration-presets">{[1, 2, 3, 4].map((h) => <button key={h} className={duration === h ? "active" : ""} onClick={() => setDuration(h)}>{h}h</button>)}</div></section>
+          <section className="booking-section"><div className="section-title"><span><Icon name="wallet" size={18} /> Payment</span></div><div className="payment-options"><button className={payment === "wallet" ? "selected" : ""} onClick={() => setPayment("wallet")}><span className="payment-symbol wallet-symbol"><Icon name="wallet" size={17} /></span><span>PrakmeWallet</span><i className="radio" /></button><button className={payment === "telebirr" ? "selected" : ""} onClick={() => setPayment("telebirr")}><span className="payment-symbol telebirr-symbol">t</span><span>telebirr</span><i className="radio" /></button></div></section>
+          <section className="coupon-row"><Icon name="sparkle" size={17} /><input value={coupon} onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); }} placeholder="Promo code (try PRAKME20)" /><button onClick={() => coupon.trim().toUpperCase() === "PRAKME20" && setCouponApplied(true)}>{couponApplied ? "Applied!" : "Apply"}</button></section>
           {couponApplied && <p className="coupon-success"><Icon name="check" size={15} /> PRAKME20 saved you 20 ETB</p>}
-          <div className="booking-total"><span>Total due <small>Includes secure space reservation</small></span><b>{total} <small>ETB</small></b></div>
-          {bookingError && <p className="booking-error" role="alert">{bookingError}</p>}
-          <button className="confirm-booking" disabled={submitting} onClick={() => void confirmBooking()}>{submitting ? "Confirming secure payment…" : `Confirm & pay ${total} ETB`} <Icon name="arrow" size={18} /></button><p className="secure-note"><Icon name="shield" size={15} /> Secured by Prakme payments</p>
+          <div className="booking-total"><span>Total due</span><b>{total} <small>ETB</small></b></div>
+          {error && <p className="booking-error" role="alert">{error}</p>}
+          <button className="confirm-booking" disabled={submitting} onClick={() => void confirmBooking()}>{submitting ? "Confirming..." : `Confirm & pay ${total} ETB`} <Icon name="arrow" size={18} /></button>
+          <p className="secure-note"><Icon name="shield" size={15} /> Secured by Prakme payments</p>
         </> : <>
           <div className="ticket-celebration"><span><Icon name="sparkle" size={20} /></span><div><p>YOU&apos;RE ALL SET!</p><h2>Parking confirmed</h2></div></div>
-          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PRAKME PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{place.name}</h3><p>{place.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>10:30 AM</b><span>Thu, 27 June</span></div><div><small>DURATION</small><b>{duration} hours</b><span>Until {10 + duration}:30 PM</span></div><div><small>SPACE</small><b>B · 27</b><span>Level B</span></div></div><div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Scan check-in QR code"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Gate checked in" : "CHECK IN AT GATE"}</p><b>{scanned ? "Welcome to Unity Park" : "Scan your ticket QR code"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Check-in complete" : "Open scanner"}</button></div></div></div>
-          <button className="confirm-booking" onClick={() => { onBooked(); onClose(); }}>Done, view my pass <Icon name="arrow" size={18} /></button><button className="ticket-link" onClick={onClose}>Email me this ticket</button>
+          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PRAKME PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{spot.name}</h3><p>{spot.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>{formatTime(new Date())}</b><span>{formatDate(new Date())}</span></div><div><small>DURATION</small><b>{duration} hours</b></div><div><small>SPACE</small><b>{bookingGateCode ? `${bookingGateCode.slice(0, 2)} · ${bookingGateCode.slice(2)}` : "B · 27"}</b></div></div><div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Check in"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Checked in!" : "CHECK IN AT GATE"}</p><b>{scanned ? `Welcome! Code: ${bookingGateCode}` : "Scan your ticket"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Done" : "Open scanner"}</button></div></div></div>
+          <button className="confirm-booking" onClick={() => { onBooked(); onClose(); }}>Done <Icon name="arrow" size={18} /></button>
         </>}
       </div>
     </div>
   );
 }
 
-function ProfileDrawer({ onClose, onOwner }: { onClose: () => void; onOwner: () => void }) {
-  const [tab, setTab] = useState<"wallet" | "passes" | "hosting">("wallet");
-  const [depositOpen, setDepositOpen] = useState(false);
-  const [balance, setBalance] = useState(250);
-  const [addingFunds, setAddingFunds] = useState(false);
+function ProfileDrawer({ user, onClose, onOwner, onLogout }: { user: User; onClose: () => void; onOwner: () => void; onLogout: () => void }) {
+  const [tab, setTab] = useState<"wallet" | "passes">("wallet");
 
-  useEffect(() => {
-    void fetch("/api/wallet")
-      .then((response) => response.ok ? response.json() as Promise<{ balanceEtb: number }> : null)
-      .then((data) => { if (data) setBalance(data.balanceEtb); })
-      .catch(() => undefined);
-  }, []);
-
-  async function addFunds(amount: number) {
-    setAddingFunds(true);
-    try {
-      const response = await fetch("/api/wallet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountEtb: amount, provider: "telebirr" }),
-      });
-      const data = (await response.json()) as { balanceEtb?: number };
-      if (response.ok && typeof data.balanceEtb === "number") {
-        setBalance(data.balanceEtb);
-        setDepositOpen(false);
-      }
-    } finally {
-      setAddingFunds(false);
-    }
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    onLogout();
+    onClose();
   }
 
   return (
-    <div className="drawer-overlay" role="dialog" aria-modal="true" aria-label="Your Prakme profile">
-      <aside className="profile-drawer"><div className="drawer-header"><div><p className="eyebrow">YOUR PRAKME</p><h2>Account & parking</h2></div><button className="icon-button" onClick={onClose} aria-label="Close profile"><Icon name="close" size={21} /></button></div><div className="profile-identity"><Avatar /><div><h3>Miki Tadesse</h3><p>miki.t@prakme.et</p></div><span className="verified"><Icon name="check" size={13} /></span></div><div className="profile-tabs"><button className={tab === "wallet" ? "active" : ""} onClick={() => setTab("wallet")}>Wallet</button><button className={tab === "passes" ? "active" : ""} onClick={() => setTab("passes")}>Passes</button><button className={tab === "hosting" ? "active" : ""} onClick={() => setTab("hosting")}>Hosting</button></div>
-      {tab === "wallet" && <div className="drawer-content"><section className="wallet-card"><FlagRibbon /><span>ARKWALLET BALANCE</span><h3>{balance.toLocaleString()} <small>ETB</small></h3><p><i /> Ready to park anywhere</p><button onClick={() => setDepositOpen(!depositOpen)}><Icon name="plus" size={17} /> Add money</button></section>{depositOpen && <div className="deposit-sheet"><p>Add a quick amount</p><div>{[50, 100, 250].map(amount => <button key={amount} disabled={addingFunds} onClick={() => void addFunds(amount)}>{addingFunds ? "Adding…" : `+${amount} ETB`}</button>)}</div></div>}<section className="drawer-section"><div className="drawer-section-title"><h3>Recent activity</h3><button>View all</button></div><div className="activity-row"><span className="activity-icon green"><Icon name="car" size={17} /></span><div><b>Unity Park Garage</b><small>Today · 10:30 AM</small></div><strong>−70 ETB</strong></div><div className="activity-row"><span className="activity-icon yellow"><Icon name="plus" size={17} /></span><div><b>Wallet top up</b><small>25 June · telebirr</small></div><strong className="positive">+300 ETB</strong></div></section><button className="help-card"><span><Icon name="help" size={20} /></span><div><b>Need a hand?</b><small>Get fast local support</small></div><Icon name="chevron" size={17} /></button></div>}
-      {tab === "passes" && <div className="drawer-content"><section className="mini-pass"><FlagRibbon /><StatusDot text="ACTIVE NOW" /><h3>Unity Park Garage</h3><p>Space B · 27 &nbsp; · &nbsp; Ends 12:30 PM</p><div><span>GATE CODE</span><b>4 8 2 6</b><button><Icon name="copy" size={15} /></button></div></section><section className="drawer-section"><div className="drawer-section-title"><h3>Upcoming</h3><button>View all</button></div><div className="upcoming-pass"><span className="calendar-chip"><b>29</b><small>JUN</small></span><div><b>Edna Mall Parking</b><small>Saturday · 2:00 PM</small></div><span>45 ETB</span></div></section><section className="drawer-section"><div className="drawer-section-title"><h3>Past passes</h3></div><div className="history-pass"><span>24 JUN</span><div><b>Meskel Square Lot</b><small>1h 30m · 45 ETB</small></div><Icon name="chevron" size={16} /></div><div className="history-pass"><span>20 JUN</span><div><b>Bole Medhanialem</b><small>2h · 90 ETB</small></div><Icon name="chevron" size={16} /></div></section></div>}
-      {tab === "hosting" && <div className="drawer-content"><section className="host-mini-hero"><span>HOSTING WITH PRAKME</span><h3>Earn from your space.</h3><p>Your listing has 86% visibility this week.</p><button onClick={onOwner}>Open host dashboard <Icon name="arrow" size={16} /></button></section><div className="host-stats"><div><span>This month</span><b>4,680 <small>ETB</small></b><em>+18.5%</em></div><div><span>Bookings</span><b>42</b><em>+12%</em></div></div><section className="drawer-section"><div className="drawer-section-title"><h3>Your spaces</h3><button onClick={onOwner}>Manage</button></div><div className="space-row"><span className="space-thumbnail">P</span><div><b>Bole Road Space #12</b><small><i /> Live · 45 ETB/hr</small></div><Icon name="chevron" size={16} /></div><div className="space-row"><span className="space-thumbnail second">P</span><div><b>Mexico Square Space #4</b><small><i /> Live · 35 ETB/hr</small></div><Icon name="chevron" size={16} /></div></section></div>}
-      <div className="drawer-footer"><button><Icon name="settings" size={18} /> Settings</button><button><Icon name="help" size={18} /> Help centre</button><button className="sign-out">Sign out</button></div></aside>
+    <div className="drawer-overlay" role="dialog" aria-modal="true">
+      <aside className="profile-drawer">
+        <div className="drawer-header"><div><p className="eyebrow">YOUR PRAKME</p><h2>Account & parking</h2></div><button className="icon-button" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button></div>
+        <div className="profile-identity"><Avatar name={user.name} /><div><h3>{user.name}</h3><p>{user.email}</p></div><span className="verified"><Icon name="check" size={13} /></span></div>
+        <div className="profile-tabs"><button className={tab === "wallet" ? "active" : ""} onClick={() => setTab("wallet")}>Wallet</button><button className={tab === "passes" ? "active" : ""} onClick={() => setTab("passes")}>Passes</button></div>
+        {tab === "wallet" && <div className="drawer-content"><WalletView /></div>}
+        {tab === "passes" && <div className="drawer-content"><BookingsView onBook={() => {}} /></div>}
+        <div className="drawer-footer">
+          <button onClick={onOwner}><Icon name="building" size={18} /> Host dashboard</button>
+          <button><Icon name="settings" size={18} /> Settings</button>
+          <button><Icon name="help" size={18} /> Help centre</button>
+          <button className="sign-out" onClick={() => void handleLogout()}><Icon name="logout" size={18} /> Sign out</button>
+        </div>
+      </aside>
     </div>
   );
 }
 
 function OwnerPortal({ onClose }: { onClose: () => void }) {
-  const [week, setWeek] = useState("This week");
-  const [calendar, setCalendar] = useState<Set<number>>(new Set([6, 13, 20]));
-  const [price, setPrice] = useState(45);
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
+  const [data, setData] = useState<{ summary: { totalEarningsEtb: number; bookingCount: number; occupancyRate: number; averageRating: number }; spaces: { id: number; name: string; priceHourlyEtb: number; availableSpots: number; totalSpots: number; isActive: boolean }[]; weeklyEarnings: { day: string; amountEtb: number }[] } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  async function adjustPrice(change: number) {
-    const nextPrice = Math.max(25, price + change);
-    const response = await fetch("/api/host/spaces/2", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priceHourlyEtb: nextPrice }),
-    });
-    if (response.ok) setPrice(nextPrice);
+  useEffect(() => { fetch("/api/host/dashboard").then((r) => r.ok ? r.json() : null).then((d) => { setData(d); setLoading(false); }).catch(() => setLoading(false)); }, []);
+
+  async function adjustPrice(id: number, change: number) {
+    const spot = data?.spaces.find((s) => s.id === id);
+    if (!spot) return;
+    const next = Math.max(25, spot.priceHourlyEtb + change);
+    const r = await fetch(`/api/host/spaces/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ priceHourlyEtb: next }) });
+    if (r.ok) setData((prev) => prev ? { ...prev, spaces: prev.spaces.map((s) => s.id === id ? { ...s, priceHourlyEtb: next } : s) } : prev);
   }
 
-  async function toggleCalendarDay(day: number) {
-    const isBlocked = calendar.has(day);
-    const blockedDate = `2024-06-${String(day).padStart(2, "0")}`;
-    const response = await fetch(
-      isBlocked ? `/api/host/availability?parkingSpaceId=2&blockedDate=${blockedDate}` : "/api/host/availability",
-      isBlocked
-        ? { method: "DELETE" }
-        : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ parkingSpaceId: 2, blockedDate }) },
-    );
-    if (!response.ok) return;
-    setCalendar((previous) => {
-      const next = new Set(previous);
-      if (next.has(day)) next.delete(day); else next.add(day);
-      return next;
-    });
-  }
-  return <div className="owner-overlay" role="dialog" aria-modal="true" aria-label="Prakme owner portal"><section className="owner-portal"><header className="owner-header"><div className="owner-logo"><span>Prak</span><b>me</b><i>host</i></div><div className="owner-nav"><button className="active">Overview</button><button>Spaces</button><button>Bookings</button><button>Payouts</button></div><div><button className="period-select" onClick={() => setWeek(week === "This week" ? "Last week" : "This week")}>{week} <Icon name="chevron" size={15} /></button><button className="icon-button" onClick={onClose} aria-label="Close host dashboard"><Icon name="close" size={20} /></button></div></header><main className="owner-main"><div className="owner-intro"><div><p className="eyebrow">HOST PERFORMANCE</p><h1>Hello, Miki. You&apos;re on a roll.</h1><p>Your spaces earned more than Addis average this week.</p></div><button className="add-space"><Icon name="plus" size={18} /> List a space</button></div><div className="owner-metrics"><article><span className="metric-icon green"><Icon name="wallet" size={20} /></span><p>Total earnings</p><h2>4,680 <small>ETB</small></h2><b className="up">↗ 18.5% <small>vs last week</small></b></article><article><span className="metric-icon yellow"><Icon name="calendar" size={20} /></span><p>Bookings</p><h2>42</h2><b className="up">↗ 12.0% <small>vs last week</small></b></article><article><span className="metric-icon red"><Icon name="clock" size={20} /></span><p>Occupancy rate</p><h2>76<small>%</small></h2><b className="up">↗ 8.2% <small>vs last week</small></b></article><article><span className="metric-icon slate"><Icon name="star" size={20} /></span><p>Guest rating</p><h2>4.9</h2><b className="neutral">Based on 38 reviews</b></article></div><div className="owner-grid"><section className="earnings-chart"><div className="panel-heading"><div><h2>Earnings overview</h2><p>Daily revenue across your spaces</p></div><button>View report <Icon name="arrow" size={15} /></button></div><div className="chart-summary"><b>4,680 <small>ETB</small></b><span className="up">↗ 18.5%</span></div><div className="chart-wrap"><div className="chart-y"><span>1k</span><span>750</span><span>500</span><span>250</span><span>0</span></div><svg viewBox="0 0 620 190" preserveAspectRatio="none" aria-label="Earnings chart"><defs><linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#159447" stopOpacity=".22" /><stop offset="100%" stopColor="#159447" stopOpacity="0" /></linearGradient></defs><path className="grid-line" d="M0 12H620M0 55H620M0 98H620M0 141H620M0 184H620" /><path d="M0 150 C35 142 38 135 75 139 S124 104 151 121 S199 145 228 104 S278 115 306 77 S351 88 380 67 S428 113 458 77 S501 54 532 58 S570 26 620 19 V190 H0Z" fill="url(#chart-fill)" /><path className="chart-line" d="M0 150 C35 142 38 135 75 139 S124 104 151 121 S199 145 228 104 S278 115 306 77 S351 88 380 67 S428 113 458 77 S501 54 532 58 S570 26 620 19" /><circle cx="380" cy="67" r="5" className="chart-point" /></svg><div className="chart-x">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => <span key={day}>{day}</span>)}</div></div></section><section className="next-payout"><div className="panel-heading"><div><h2>Next payout</h2><p>Scheduled for Monday</p></div><span className="payout-status">Processing</span></div><h3>3,240 <small>ETB</small></h3><div className="payout-bank"><span>CB</span><div><b>Commercial Bank of Ethiopia</b><small>•••• 4928</small></div></div><button>Manage payout details <Icon name="chevron" size={16} /></button></section></div><div className="owner-grid lower"><section className="active-spaces"><div className="panel-heading"><div><h2>Your active spaces</h2><p>Manage availability & pricing</p></div><button>All spaces <Icon name="arrow" size={15} /></button></div><div className="owner-space-row"><span className="owner-space-photo first">P</span><div><b>Bole Road Space #12</b><p><i /> Available now · Bole, Addis Ababa</p></div><div className="space-price"><span>Current price</span><b>{price} ETB/hr</b><div><button onClick={() => void adjustPrice(-5)}>−</button><button onClick={() => void adjustPrice(5)}>+</button></div></div><button className="row-more"><Icon name="chevron" size={18} /></button></div><div className="owner-space-row"><span className="owner-space-photo second">P</span><div><b>Mexico Square Space #4</b><p><i /> Available now · Churchill Ave</p></div><div className="space-price"><span>Current price</span><b>35 ETB/hr</b><div><button>−</button><button>+</button></div></div><button className="row-more"><Icon name="chevron" size={18} /></button></div></section><section className="availability-calendar"><div className="panel-heading"><div><h2>Availability</h2><p>June 2024</p></div><button className="small-outline"><Icon name="edit" size={14} /> Edit</button></div><div className="calendar-grid"><div className="calendar-days">{days.map((day, index) => <span key={`${day}${index}`}>{day}</span>)}</div><div className="dates">{Array.from({ length: 30 }, (_, index) => index + 1).map(day => <button className={`${calendar.has(day) ? "blocked" : ""} ${day === 27 ? "today" : ""}`} key={day} onClick={() => void toggleCalendarDay(day)}>{day}</button>)}</div></div><p className="calendar-note"><i /> Available <i className="blocked-key" /> Blocked date</p></section></div></main></section></div>;
+  const maxChart = Math.max(...(data?.weeklyEarnings.map((d) => d.amountEtb) ?? [1]), 1);
+
+  return (
+    <div className="owner-overlay" role="dialog" aria-modal="true">
+      <section className="owner-portal">
+        <header className="owner-header">
+          <div className="owner-logo"><span>Prak</span><b>me</b><i>host</i></div>
+          <div className="owner-nav"><button className="active">Overview</button><button>Spaces</button><button>Bookings</button></div>
+          <button className="icon-button" onClick={onClose} aria-label="Close"><Icon name="close" size={20} /></button>
+        </header>
+        <main className="owner-main">
+          {loading ? <div className="view-loading"><p>Loading dashboard...</p></div> : data && <>
+            <div className="owner-intro"><div><p className="eyebrow">HOST PERFORMANCE</p><h1>Welcome to your host dashboard.</h1><p>Manage your parking spaces and track earnings.</p></div></div>
+            <div className="owner-metrics">
+              <article><span className="metric-icon green"><Icon name="wallet" size={20} /></span><p>Total earnings</p><h2>{data.summary.totalEarningsEtb.toLocaleString()} <small>ETB</small></h2></article>
+              <article><span className="metric-icon yellow"><Icon name="calendar" size={20} /></span><p>Bookings</p><h2>{data.summary.bookingCount}</h2></article>
+              <article><span className="metric-icon red"><Icon name="chart" size={20} /></span><p>Occupancy</p><h2>{data.summary.occupancyRate}<small>%</small></h2></article>
+              <article><span className="metric-icon slate"><Icon name="star" size={20} /></span><p>Guest rating</p><h2>{data.summary.averageRating}</h2></article>
+            </div>
+            <div className="owner-grid">
+              <section className="earnings-chart">
+                <div className="panel-heading"><h2>Weekly earnings</h2></div>
+                <div className="chart-bars">{data.weeklyEarnings.map((d) => (
+                  <div className="chart-bar-col" key={d.day}><div className="chart-bar" style={{ height: `${(d.amountEtb / maxChart) * 100}%` }} /><span>{d.day}</span></div>
+                ))}</div>
+              </section>
+              <section className="active-spaces">
+                <div className="panel-heading"><h2>Your spaces</h2></div>
+                {data.spaces.map((s) => (
+                  <div className="owner-space-row" key={s.id}>
+                    <span className="owner-space-photo">P</span>
+                    <div><b>{s.name}</b><small>{s.availableSpots}/{s.totalSpots} spots · {s.priceHourlyEtb} ETB/hr</small></div>
+                    <div className="space-controls">
+                      <button onClick={() => void adjustPrice(s.id, -5)}>-</button>
+                      <button onClick={() => void adjustPrice(s.id, 5)}>+</button>
+                    </div>
+                  </div>
+                ))}
+              </section>
+            </div>
+          </>}
+        </main>
+      </section>
+    </div>
+  );
 }
 
 export default function PrakmeApp() {
-  const [bookingPlace, setBookingPlace] = useState<typeof places[number] | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(true);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [view, setView] = useState<"spots" | "bookings" | "wallet" | "history">("spots");
+  const [bookingSpot, setBookingSpot] = useState<ApiSpot | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [ownerOpen, setOwnerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const activePlace = useMemo(() => bookingPlace ?? places[0], [bookingPlace]);
-  return <main className="prakme-shell"><aside className={`sidebar ${menuOpen ? "mobile-visible" : ""}`}><div className="brand"><div className="brand-mark"><span>Prak</span><b>me</b></div><em>ethiopia</em></div><button className="sidebar-close" onClick={() => setMenuOpen(false)}><Icon name="close" size={20} /></button><nav>{navItems.map(item => <button key={item.label} className={item.active ? "active" : ""}><Icon name={item.icon} size={20} /><span>{item.label}</span>{item.label === "My bookings" && <i className="nav-count">1</i>}</button>)}</nav><div className="sidebar-bottom"><button className="host-callout" onClick={() => setOwnerOpen(true)}><span><Icon name="building" size={20} /></span><div><b>List your space</b><small>Earn with Prakme</small></div><Icon name="chevron" size={16} /></button><button className="side-help"><Icon name="help" size={19} /> Help & support</button><div className="side-user"><Avatar size="sm" /><div><b>Miki Tadesse</b><small>Personal account</small></div><button onClick={() => setProfileOpen(true)} aria-label="Open profile"><Icon name="chevron" size={16} /></button></div></div></aside><div className="app-content"><header className="topbar"><button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Icon name="menu" size={22} /></button><div className="mobile-brand"><span>Prak</span><b>me</b></div><div className="top-location"><Icon name="pin" size={18} /><span>Addis Ababa</span><Icon name="chevron" size={15} /></div><div className="top-actions"><button className="notification" aria-label="Notifications"><Icon name="bell" size={20} /><i /></button><button className="top-profile" onClick={() => setProfileOpen(true)}><Avatar size="sm" /><span>Miki</span><Icon name="chevron" size={15} /></button></div></header><div className="workspace"><div className="content-grid"><SearchPanel onBook={(place) => setBookingPlace(place ?? places[0])} /><CityMap onBook={(place) => setBookingPlace(place ?? places[0])} /></div><BookingTimerCard onOpen={() => setBookingPlace(places[0])} /></div></div>{bookingPlace && <BookingModal place={activePlace} onClose={() => setBookingPlace(null)} onBooked={() => undefined} />}{profileOpen && <ProfileDrawer onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setOwnerOpen(true); }} />}{ownerOpen && <OwnerPortal onClose={() => setOwnerOpen(false)} />}</main>;
+  const [spots, setSpots] = useState<ApiSpot[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [spotsLoading, setSpotsLoading] = useState(true);
+  const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const fetchSpots = useCallback((q: string) => {
+    setSpotsLoading(true);
+    const url = q ? `/api/spots?q=${encodeURIComponent(q)}` : "/api/spots";
+    fetch(url).then((r) => r.ok ? r.json() : { spots: [] }).then((d) => { setSpots(d.spots ?? []); setSpotsLoading(false); }).catch(() => setSpotsLoading(false));
+  }, []);
+
+  useEffect(() => { fetchSpots(""); }, [fetchSpots]);
+  useEffect(() => { if (user) fetch("/api/bookings?status=active").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { const b = (d.bookings ?? [])[0]; if (b) setActiveBooking(b); }).catch(() => {}); }, [user]);
+
+  function onSearch(q: string) {
+    setSearchQuery(q);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => fetchSpots(q), 300);
+  }
+
+  const navItems = [
+    { icon: "grid" as IconName, label: "Find a spot", view: "spots" as const, active: view === "spots" },
+    { icon: "calendar" as IconName, label: "My bookings", view: "bookings" as const, active: view === "bookings" },
+    { icon: "wallet" as IconName, label: "Wallet", view: "wallet" as const, active: view === "wallet" },
+    { icon: "receipt" as IconName, label: "History", view: "history" as const, active: view === "history" },
+  ];
+
+  return (
+    <main className="prakme-shell">
+      <aside className={`sidebar ${menuOpen ? "mobile-visible" : ""}`}>
+        <div className="brand"><div className="brand-mark"><span>Prak</span><b>me</b></div><em>ethiopia</em></div>
+        <button className="sidebar-close" onClick={() => setMenuOpen(false)}><Icon name="close" size={20} /></button>
+        <nav>{navItems.map((item) => <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setView(item.view); setMenuOpen(false); }}><Icon name={item.icon} size={20} /><span>{item.label}</span>{item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}</button>)}</nav>
+        <div className="sidebar-bottom">
+          {user ? (
+            <>
+              <button className="host-callout" onClick={() => setOwnerOpen(true)}><span><Icon name="building" size={20} /></span><div><b>List your space</b><small>Earn with Prakme</small></div><Icon name="chevron" size={16} /></button>
+              <div className="side-user"><Avatar name={user.name} size="sm" /><div><b>{user.name}</b><small>{user.email}</small></div><button onClick={() => setProfileOpen(true)} aria-label="Open profile"><Icon name="chevron" size={16} /></button></div>
+            </>
+          ) : (
+            <button className="host-callout" onClick={() => setAuthOpen(true)}><span><Icon name="shield" size={20} /></span><div><b>Log in / Sign up</b><small>Access your account</small></div><Icon name="chevron" size={16} /></button>
+          )}
+        </div>
+      </aside>
+
+      <div className="app-content">
+        <header className="topbar">
+          <button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Icon name="menu" size={22} /></button>
+          <div className="mobile-brand"><span>Prak</span><b>me</b></div>
+          <div className="top-location"><Icon name="pin" size={18} /><span>Addis Ababa</span></div>
+          <div className="top-actions">
+            {user ? (
+              <>
+                <button className="top-profile" onClick={() => setProfileOpen(true)}><Avatar name={user.name} size="sm" /><span>{user.name.split(" ")[0]}</span><Icon name="chevron" size={15} /></button>
+              </>
+            ) : (
+              <button className="top-profile" onClick={() => setAuthOpen(true)}>Log in</button>
+            )}
+          </div>
+        </header>
+
+        <div className="workspace">
+          {view === "spots" && (
+            <div className="content-grid">
+              <SearchPanel spots={spots} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => setBookingSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} totalCount={spots.length} />
+              <CityMap spots={spots} onSelectSpot={(s) => setBookingSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} />
+            </div>
+          )}
+          {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}
+          {view === "wallet" && (user ? <WalletView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to access your wallet.</p><button className="confirm-booking" onClick={() => setAuthOpen(true)}>Log in <Icon name="arrow" size={16} /></button></div>)}
+          {view === "history" && (user ? <HistoryView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to view history.</p><button className="confirm-booking" onClick={() => setAuthOpen(true)}>Log in <Icon name="arrow" size={16} /></button></div>)}
+
+          {view === "spots" && activeBooking && user && <BookingTimerCard booking={activeBooking} onOpen={() => setBookingSpot(spots[0] ?? null)} />}
+        </div>
+      </div>
+
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onAuth={(u) => setUser(u)} />}
+      {bookingSpot && <BookingModal spot={bookingSpot} onClose={() => setBookingSpot(null)} onBooked={() => { fetchSpots(searchQuery); setActiveBooking(null); }} user={user} />}
+      {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setOwnerOpen(true); }} onLogout={() => setUser(null)} />}
+      {ownerOpen && <OwnerPortal onClose={() => setOwnerOpen(false)} />}
+    </main>
+  );
 }
