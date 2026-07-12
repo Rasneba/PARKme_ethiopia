@@ -9,7 +9,8 @@ type IconName =
   | "search" | "bell" | "calendar" | "clock" | "chevron" | "car" | "pin"
   | "star" | "filter" | "wallet" | "plus" | "arrow" | "close" | "check"
   | "lock" | "grid" | "home" | "receipt" | "help" | "settings" | "building"
-  | "chart" | "edit" | "copy" | "scan" | "sparkle" | "shield" | "menu" | "logout";
+  | "chart" | "edit" | "copy" | "scan" | "sparkle" | "shield" | "menu" | "logout"
+  | "nav" | "map" | "locate";
 
 function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number; stroke?: number }) {
   const shared = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: stroke, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
@@ -43,14 +44,33 @@ function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number
     shield: <><path d="M12 3 19 6v5c0 4.7-3 7.6-7 10-4-2.4-7-5.3-7-10V6l7-3Z" /><path d="m9 12 2 2 4-4" /></>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
     logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>,
+    nav: <><polygon points="3 11 22 2 13 21 11 13 3 11" /></>,
+    map: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
+    locate: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /><circle cx="12" cy="12" r="8" /></>,
   };
   return <svg {...shared}>{paths[name]}</svg>;
 }
 
 type User = { id: string; email: string; name: string };
-type ApiSpot = { id: number; slug: string; name: string; address: string; neighborhood: string; label: string; tone: string; price: number; rating: string; availableSpots: number; totalSpots: number; spaces: string; hostName: string; lat: number; lng: number };
+type ApiSpot = { id: number; slug: string; name: string; address: string; neighborhood: string; label: string; tone: string; price: number; rating: string; availableSpots: number; totalSpots: number; spaces: string; hostName: string; lat: number; lng: number; distanceKm?: number };
 type Booking = { id: string; reference: string; status: string; parkingDate: string; startAt: string; endAt: string; durationHours: number; spaceLabel: string; paymentMethod: string; amountEtb: number; gateCode: string; checkInAt: string | null; createdAt: string; spotId: number; spotName: string; spotAddress: string };
 type WalletTx = { id: string; reference: string; type: string; amountEtb: number; provider: string | null; note: string; createdAt: string };
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  return `${km.toFixed(1)} km`;
+}
 
 function formatDate(d: Date) { return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); }
 function formatTime(d: Date) { return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }); }
@@ -135,7 +155,7 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
   );
 }
 
-function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, totalCount, selectedSpotId }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null }) {
+function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, totalCount, selectedSpotId, hasLocation }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean }) {
   const [filterOpen, setFilterOpen] = useState(false);
   return (
     <section className="search-column">
@@ -146,14 +166,30 @@ function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBo
         <button className="filter-button" aria-label="Open filters" onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" size={19} /></button>
         {filterOpen && <div className="filter-popover"><b>Filters</b><label><input type="checkbox" defaultChecked /> Available only</label><label><input type="checkbox" /> Covered</label><label><input type="checkbox" defaultChecked /> Under 50 ETB/hr</label></div>}
       </div>
-      <div className="results-heading"><div><span className="eyebrow">AVAILABLE NEARBY</span><h2>{totalCount} spots found</h2></div></div>
+      <div className="results-heading"><div><span className="eyebrow">{hasLocation ? "AVAILABLE NEARBY" : "ALL SPOTS"}</span><h2>{totalCount} spot{totalCount !== 1 ? "s" : ""} found{hasLocation ? " nearby" : ""}</h2></div></div>
       {loading ? <div className="loading-state">Searching...</div> : (
         <div className="place-list">
           {spots.map((spot) => (
             <article className={`place-card ${selectedSpotId === spot.id ? "selected" : ""}`} key={spot.id} onClick={() => onSelectSpot(spot)}>
               <div className={`place-image ${spot.tone}`}><span>{spot.label}</span><div className="car-shape"><Icon name="car" size={29} /></div></div>
-              <div className="place-info"><div className="place-name-line"><h3>{spot.name}</h3><span className="rating"><Icon name="star" size={13} stroke={2.4} /> {spot.rating}</span></div><p>{spot.address}</p><div className="place-meta"><span><Icon name="pin" size={14} />{spot.availableSpots} spots available</span></div></div>
-              <div className="place-price"><b>{spot.price} <small>ETB</small></b><span>/ hour</span><button onClick={(e) => { e.stopPropagation(); onBook(spot); }}>Reserve</button></div>
+              <div className="place-info">
+                <div className="place-name-line"><h3>{spot.name}</h3><span className="rating"><Icon name="star" size={13} stroke={2.4} /> {spot.rating}</span></div>
+                <p>{spot.address}</p>
+                <div className="place-meta">
+                  <span><Icon name="pin" size={14} />{spot.availableSpots} spots available</span>
+                  {spot.distanceKm != null && <span className="place-distance"><Icon name="locate" size={13} /> {formatDistance(spot.distanceKm)}</span>}
+                </div>
+              </div>
+              <div className="place-price">
+                <b>{spot.price} <small>ETB</small></b>
+                <span>/ hour</span>
+                <div className="place-card-actions">
+                  <button className="place-directions-btn" title="Get directions" onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}`, "_blank"); }}>
+                    <Icon name="nav" size={14} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onBook(spot); }}>Reserve</button>
+                </div>
+              </div>
             </article>
           ))}
           {spots.length === 0 && <p className="empty-state">No parking spots found nearby.</p>}
@@ -184,13 +220,13 @@ function CityMap({
   return (
     <section className="map-column" aria-label="Map of parking spots">
       <div className="map-toolbar">
-        <span><Icon name="pin" size={15} /> {spots.length} spots on map</span>
+        <span className="map-toolbar-count"><Icon name="map" size={15} /> {spots.length} spot{spots.length !== 1 ? "s" : ""}</span>
         <div className="map-toolbar-btns">
-          <button className="map-toolbar-btn" title="Find near me" onClick={onNearMe}>
-            <Icon name="search" size={16} /> Near me
+          <button className="map-toolbar-btn near-me-btn" title="Find nearest spot" onClick={onNearMe}>
+            <Icon name="locate" size={15} /> Near me
           </button>
-          <button className={`map-toolbar-btn ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
-            <Icon name="home" size={16} /> {satellite ? "Street" : "Satellite"}
+          <button className={`map-toolbar-btn sat-btn ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
+            <Icon name={satellite ? "map" : "home"} size={15} /> {satellite ? "Map" : "Satellite"}
           </button>
         </div>
       </div>
@@ -212,14 +248,14 @@ function CityMap({
             </div>
             <div className="map-sheet-price">
               <b>{selected.price} <small>ETB/hr</small></b>
-              <span>{selected.availableSpots} spots</span>
+              <span>{selected.distanceKm != null ? `${formatDistance(selected.distanceKm)} away` : `${selected.availableSpots} spots`}</span>
             </div>
           </div>
           <div className="map-sheet-actions">
             <button className="map-sheet-btn directions" onClick={() => {
               window.open(`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`, "_blank");
             }}>
-              <Icon name="pin" size={15} /> Directions
+              <Icon name="nav" size={15} /> Directions
             </button>
             <button className="map-sheet-btn reserve" onClick={() => onBook(selected)}>
               <Icon name="car" size={15} /> Reserve now
@@ -483,6 +519,7 @@ export default function ParkmeApp() {
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const [satellite, setSatellite] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const fetchSpots = useCallback((q: string) => {
@@ -494,6 +531,24 @@ export default function ParkmeApp() {
   useEffect(() => { fetchSpots(""); }, [fetchSpots]);
   useEffect(() => { if (user) fetch("/api/bookings?status=active").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { const b = (d.bookings ?? [])[0]; if (b) setActiveBooking(b); }).catch(() => {}); }, [user]);
 
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 5000, enableHighAccuracy: true },
+    );
+  }, []);
+
+  const spotsWithDistance = useMemo(() => {
+    const enriched = spots.map((s) => ({
+      ...s,
+      distanceKm: userLocation ? haversineKm(userLocation.lat, userLocation.lng, s.lat, s.lng) : undefined,
+    }));
+    enriched.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
+    return enriched;
+  }, [spots, userLocation]);
+
   function onSearch(q: string) {
     setSearchQuery(q);
     clearTimeout(searchTimer.current);
@@ -504,13 +559,12 @@ export default function ParkmeApp() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const withDist = spots.map((s) => ({
-          ...s,
-          dist: Math.sqrt((s.lat - latitude) ** 2 + (s.lng - longitude) ** 2),
-        }));
-        withDist.sort((a, b) => a.dist - b.dist);
-        if (withDist.length > 0) setSelectedSpotId(withDist[0].id);
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const nearest = [...spots].sort((a, b) =>
+          haversineKm(pos.coords.latitude, pos.coords.longitude, a.lat, a.lng) -
+          haversineKm(pos.coords.latitude, pos.coords.longitude, b.lat, b.lng)
+        );
+        if (nearest.length > 0) setSelectedSpotId(nearest[0].id);
       },
       () => {},
       { timeout: 5000, enableHighAccuracy: true },
@@ -519,7 +573,6 @@ export default function ParkmeApp() {
 
   function handleSelectSpot(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
-    setBookingSpot(spot);
   }
 
   const navItems = [
@@ -566,8 +619,8 @@ export default function ParkmeApp() {
         <div className="workspace">
           {view === "spots" && (
             <div className="content-grid">
-              <SearchPanel spots={spots} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} totalCount={spots.length} selectedSpotId={selectedSpotId} />
-              <CityMap spots={spots} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} />
+              <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} />
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} />
             </div>
           )}
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}

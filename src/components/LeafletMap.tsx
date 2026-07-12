@@ -30,16 +30,20 @@ export default function LeafletMap({
 
   const createSpotPopup = useCallback(
     (spot: any, isNearest?: boolean) => {
+      const distText = spot.distanceKm != null ? `${spot.distanceKm < 1 ? Math.round(spot.distanceKm * 1000) + ' m' : spot.distanceKm.toFixed(1) + ' km'} away` : '';
       return `
-        <div style="font-family:Arial,sans-serif;min-width:180px;padding:4px 0;">
+        <div style="font-family:Arial,sans-serif;min-width:190px;padding:4px 0;">
           ${isNearest ? '<div style="display:inline-block;padding:3px 7px;margin-bottom:6px;background:#4098df;color:white;border-radius:5px;font-size:9px;font-weight:800;">NEAREST TO YOU</div>' : ""}
           <b style="font-size:14px;color:#131614;">${spot.name}</b>
           <p style="margin:3px 0;color:#6c746e;font-size:11px;">${spot.address}</p>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
             <span style="font-weight:800;color:#0fa24b;font-size:13px;">${spot.price} ETB/hr</span>
-            <span style="font-size:10px;color:#888;">${spot.availableSpots} spots</span>
+            <span style="font-size:10px;color:#888;">${distText || spot.availableSpots + ' spots'}</span>
           </div>
-          <button onclick="window.__parkmeSelectSpot?.(${spot.id})" style="margin-top:8px;width:100%;padding:8px;background:linear-gradient(135deg,#111a13,#168b45);color:white;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;transition:.15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">Select & Reserve</button>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;background:#dcf8e4;color:#086a32;border:none;border-radius:8px;font-size:11px;font-weight:800;text-decoration:none;cursor:pointer;">&#9654; Directions</a>
+            <button onclick="window.__parkmeSelectSpot?.(${spot.id})" style="flex:1;padding:8px;background:linear-gradient(135deg,#111a13,#168b45);color:white;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">Select & Reserve</button>
+          </div>
         </div>`;
     },
     [],
