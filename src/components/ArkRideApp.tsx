@@ -223,10 +223,10 @@ function CityMap({
         <span className="map-toolbar-count"><Icon name="map" size={15} /> {spots.length} spot{spots.length !== 1 ? "s" : ""}</span>
         <div className="map-toolbar-btns">
           <button className="map-toolbar-btn near-me-btn" title="Find nearest spot" onClick={onNearMe}>
-            <Icon name="locate" size={15} /> Near me
+            <span className="map-btn-icon-wrap near"><Icon name="locate" size={18} /></span> Near me
           </button>
           <button className={`map-toolbar-btn sat-btn ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
-            <Icon name={satellite ? "map" : "home"} size={15} /> {satellite ? "Map" : "Satellite"}
+            <span className={`map-btn-icon-wrap ${satellite ? "sat-on" : "sat-off"}`}><Icon name={satellite ? "map" : "home"} size={18} /></span> {satellite ? "Map" : "Satellite"}
           </button>
         </div>
       </div>
