@@ -45,6 +45,8 @@ export async function GET(request: NextRequest) {
       totalSpots: spot.totalSpots,
       spaces: `${spot.availableSpots} spots`,
       hostName: spot.hostName,
+      lat: spot.lat,
+      lng: spot.lng,
     }));
 
   return NextResponse.json({ spots, count: spots.length });
