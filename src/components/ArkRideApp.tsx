@@ -135,7 +135,7 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
   );
 }
 
-function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, totalCount }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; totalCount: number }) {
+function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, totalCount, selectedSpotId }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null }) {
   const [filterOpen, setFilterOpen] = useState(false);
   return (
     <section className="search-column">
@@ -150,7 +150,7 @@ function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBo
       {loading ? <div className="loading-state">Searching...</div> : (
         <div className="place-list">
           {spots.map((spot) => (
-            <article className="place-card" key={spot.id} onClick={() => onSelectSpot(spot)}>
+            <article className={`place-card ${selectedSpotId === spot.id ? "selected" : ""}`} key={spot.id} onClick={() => onSelectSpot(spot)}>
               <div className={`place-image ${spot.tone}`}><span>{spot.label}</span><div className="car-shape"><Icon name="car" size={29} /></div></div>
               <div className="place-info"><div className="place-name-line"><h3>{spot.name}</h3><span className="rating"><Icon name="star" size={13} stroke={2.4} /> {spot.rating}</span></div><p>{spot.address}</p><div className="place-meta"><span><Icon name="pin" size={14} />{spot.availableSpots} spots available</span></div></div>
               <div className="place-price"><b>{spot.price} <small>ETB</small></b><span>/ hour</span><button onClick={(e) => { e.stopPropagation(); onBook(spot); }}>Reserve</button></div>
@@ -163,10 +163,70 @@ function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBo
   );
 }
 
-function CityMap({ spots, onSelectSpot, onBook }: { spots: ApiSpot[]; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void }) {
+function CityMap({
+  spots,
+  onSelectSpot,
+  onBook,
+  selectedSpotId,
+  onNearMe,
+  satellite,
+  onToggleSatellite,
+}: {
+  spots: ApiSpot[];
+  onSelectSpot: (s: ApiSpot) => void;
+  onBook: (s: ApiSpot) => void;
+  selectedSpotId: number | null;
+  onNearMe: () => void;
+  satellite: boolean;
+  onToggleSatellite: () => void;
+}) {
+  const selected = spots.find((s) => s.id === selectedSpotId);
   return (
     <section className="map-column" aria-label="Map of parking spots">
-      <LeafletMap spots={spots} onSelectSpot={onSelectSpot} />
+      <div className="map-toolbar">
+        <span><Icon name="pin" size={15} /> {spots.length} spots on map</span>
+        <div className="map-toolbar-btns">
+          <button className="map-toolbar-btn" title="Find near me" onClick={onNearMe}>
+            <Icon name="search" size={16} /> Near me
+          </button>
+          <button className={`map-toolbar-btn ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
+            <Icon name="home" size={16} /> {satellite ? "Street" : "Satellite"}
+          </button>
+        </div>
+      </div>
+      <LeafletMap
+        spots={spots}
+        onSelectSpot={onSelectSpot}
+        onBookSpot={onBook}
+        selectedSpotId={selectedSpotId}
+        onNearMe={onNearMe}
+        satellite={satellite}
+      />
+      {selected && (
+        <div className="map-spot-sheet">
+          <div className="map-sheet-kicker">SELECTED SPOT</div>
+          <div className="map-sheet-row">
+            <div className="map-sheet-info">
+              <b>{selected.name}</b>
+              <p>{selected.address}</p>
+            </div>
+            <div className="map-sheet-price">
+              <b>{selected.price} <small>ETB/hr</small></b>
+              <span>{selected.availableSpots} spots</span>
+            </div>
+          </div>
+          <div className="map-sheet-actions">
+            <button className="map-sheet-btn directions" onClick={() => {
+              window.open(`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`, "_blank");
+            }}>
+              <Icon name="pin" size={15} /> Directions
+            </button>
+            <button className="map-sheet-btn reserve" onClick={() => onBook(selected)}>
+              <Icon name="car" size={15} /> Reserve now
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -421,6 +481,8 @@ export default function PrakmeApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [spotsLoading, setSpotsLoading] = useState(true);
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
+  const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
+  const [satellite, setSatellite] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const fetchSpots = useCallback((q: string) => {
@@ -436,6 +498,28 @@ export default function PrakmeApp() {
     setSearchQuery(q);
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => fetchSpots(q), 300);
+  }
+
+  function handleNearMe() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const withDist = spots.map((s) => ({
+          ...s,
+          dist: Math.sqrt((s.lat - latitude) ** 2 + (s.lng - longitude) ** 2),
+        }));
+        withDist.sort((a, b) => a.dist - b.dist);
+        if (withDist.length > 0) setSelectedSpotId(withDist[0].id);
+      },
+      () => {},
+      { timeout: 5000, enableHighAccuracy: true },
+    );
+  }
+
+  function handleSelectSpot(spot: ApiSpot) {
+    setSelectedSpotId(spot.id);
+    setBookingSpot(spot);
   }
 
   const navItems = [
@@ -482,8 +566,8 @@ export default function PrakmeApp() {
         <div className="workspace">
           {view === "spots" && (
             <div className="content-grid">
-              <SearchPanel spots={spots} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => setBookingSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} totalCount={spots.length} />
-              <CityMap spots={spots} onSelectSpot={(s) => setBookingSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} />
+              <SearchPanel spots={spots} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} totalCount={spots.length} selectedSpotId={selectedSpotId} />
+              <CityMap spots={spots} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} />
             </div>
           )}
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}
