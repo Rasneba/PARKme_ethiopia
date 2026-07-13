@@ -81,7 +81,7 @@ function formatDistance(m: number): string {
   return `${(m / 1000).toFixed(1)} km`;
 }
 
-function createDirectionsHTML(instructions: any[], distance: number, time: number, spotName: string): string {
+function createDirectionsHTML(instructions: any[], distance: number, time: number, spotName: string, fromLat: number, fromLng: number, toLat: number, toLng: number): string {
   const steps = instructions.map((ins: any) => {
     const icon = ins.sign === 0 ? "&#8594;" : ins.sign === -1 ? "&#8619;" : ins.sign === 1 ? "&#8618;" : ins.sign === -2 ? "&#8634;" : ins.sign === 2 ? "&#8635;" : "&#9654;";
     const text = ins.text || "";
@@ -102,7 +102,7 @@ function createDirectionsHTML(instructions: any[], distance: number, time: numbe
       <span style="font-size:11px;color:#333;"><b>${formatDuration(time)}</b></span>
     </div>
     ${steps}
-    <a href="https://www.graphhopper.com/maps/?point=0,0&point=0,0&vehicle=car" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;padding:6px;background:#0fa24b;color:white;border-radius:6px;font-size:11px;font-weight:800;text-decoration:none;">Open in GraphHopper</a>
+    <a href="https://www.graphhopper.com/maps/?point=${fromLat},${fromLng}&point=${toLat},${toLng}&vehicle=car" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;padding:6px;background:#0fa24b;color:white;border-radius:6px;font-size:11px;font-weight:800;text-decoration:none;">Open in GraphHopper</a>
   </div>`;
 }
 
@@ -209,7 +209,7 @@ export default function MapLibreMap(
 
       const destSpot = spotsRef.current.find((s: any) => s.lat === destLat && s.lng === destLng);
       const spotName = destSpot?.name || "destination";
-      const dirHTML = createDirectionsHTML(data.instructions, data.distance, data.time, spotName);
+      const dirHTML = createDirectionsHTML(data.instructions, data.distance, data.time, spotName, userLoc.lat, userLoc.lng, destLat, destLng);
       popupRef.current?.remove();
       popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: true, maxWidth: "280px" })
         .setLngLat([destLng, destLat])
@@ -259,7 +259,7 @@ export default function MapLibreMap(
 
     map.on("error", () => {});
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "bottom-right");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "top-right");
 
     mapRef.current = map;
 

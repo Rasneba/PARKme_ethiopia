@@ -226,7 +226,7 @@ function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBo
                 <b>{spot.price} <small>ETB</small></b>
                 <span>/ hour</span>
                 <div className="place-card-actions">
-                  <button className="place-directions-btn" title="Get directions" onClick={(e) => { e.stopPropagation(); window.open(`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&to=${spot.lat},${spot.lng}`, "_blank"); }}>
+                  <button className="place-directions-btn" title="Get directions" onClick={(e) => { e.stopPropagation(); window.open(`https://www.graphhopper.com/maps/?point=${spot.lat},${spot.lng}&vehicle=car`, "_blank"); }}>
                     <Icon name="nav" size={14} />
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); onBook(spot); }}>Reserve</button>
@@ -267,14 +267,6 @@ function CityMap({
     <section className="map-column" aria-label="Map of parking spots">
       <div className="map-toolbar">
         <span className="map-toolbar-count"><Icon name="map" size={15} /> {spots.length} spot{spots.length !== 1 ? "s" : ""}</span>
-        <div className="map-toolbar-btns">
-          <button className="map-toolbar-btn zoom-btn" title="Zoom in" onClick={() => mapRef.current?.zoomIn()}>
-            <span className="map-btn-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></span>
-          </button>
-          <button className="map-toolbar-btn zoom-btn" title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>
-            <span className="map-btn-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /></svg></span>
-          </button>
-        </div>
       </div>
       <div className="map-float-controls">
         <button className="map-float-btn near" title="Find nearest spot" onClick={onNearMe}>
