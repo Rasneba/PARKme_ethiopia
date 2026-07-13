@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body?.password === "string" ? body.password : "";
     const name = typeof body?.name === "string" ? body.name.trim() : "";
+    const role = body?.role === "host" ? "host" : "driver";
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
@@ -33,17 +34,18 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = hashSync(password, 10);
+    const isHost = role === "host";
     const [user] = await db
       .insert(users)
-      .values({ email, name, passwordHash })
-      .returning({ id: users.id, email: users.email, name: users.name });
+      .values({ email, name, passwordHash, isHost })
+      .returning({ id: users.id, email: users.email, name: users.name, isHost: users.isHost });
 
     const token = uuid();
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
     await db.insert(sessions).values({ userId: user.id, token, expiresAt });
 
     const cookie = createSessionCookie(token);
-    const response = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name } }, { status: 201 });
+    const response = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, isHost: user.isHost } }, { status: 201 });
     response.cookies.set(cookie.name, cookie.value, cookie.options);
     return response;
   } catch (e) {

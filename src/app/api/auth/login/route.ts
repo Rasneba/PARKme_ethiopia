@@ -13,13 +13,14 @@ export async function POST(request: NextRequest) {
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body?.password === "string" ? body.password : "";
+    const role = body?.role === "host" ? "host" : "driver";
 
     if (!email || !password) {
       return NextResponse.json({ error: "Enter email and password." }, { status: 400 });
     }
 
     const [user] = await db
-      .select({ id: users.id, email: users.email, name: users.name, passwordHash: users.passwordHash })
+      .select({ id: users.id, email: users.email, name: users.name, passwordHash: users.passwordHash, isHost: users.isHost })
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
@@ -28,12 +29,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
+    if (role === "host" && !user.isHost) {
+      return NextResponse.json({ error: "This account is not a host account. Please sign up as a host first." }, { status: 403 });
+    }
+
     const token = uuid();
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
     await db.insert(sessions).values({ userId: user.id, token, expiresAt });
 
     const cookie = createSessionCookie(token);
-    const response = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name } });
+    const response = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, isHost: user.isHost } });
     response.cookies.set(cookie.name, cookie.value, cookie.options);
     return response;
   } catch (e) {

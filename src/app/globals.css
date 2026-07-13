@@ -342,6 +342,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 .auth-field input:focus { outline: 2px solid rgba(22, 150, 74, .28); border-color: var(--green); }
 .auth-toggle { margin: 16px 0 0; text-align: center; color: var(--muted); font-size: 12px; }
 .auth-toggle button { color: var(--green-dark); background: none; font-weight: 750; text-decoration: underline; }
+.auth-back { display: flex; align-items: center; gap: 4px; background: none; color: var(--muted); font-size: 12px; font-weight: 700; margin-bottom: 8px; padding: 0; }
+.auth-back:hover { color: var(--ink); }
+.auth-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0 0; }
+.auth-role-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px 12px; border: 2px solid var(--line); border-radius: 14px; background: #fff; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.auth-role-card:hover { border-color: var(--green); box-shadow: 0 0 0 3px rgba(22,150,74,.1); }
+.auth-role-card b { font-size: 14px; color: var(--ink); }
+.auth-role-card small { font-size: 11px; color: var(--muted); text-align: center; }
+.auth-role-emoji { font-size: 32px; }
+.auth-role-gold:hover { border-color: #d4a017; box-shadow: 0 0 0 3px rgba(212,160,23,.12); }
+.modal-icon-gold { background: #fdf6e3 !important; color: #d4a017 !important; }
+.confirm-booking.btn-gold { background: linear-gradient(135deg, #d4a017, #e8b830); }
+.confirm-booking.btn-gold:hover { background: linear-gradient(135deg, #c4940f, #d4a017); }
 .copy-gate-btn { margin-top: 8px; padding: 7px 12px; display: flex; align-items: center; gap: 6px; color: var(--green-dark); background: var(--green-soft); border-radius: 7px; font-size: 11px; font-weight: 700; width: 100%; justify-content: center; }
 
 .view-panel { max-width: 720px; }

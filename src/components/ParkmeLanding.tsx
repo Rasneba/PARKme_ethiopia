@@ -107,7 +107,7 @@ export default function ParkmeLanding() {
             <a href="#stories" onClick={() => setMobileMenu(false)}>Stories</a>
             <a href="#register" className="nav-cta" onClick={() => setMobileMenu(false)}>Create account</a>
           </div>
-          <a href="/app" className="nav-open-app">Open App</a>
+          <a href={`/app?role=${role}`} className="nav-open-app">Open App</a>
           <button className="nav-burger" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Menu">
             <span /><span /><span />
           </button>
@@ -261,7 +261,7 @@ export default function ParkmeLanding() {
                     </ul>
                     <div className="rc-price">
                       <div><span>Starting from</span><b>25 <small>ETB/hr</small></b></div>
-                      <a href="#register" className="btn btn-primary">Sign up as Driver →</a>
+                      <button className="btn btn-primary" onClick={() => { setRole("driver"); document.getElementById("register")?.scrollIntoView({ behavior: "smooth" }); }}>Sign up as Driver →</button>
                     </div>
                   </div>
                 </div>
@@ -283,7 +283,7 @@ export default function ParkmeLanding() {
                     </ul>
                     <div className="rc-price">
                       <div><span>Average monthly</span><b>4,680 <small>ETB</small></b></div>
-                      <a href="#register" className="btn btn-gold">Sign up as Host →</a>
+                      <button className="btn btn-gold" onClick={() => { setRole("host"); document.getElementById("register")?.scrollIntoView({ behavior: "smooth" }); }}>Sign up as Host →</button>
                     </div>
                   </div>
                 </div>
@@ -418,7 +418,7 @@ export default function ParkmeLanding() {
                     </button>
 
                     <p className="reg-terms">By signing up you agree to our <a href="#register">Terms of Service</a> and <a href="#register">Privacy Policy</a>.</p>
-                    <p className="reg-signin">Already have an account? <a href="/app"><b>Sign in</b></a></p>
+                    <p className="reg-signin">Already have an account? <a href={`/app?role=${role}`}><b>Sign in</b></a></p>
                   </form>
                 </>
               ) : (
@@ -456,7 +456,7 @@ export default function ParkmeLanding() {
                     </div>
                   </div>
 
-                  <a href="/app" className="reg-submit" style={{ textDecoration: "none" }}>
+                  <a href={`/app?role=${registered.role}`} className="reg-submit" style={{ textDecoration: "none" }}>
                     Open Parkme App <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
                   </a>
                 </div>

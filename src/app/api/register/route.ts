@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const phone = typeof body.phone === "string" ? body.phone.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
+    const role = body.role === "host" ? "host" : "driver";
 
     if (!name || name.length < 2) return err("Please enter your full name.");
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return err("Please enter a valid email address.");
@@ -34,13 +35,14 @@ export async function POST(request: NextRequest) {
     if (existing) return err("An account with this email already exists. Try signing in instead.", 409);
 
     const passwordHash = hashSync(password, 10);
+    const isHost = role === "host";
 
     const [user] = await db
       .insert(users)
-      .values({ name, email, phone, passwordHash, isHost: false })
+      .values({ name, email, phone, passwordHash, isHost })
       .returning({ id: users.id, name: users.name, email: users.email, createdAt: users.createdAt });
 
-    return NextResponse.json({ user: { ...user, fullName: user.name, role: "driver", isHost: false } }, { status: 201 });
+    return NextResponse.json({ user: { ...user, fullName: user.name, role, isHost } }, { status: 201 });
   } catch {
     return err("Internal server error. Please try again.", 500);
   }

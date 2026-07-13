@@ -85,19 +85,27 @@ function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
 function FlagRibbon() { return <div className="flag-ribbon" aria-hidden="true"><i /><i /><i /></div>; }
 function StatusDot({ text, color = "green" }: { text: string; color?: "green" | "yellow" }) { return <span className={`status-dot ${color}`}><i />{text}</span>; }
 
-function AuthModal({ onClose, onAuth }: { onClose: () => void; onAuth: (u: User) => void }) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () => void; onAuth: (u: User) => void; initialRole?: "driver" | "host" }) {
+  const [role, setRole] = useState<"driver" | "host">(initialRole);
+  const [mode, setMode] = useState<"choose" | "login" | "signup">("choose");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  function pickRole(r: "driver" | "host") {
+    setRole(r);
+    setMode("login");
+  }
+
   async function submit() {
     setLoading(true); setError("");
     try {
       const url = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
-      const body = mode === "login" ? { email, password } : { name, email, password };
+      const body = mode === "login"
+        ? { email, password, role }
+        : { name, email, password, role };
       const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = (await r.json()) as { user?: User; error?: string };
       if (!r.ok || !data.user) throw new Error(data.error ?? "Failed");
@@ -107,16 +115,48 @@ function AuthModal({ onClose, onAuth }: { onClose: () => void; onAuth: (u: User)
     finally { setLoading(false); }
   }
 
+  const isDriver = role === "driver";
+
+  if (mode === "choose") {
+    return (
+      <div className="overlay" role="dialog" aria-modal="true">
+        <div className="booking-modal auth-modal">
+          <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button>
+          <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">WELCOME TO PARKME</p><h2>How will you use Parkme?</h2></div></div>
+          <div className="auth-role-grid">
+            <button className="auth-role-card" onClick={() => pickRole("driver")}>
+              <span className="auth-role-emoji">🚗</span>
+              <b>I&apos;m a Driver</b>
+              <small>Find &amp; reserve parking spots</small>
+            </button>
+            <button className="auth-role-card auth-role-gold" onClick={() => pickRole("host")}>
+              <span className="auth-role-emoji">🏠</span>
+              <b>I&apos;m a Host</b>
+              <small>List your space &amp; earn money</small>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="overlay" role="dialog" aria-modal="true">
       <div className="booking-modal auth-modal">
         <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button>
-        <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"}</p><h2>{mode === "login" ? "Log in to Parkme" : "Sign up for Parkme"}</h2></div></div>
+        <button className="auth-back" onClick={() => { setMode("choose"); setError(""); }}><Icon name="arrow" size={16} /> Back</button>
+        <div className="modal-heading">
+          <span className={`modal-icon ${isDriver ? "" : "modal-icon-gold"}`}><Icon name={isDriver ? "car" : "building"} size={22} /></span>
+          <div>
+            <p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"} · {isDriver ? "DRIVER" : "HOST"}</p>
+            <h2>{mode === "login" ? "Log in to Parkme" : "Sign up for Parkme"}</h2>
+          </div>
+        </div>
         {mode === "signup" && <div className="auth-field"><label>Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" /></div>}
         <div className="auth-field"><label>Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
         <div className="auth-field"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" /></div>
         {error && <p className="booking-error" role="alert">{error}</p>}
-        <button className="confirm-booking" disabled={loading} onClick={() => void submit()}>{loading ? "Please wait..." : mode === "login" ? "Log in" : "Create account"} <Icon name="arrow" size={18} /></button>
+        <button className={`confirm-booking ${isDriver ? "" : "btn-gold"}`} disabled={loading} onClick={() => void submit()}>{loading ? "Please wait..." : mode === "login" ? "Log in" : "Create account"} <Icon name="arrow" size={18} /></button>
         <p className="auth-toggle">{mode === "login" ? "Don't have an account?" : "Already have an account?"} <button onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "Sign up" : "Log in"}</button></p>
       </div>
     </div>
@@ -520,7 +560,7 @@ function OwnerPortal({ onClose }: { onClose: () => void }) {
 export default function ParkmeApp() {
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState<false | "driver" | "host">(false);
   const [view, setView] = useState<"spots" | "bookings" | "wallet" | "history">("spots");
   const [bookingSpot, setBookingSpot] = useState<ApiSpot | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -546,7 +586,12 @@ export default function ParkmeApp() {
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.ok ? r.json() : { user: null })
-      .then((d) => { if (d.user) setUser(d.user); })
+      .then((d) => {
+        if (d.user) { setUser(d.user); return; }
+        const params = new URLSearchParams(window.location.search);
+        const r = params.get("role");
+        if (r === "driver" || r === "host") { setAuthOpen(r); window.history.replaceState({}, "", "/app"); }
+      })
       .catch(() => {})
       .finally(() => setAuthChecked(true));
   }, []);
@@ -616,7 +661,7 @@ export default function ParkmeApp() {
               <div className="side-user"><Avatar name={user.name} size="sm" /><div><b>{user.name}</b><small>{user.email}</small></div><button onClick={() => setProfileOpen(true)} aria-label="Open profile"><Icon name="chevron" size={16} /></button></div>
             </>
           ) : (
-            <button className="host-callout" onClick={() => setAuthOpen(true)}><span><Icon name="shield" size={20} /></span><div><b>Log in / Sign up</b><small>Access your account</small></div><Icon name="chevron" size={16} /></button>
+            <button className="host-callout" onClick={() => setAuthOpen("driver")}><span><Icon name="shield" size={20} /></span><div><b>Log in / Sign up</b><small>Access your account</small></div><Icon name="chevron" size={16} /></button>
           )}
         </div>
       </aside>
@@ -632,7 +677,7 @@ export default function ParkmeApp() {
                 <button className="top-profile" onClick={() => setProfileOpen(true)}><Avatar name={user.name} size="sm" /><span>{user.name.split(" ")[0]}</span><Icon name="chevron" size={15} /></button>
               </>
             ) : (
-              <button className="top-profile" onClick={() => setAuthOpen(true)}>Log in</button>
+              <button className="top-profile" onClick={() => setAuthOpen("driver")}>Log in</button>
             )}
           </div>
         </header>
@@ -640,19 +685,19 @@ export default function ParkmeApp() {
         <div className="workspace">
           {view === "spots" && (
             <div className="content-grid">
-              <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} />
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} />
+              <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} />
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} />
             </div>
           )}
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}
-          {view === "wallet" && (user ? <WalletView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to access your wallet.</p><button className="confirm-booking" onClick={() => setAuthOpen(true)}>Log in <Icon name="arrow" size={16} /></button></div>)}
-          {view === "history" && (user ? <HistoryView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to view history.</p><button className="confirm-booking" onClick={() => setAuthOpen(true)}>Log in <Icon name="arrow" size={16} /></button></div>)}
+          {view === "wallet" && (user ? <WalletView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to access your wallet.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>)}
+          {view === "history" && (user ? <HistoryView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to view history.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>)}
 
           {view === "spots" && activeBooking && user && <BookingTimerCard booking={activeBooking} onOpen={() => setBookingSpot(spots[0] ?? null)} />}
         </div>
       </div>
 
-      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onAuth={(u) => setUser(u)} />}
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onAuth={(u) => setUser(u)} initialRole={authOpen} />}
       {bookingSpot && <BookingModal spot={bookingSpot} onClose={() => setBookingSpot(null)} onBooked={() => { fetchSpots(searchQuery); setActiveBooking(null); }} user={user} />}
       {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setOwnerOpen(true); }} onLogout={() => setUser(null)} />}
       {ownerOpen && <OwnerPortal onClose={() => setOwnerOpen(false)} />}
