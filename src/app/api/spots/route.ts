@@ -1,13 +1,28 @@
 import { db } from "@/db";
 import { ensureParkmeSeeded } from "@/db/seed";
 import { parkingSpaces } from "@/db/schema";
-import { and, asc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+let migrated = false;
+
+async function ensureCategoryColumn() {
+  if (migrated) return;
+  try {
+    await db.execute(sql`ALTER TABLE parking_spaces ADD COLUMN IF NOT EXISTS category text NOT NULL DEFAULT 'standard'`);
+    await db.execute(sql`UPDATE parking_spaces SET category = 'ev_charging' WHERE slug IN ('unity-park-garage','edna-mall-parking','bole-road-garage','bole-medhanialem-2','megenagna-parking') AND category = 'standard'`);
+    await db.execute(sql`UPDATE parking_spaces SET category = 'cctv' WHERE slug IN ('bole-medhanialem','mexico-square-space-4','kazanchis-business-parking','bole-atlas-parking','mexico-supermarket-parking') AND category = 'standard'`);
+    await db.execute(sql`UPDATE parking_spaces SET category = '24hr' WHERE slug IN ('meskel-square-lot','churchill-avenue-lot','haya-hulet-parking','tor-hayloch-parking') AND category = 'standard'`);
+    await db.execute(sql`UPDATE parking_spaces SET category = 'wheelchair' WHERE slug IN ('piassa-parking-lot','summit-view-parking','arada-parking-hub') AND category = 'standard'`);
+    migrated = true;
+  } catch { migrated = true; }
+}
+
 export async function GET(request: NextRequest) {
   await ensureParkmeSeeded();
+  await ensureCategoryColumn();
 
   const query = request.nextUrl.searchParams.get("q")?.trim();
   const onlyAvailable = request.nextUrl.searchParams.get("available") !== "false";
