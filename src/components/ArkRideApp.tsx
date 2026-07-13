@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { LeafletMapHandle } from "./LeafletMap";
+import type { GoogleMapHandle } from "./GoogleMap";
 
-const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
+const GoogleMap = dynamic(() => import("./GoogleMap"), { ssr: false });
 
 type IconName =
   | "search" | "bell" | "calendar" | "clock" | "chevron" | "car" | "pin"
@@ -52,7 +52,7 @@ function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number
   return <svg {...shared}>{paths[name]}</svg>;
 }
 
-type User = { id: string; email: string; name: string };
+type User = { id: string; email: string; name: string; isHost?: boolean };
 type ApiSpot = { id: number; slug: string; name: string; address: string; neighborhood: string; label: string; tone: string; price: number; rating: string; availableSpots: number; totalSpots: number; spaces: string; hostName: string; lat: number; lng: number; distanceKm?: number };
 type Booking = { id: string; reference: string; status: string; parkingDate: string; startAt: string; endAt: string; durationHours: number; spaceLabel: string; paymentMethod: string; amountEtb: number; gateCode: string; checkInAt: string | null; createdAt: string; spotId: number; spotName: string; spotAddress: string };
 type WalletTx = { id: string; reference: string; type: string; amountEtb: number; provider: string | null; note: string; createdAt: string };
@@ -158,12 +158,39 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
 
 function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, totalCount, selectedSpotId, hasLocation }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean }) {
   const [filterOpen, setFilterOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!inputRef.current || autocompleteRef.current) return;
+    const checkGoogle = setInterval(() => {
+      const g = (window as any).google;
+      if (g?.maps?.places) {
+        clearInterval(checkGoogle);
+        if (!inputRef.current || autocompleteRef.current) return;
+        const ac = new g.maps.places.Autocomplete(inputRef.current, {
+          types: ["geocode"],
+          componentRestrictions: { country: "et" },
+        });
+        ac.addListener("place_changed", () => {
+          const place = ac.getPlace();
+          if (place?.formatted_address) {
+            onSearch(place.formatted_address);
+          } else if (place?.name) {
+            onSearch(place.name);
+          }
+        });
+        autocompleteRef.current = ac;
+      }
+    }, 300);
+    return () => clearInterval(checkGoogle);
+  }, [onSearch]);
   return (
     <section className="search-column">
       <div className="welcome-line"><p>{greetByHour()}</p><h1>Where are you parking today?</h1></div>
       <div className="search-box">
         <Icon name="search" size={20} />
-        <input value={searchQuery} onChange={(e) => onSearch(e.target.value)} placeholder="Search by name, area, or address..." aria-label="Search parking location" />
+        <input ref={inputRef} value={searchQuery} onChange={(e) => onSearch(e.target.value)} placeholder="Search by name, area, or address..." aria-label="Search parking location" />
         <button className="filter-button" aria-label="Open filters" onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" size={19} /></button>
         {filterOpen && <div className="filter-popover"><b>Filters</b><label><input type="checkbox" defaultChecked /> Available only</label><label><input type="checkbox" /> Covered</label><label><input type="checkbox" defaultChecked /> Under 50 ETB/hr</label></div>}
       </div>
@@ -219,7 +246,7 @@ function CityMap({
   satellite: boolean;
   onToggleSatellite: () => void;
   userLocation?: { lat: number; lng: number } | null;
-  mapRef: React.MutableRefObject<LeafletMapHandle | null>;
+  mapRef: React.MutableRefObject<GoogleMapHandle | null>;
 }) {
   const selected = spots.find((s) => s.id === selectedSpotId);
   return (
@@ -241,12 +268,11 @@ function CityMap({
           </button>
         </div>
       </div>
-      <LeafletMap
+      <GoogleMap
         spots={spots}
         onSelectSpot={onSelectSpot}
         onBookSpot={onBook}
         selectedSpotId={selectedSpotId}
-        onNearMe={onNearMe}
         satellite={satellite}
         userLocation={userLocation}
         mapRef={mapRef}
@@ -534,7 +560,7 @@ export default function ParkmeApp() {
   const [satellite, setSatellite] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const mapHandleRef = useRef<LeafletMapHandle | null>(null);
+  const mapHandleRef = useRef<GoogleMapHandle | null>(null);
 
   const fetchSpots = useCallback((q: string) => {
     setSpotsLoading(true);
