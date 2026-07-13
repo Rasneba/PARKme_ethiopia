@@ -73,6 +73,12 @@ function formatDistance(km: number): string {
   return `${km.toFixed(1)} km`;
 }
 
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${Math.round(seconds)} sec`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
+  return `${Math.floor(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`;
+}
+
 function formatDate(d: Date) { return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); }
 function formatTime(d: Date) { return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }); }
 function greetByHour() { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; }
@@ -598,6 +604,8 @@ export default function ParkmeApp() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [mobileListOpen, setMobileListOpen] = useState(false);
+  const [routeActive, setRouteActive] = useState(false);
+  const [routeData, setRouteData] = useState<{ distance: number; time: number; instructions: any[] } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mapHandleRef = useRef<MapLibreHandle | null>(null);
 
@@ -672,13 +680,22 @@ export default function ParkmeApp() {
 
   function handleSelectSpot(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
+    setRouteActive(false);
+    setRouteData(null);
   }
 
   function handleDirections(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
+    setRouteActive(true);
     setTimeout(() => {
       (window as any).__parkmeRoute?.(spot.lat, spot.lng);
     }, 600);
+    if (userLocation) {
+      fetch(`/api/directions?from_lat=${userLocation.lat}&from_lng=${userLocation.lng}&to_lat=${spot.lat}&to_lng=${spot.lng}`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((d) => { if (d) setRouteData({ distance: d.distance, time: d.time, instructions: d.instructions || [] }); })
+        .catch(() => {});
+    }
   }
 
   const navItems = [
@@ -724,9 +741,51 @@ export default function ParkmeApp() {
 
         <div className="workspace">
           {view === "spots" && (
-            <div className="content-grid">
-              <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => handleDirections(s)} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} activeCategory={activeCategory} onCategoryChange={onCategoryChange} />
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); (window as any).__parkmeClearRoute?.(); }} />
+            <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
+              <div className={`search-panel-wrap ${selectedSpotId ? "mobile-hidden" : ""}`}>
+                <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => handleDirections(s)} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} activeCategory={activeCategory} onCategoryChange={onCategoryChange} />
+              </div>
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
+              {selectedSpotId && (() => {
+                const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);
+                if (!spot) return null;
+                return (
+                  <div className={`mobile-action-bar ${routeActive ? "route-mode" : ""}`}>
+                    {routeActive ? (
+                      <div className="mobile-route-panel">
+                        <div className="route-panel-header">
+                          <div className="route-panel-info">
+                            <b>Route to {spot.name}</b>
+                            {routeData && <span>{formatDistance(routeData.distance)} &middot; {formatDuration(routeData.time)}</span>}
+                          </div>
+                          <button className="route-panel-close" onClick={() => { setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={18} /></button>
+                        </div>
+                        <div className="route-steps">
+                          {routeData?.instructions?.filter((ins: any) => ins.distance > 0 || ins.sign === 0).map((ins: any, i: number) => (
+                            <div className="route-step" key={i}>
+                              <span className="route-step-icon">{ins.sign === 0 ? "\u2192" : ins.sign < 0 ? "\u21BA" : "\u21BB"}</span>
+                              <div><span>{ins.text}</span><small>{formatDistance(ins.distance || 0)}</small></div>
+                            </div>
+                          ))}
+                          {!routeData && <div className="route-loading">Calculating route...</div>}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mobile-spot-bar">
+                        <div className="mobile-spot-info">
+                          <b>{spot.name}</b>
+                          <span>{spot.price} ETB/hr &middot; {spot.distanceKm != null ? formatDistance(spot.distanceKm) : `${spot.availableSpots} spots`}</span>
+                        </div>
+                        <div className="mobile-spot-actions">
+                          <button className="mobile-btn directions" onClick={() => handleDirections(spot)}><Icon name="nav" size={16} /> Directions</button>
+                          <button className="mobile-btn reserve" onClick={() => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(spot); }}><Icon name="car" size={16} /> Reserve</button>
+                        </div>
+                        <button className="mobile-back-btn" onClick={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={16} /> Back to list</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}
