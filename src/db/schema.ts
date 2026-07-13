@@ -48,6 +48,7 @@ export const parkingSpaces = pgTable(
     address: text("address").notNull(),
     neighborhood: text("neighborhood").notNull(),
     kind: text("kind").notNull().default("Open air"),
+    category: text("category").notNull().default("standard"),
     tone: text("tone").notNull().default("sage"),
     priceHourlyEtb: integer("price_hourly_etb").notNull(),
     ratingTenths: integer("rating_tenths").notNull().default(48),

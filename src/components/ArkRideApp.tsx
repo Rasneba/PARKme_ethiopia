@@ -53,7 +53,7 @@ function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number
 }
 
 type User = { id: string; email: string; name: string; isHost?: boolean };
-type ApiSpot = { id: number; slug: string; name: string; address: string; neighborhood: string; label: string; tone: string; price: number; rating: string; availableSpots: number; totalSpots: number; spaces: string; hostName: string; lat: number; lng: number; distanceKm?: number };
+type ApiSpot = { id: number; slug: string; name: string; address: string; neighborhood: string; label: string; category: string; tone: string; price: number; rating: string; availableSpots: number; totalSpots: number; spaces: string; hostName: string; lat: number; lng: number; distanceKm?: number };
 type Booking = { id: string; reference: string; status: string; parkingDate: string; startAt: string; endAt: string; durationHours: number; spaceLabel: string; paymentMethod: string; amountEtb: number; gateCode: string; checkInAt: string | null; createdAt: string; spotId: number; spotName: string; spotAddress: string };
 type WalletTx = { id: string; reference: string; type: string; amountEtb: number; provider: string | null; note: string; createdAt: string };
 
@@ -196,29 +196,51 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
   );
 }
 
-function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, onDirections, totalCount, selectedSpotId, hasLocation }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; onDirections: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean }) {
+function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, onDirections, totalCount, selectedSpotId, hasLocation, activeCategory, onCategoryChange }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; onDirections: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean; activeCategory: string; onCategoryChange: (cat: string) => void }) {
   const [filterOpen, setFilterOpen] = useState(false);
+
+  const categories = [
+    { key: "all", label: "All spots", icon: "grid" as IconName },
+    { key: "ev_charging", label: "EV Charging", icon: "sparkle" as IconName },
+    { key: "cctv", label: "CCTV Covered", icon: "shield" as IconName },
+    { key: "24hr", label: "24/7 Open", icon: "clock" as IconName },
+    { key: "wheelchair", label: "Accessible", icon: "check" as IconName },
+    { key: "standard", label: "Standard", icon: "car" as IconName },
+  ];
 
   return (
     <section className="search-column">
-      <div className="welcome-line"><p>{greetByHour()}</p><h1>Where are you parking today?</h1></div>
-      <div className="search-box">
-        <Icon name="search" size={20} />
-        <input value={searchQuery} onChange={(e) => onSearch(e.target.value)} placeholder="Search by name, area, or address..." aria-label="Search parking location" />
-        <button className="filter-button" aria-label="Open filters" onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" size={19} /></button>
-        {filterOpen && <div className="filter-popover"><b>Filters</b><label><input type="checkbox" defaultChecked /> Available only</label><label><input type="checkbox" /> Covered</label><label><input type="checkbox" defaultChecked /> Under 50 ETB/hr</label></div>}
+      <div className="search-top">
+        <div className="welcome-line"><p>{greetByHour()}</p><h1>Where are you parking today?</h1></div>
+        <div className="search-box">
+          <Icon name="search" size={20} />
+          <input value={searchQuery} onChange={(e) => onSearch(e.target.value)} placeholder="Search by name, area, or address..." aria-label="Search parking location" />
+          <button className="filter-button" aria-label="Open filters" onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" size={19} /></button>
+        </div>
+        <div className="category-chips">
+          {categories.map((cat) => (
+            <button key={cat.key} className={`category-chip ${activeCategory === cat.key ? "active" : ""}`} onClick={() => onCategoryChange(cat.key)}>
+              <Icon name={cat.icon} size={14} />
+              <span>{cat.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
       <div className="results-heading"><div><span className="eyebrow">{hasLocation ? "AVAILABLE NEARBY" : "ALL SPOTS"}</span><h2>{totalCount} spot{totalCount !== 1 ? "s" : ""} found{hasLocation ? " nearby" : ""}</h2></div></div>
       {loading ? <div className="loading-state">Searching...</div> : (
         <div className="place-list">
           {spots.map((spot) => (
             <article className={`place-card ${selectedSpotId === spot.id ? "selected" : ""}`} key={spot.id} onClick={() => onSelectSpot(spot)}>
-              <div className={`place-image ${spot.tone}`}><span>{spot.label}</span><div className="car-shape"><Icon name="car" size={29} /></div></div>
+              <div className={`place-image ${spot.tone}`}>
+                <span className="place-kind">{spot.label}</span>
+                <span className="place-cat-tag">{spot.category === "ev_charging" ? "EV" : spot.category === "cctv" ? "CCTV" : spot.category === "24hr" ? "24/7" : spot.category === "wheelchair" ? "ACC" : ""}</span>
+                <div className="car-shape"><Icon name="car" size={29} /></div>
+              </div>
               <div className="place-info">
                 <div className="place-name-line"><h3>{spot.name}</h3><span className="rating"><Icon name="star" size={13} stroke={2.4} /> {spot.rating}</span></div>
                 <p>{spot.address}</p>
                 <div className="place-meta">
-                  <span><Icon name="pin" size={14} />{spot.availableSpots} spots available</span>
+                  <span><Icon name="pin" size={14} />{spot.availableSpots} spots</span>
                   {spot.distanceKm != null && <span className="place-distance"><Icon name="locate" size={13} /> {formatDistance(spot.distanceKm)}</span>}
                 </div>
               </div>
@@ -574,14 +596,30 @@ export default function ParkmeApp() {
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const [satellite, setSatellite] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [mobileListOpen, setMobileListOpen] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mapHandleRef = useRef<MapLibreHandle | null>(null);
 
-  const fetchSpots = useCallback((q: string) => {
+  const fetchSpots = useCallback((q: string, cat: string = "all") => {
     setSpotsLoading(true);
-    const url = q ? `/api/spots?q=${encodeURIComponent(q)}` : "/api/spots";
-    fetch(url).then((r) => r.ok ? r.json() : { spots: [] }).then((d) => { setSpots(d.spots ?? []); setSpotsLoading(false); }).catch(() => setSpotsLoading(false));
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (cat && cat !== "all") params.set("category", cat);
+    const qs = params.toString();
+    fetch(`/api/spots${qs ? "?" + qs : ""}`).then((r) => r.ok ? r.json() : { spots: [] }).then((d) => { setSpots(d.spots ?? []); setSpotsLoading(false); }).catch(() => setSpotsLoading(false));
   }, []);
+
+  const onSearch = useCallback((q: string) => {
+    setSearchQuery(q);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => fetchSpots(q, activeCategory), 300);
+  }, [fetchSpots, activeCategory]);
+
+  const onCategoryChange = useCallback((cat: string) => {
+    setActiveCategory(cat);
+    fetchSpots(searchQuery, cat);
+  }, [fetchSpots, searchQuery]);
 
   useEffect(() => { fetchSpots(""); }, [fetchSpots]);
   useEffect(() => {
@@ -615,12 +653,6 @@ export default function ParkmeApp() {
     enriched.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
     return enriched;
   }, [spots, userLocation]);
-
-  function onSearch(q: string) {
-    setSearchQuery(q);
-    clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => fetchSpots(q), 300);
-  }
 
   function handleNearMe() {
     if (!navigator.geolocation) return;
@@ -693,7 +725,7 @@ export default function ParkmeApp() {
         <div className="workspace">
           {view === "spots" && (
             <div className="content-grid">
-              <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => handleDirections(s)} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} />
+              <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => handleDirections(s)} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} activeCategory={activeCategory} onCategoryChange={onCategoryChange} />
               <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); (window as any).__parkmeClearRoute?.(); }} />
             </div>
           )}

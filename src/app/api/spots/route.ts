@@ -11,22 +11,29 @@ export async function GET(request: NextRequest) {
 
   const query = request.nextUrl.searchParams.get("q")?.trim();
   const onlyAvailable = request.nextUrl.searchParams.get("available") !== "false";
+  const category = request.nextUrl.searchParams.get("category")?.trim();
+
+  const conditions = [eq(parkingSpaces.isActive, true)];
+
+  if (query) {
+    conditions.push(
+      or(
+        ilike(parkingSpaces.name, `%${query}%`),
+        ilike(parkingSpaces.address, `%${query}%`),
+        ilike(parkingSpaces.neighborhood, `%${query}%`),
+        ilike(parkingSpaces.category, `%${query}%`),
+      )!,
+    );
+  }
+
+  if (category && category !== "all") {
+    conditions.push(eq(parkingSpaces.category, category));
+  }
 
   const rows = await db
     .select()
     .from(parkingSpaces)
-    .where(
-      query
-        ? and(
-            eq(parkingSpaces.isActive, true),
-            or(
-              ilike(parkingSpaces.name, `%${query}%`),
-              ilike(parkingSpaces.address, `%${query}%`),
-              ilike(parkingSpaces.neighborhood, `%${query}%`),
-            ),
-          )
-        : eq(parkingSpaces.isActive, true),
-    )
+    .where(and(...conditions))
     .orderBy(asc(parkingSpaces.priceHourlyEtb));
 
   const spots = rows
@@ -38,6 +45,7 @@ export async function GET(request: NextRequest) {
       address: spot.address,
       neighborhood: spot.neighborhood,
       label: spot.kind,
+      category: spot.category,
       tone: spot.tone,
       price: spot.priceHourlyEtb,
       rating: (spot.ratingTenths / 10).toFixed(1),
