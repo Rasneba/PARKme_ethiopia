@@ -1,12 +1,16 @@
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
-import ParkmeApp from "@/components/ArkRideApp";
+import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import ParkmeLanding from "@/components/ParkmeLanding";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  // Keep the landing route tied to the configured Drizzle/PostgreSQL service.
   await db.execute(sql`select 1`);
 
-  return <ParkmeApp />;
+  const user = await getCurrentUser();
+  if (user) redirect("/app");
+
+  return <ParkmeLanding />;
 }

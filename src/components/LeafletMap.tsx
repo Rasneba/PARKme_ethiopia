@@ -13,6 +13,7 @@ export default function LeafletMap({
   selectedSpotId,
   onNearMe,
   satellite,
+  userLocation,
 }: {
   spots: any[];
   onSelectSpot: (spot: any) => void;
@@ -20,11 +21,14 @@ export default function LeafletMap({
   selectedSpotId: number | null;
   onNearMe: () => void;
   satellite: boolean;
+  userLocation?: { lat: number; lng: number } | null;
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
+  const LRef = useRef<typeof L | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
-  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const streetLayerRef = useRef<L.TileLayer | null>(null);
+  const satelliteLayerRef = useRef<L.TileLayer | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const selectedPopupRef = useRef<L.Popup | null>(null);
 
@@ -54,6 +58,7 @@ export default function LeafletMap({
 
     async function init() {
       const L = (await import("leaflet")).default;
+      LRef.current = L;
       await import("leaflet/dist/leaflet.css");
 
       const map = L.map(mapRef.current!, {
@@ -78,10 +83,8 @@ export default function LeafletMap({
       );
 
       streetLayer.addTo(map);
-      tileLayerRef.current = streetLayer;
-
-      (map as any)._streetLayer = streetLayer;
-      (map as any)._satelliteLayer = satelliteLayer;
+      streetLayerRef.current = streetLayer;
+      satelliteLayerRef.current = satelliteLayer;
 
       const greenIcon = L.divIcon({
         className: "leaflet-custom-icon green-pin",
@@ -119,8 +122,7 @@ export default function LeafletMap({
               zIndexOffset: 1000,
             })
               .addTo(map)
-              .bindPopup("<b>You are here</b>")
-              .openPopup();
+              .bindPopup("<b>You are here</b>");
           },
           () => {},
           { timeout: 5000, enableHighAccuracy: true },
@@ -156,14 +158,14 @@ export default function LeafletMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Satellite toggle
   useEffect(() => {
     const map = mapInstance.current;
-    if (!map) return;
-    const L = (window as any).L;
-    if (!L) return;
+    const L = LRef.current;
+    if (!map || !L) return;
 
-    const streetLayer = (map as any)._streetLayer;
-    const satelliteLayer = (map as any)._satelliteLayer;
+    const streetLayer = streetLayerRef.current;
+    const satelliteLayer = satelliteLayerRef.current;
     if (!streetLayer || !satelliteLayer) return;
 
     if (satellite && !map.hasLayer(satelliteLayer)) {
@@ -175,9 +177,40 @@ export default function LeafletMap({
     }
   }, [satellite]);
 
+  // Fly to user location when it changes (Near Me clicked)
+  useEffect(() => {
+    const map = mapInstance.current;
+    const L = LRef.current;
+    if (!map || !L || !userLocation) return;
+
+    map.flyTo([userLocation.lat, userLocation.lng], 16, { duration: 1.2 });
+
+    const userIcon = L.divIcon({
+      className: "leaflet-custom-icon user-pin",
+      html: `<div style="position:relative;width:20px;height:20px;">
+        <div style="position:absolute;inset:0;background:rgba(64,152,223,.2);border-radius:50%;animation:userPulse 2s infinite;"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;background:#4098df;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.3);"></div>
+      </div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
+    } else {
+      userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], {
+        icon: userIcon,
+        zIndexOffset: 1000,
+      })
+        .addTo(map)
+        .bindPopup("<b>You are here</b>");
+    }
+  }, [userLocation]);
+
+  // Update selected marker highlight
   useEffect(() => {
     markersRef.current.forEach((marker, id) => {
-      const L = (window as any).L;
+      const L = LRef.current;
       if (!L) return;
       const greenIcon = L.divIcon({
         className: "leaflet-custom-icon green-pin",

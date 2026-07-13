@@ -207,6 +207,7 @@ function CityMap({
   onNearMe,
   satellite,
   onToggleSatellite,
+  userLocation,
 }: {
   spots: ApiSpot[];
   onSelectSpot: (s: ApiSpot) => void;
@@ -215,6 +216,7 @@ function CityMap({
   onNearMe: () => void;
   satellite: boolean;
   onToggleSatellite: () => void;
+  userLocation?: { lat: number; lng: number } | null;
 }) {
   const selected = spots.find((s) => s.id === selectedSpotId);
   return (
@@ -237,6 +239,7 @@ function CityMap({
         selectedSpotId={selectedSpotId}
         onNearMe={onNearMe}
         satellite={satellite}
+        userLocation={userLocation}
       />
       {selected && (
         <div className="map-spot-sheet">
@@ -506,7 +509,7 @@ function OwnerPortal({ onClose }: { onClose: () => void }) {
 
 export default function ParkmeApp() {
   const [user, setUser] = useState<User | null>(null);
-  const [authChecked, setAuthChecked] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [view, setView] = useState<"spots" | "bookings" | "wallet" | "history">("spots");
   const [bookingSpot, setBookingSpot] = useState<ApiSpot | null>(null);
@@ -529,6 +532,13 @@ export default function ParkmeApp() {
   }, []);
 
   useEffect(() => { fetchSpots(""); }, [fetchSpots]);
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.ok ? r.json() : { user: null })
+      .then((d) => { if (d.user) setUser(d.user); })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true));
+  }, []);
   useEffect(() => { if (user) fetch("/api/bookings?status=active").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { const b = (d.bookings ?? [])[0]; if (b) setActiveBooking(b); }).catch(() => {}); }, [user]);
 
   useEffect(() => {
@@ -585,7 +595,7 @@ export default function ParkmeApp() {
   return (
     <main className="parkme-shell">
       <aside className={`sidebar ${menuOpen ? "mobile-visible" : ""}`}>
-        <div className="brand"><div className="brand-mark"><span>Park</span><b>me</b></div><em>ethiopia</em></div>
+        <a href="/" className="brand" style={{ textDecoration: "none" }}><div className="brand-mark"><span>Park</span><b>me</b></div><em>ethiopia</em></a>
         <button className="sidebar-close" onClick={() => setMenuOpen(false)}><Icon name="close" size={20} /></button>
         <nav>{navItems.map((item) => <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setView(item.view); setMenuOpen(false); }}><Icon name={item.icon} size={20} /><span>{item.label}</span>{item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}</button>)}</nav>
         <div className="sidebar-bottom">
@@ -620,7 +630,7 @@ export default function ParkmeApp() {
           {view === "spots" && (
             <div className="content-grid">
               <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} />
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} />
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} />
             </div>
           )}
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}

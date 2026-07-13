@@ -43,8 +43,8 @@ export async function ensureParkmeSeeded() {
         availableSpots: 12,
         totalSpots: 36,
         hostName: "Miki Tadesse",
-        lat: 9.0355,
-        lng: 38.7468,
+        lat: 9.0369,
+        lng: 38.7465,
       },
       {
         slug: "bole-medhanialem",
@@ -58,8 +58,8 @@ export async function ensureParkmeSeeded() {
         availableSpots: 6,
         totalSpots: 18,
         hostName: "Miki Tadesse",
-        lat: 9.0115,
-        lng: 38.7892,
+        lat: 9.0120,
+        lng: 38.7895,
       },
       {
         slug: "meskel-square-lot",
@@ -88,7 +88,7 @@ export async function ensureParkmeSeeded() {
         availableSpots: 4,
         totalSpots: 10,
         hostName: "Miki Tadesse",
-        lat: 9.0288,
+        lat: 9.0285,
         lng: 38.7578,
       },
       {
@@ -103,8 +103,8 @@ export async function ensureParkmeSeeded() {
         availableSpots: 8,
         totalSpots: 24,
         hostName: "Miki Tadesse",
-        lat: 9.0073,
-        lng: 38.7815,
+        lat: 9.0058,
+        lng: 38.7833,
       },
       {
         slug: "piassa-parking-lot",
@@ -118,8 +118,8 @@ export async function ensureParkmeSeeded() {
         availableSpots: 15,
         totalSpots: 30,
         hostName: "Miki Tadesse",
-        lat: 9.0340,
-        lng: 38.7500,
+        lat: 9.0353,
+        lng: 38.7470,
       },
     ])
     .onConflictDoNothing({ target: parkingSpaces.slug });
