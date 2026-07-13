@@ -186,20 +186,20 @@ export default function MapLibreMap(
       if (coords.length < 2) return;
 
       clearRoute();
-      const firstLayerId = map.getStyle().layers?.[0]?.id;
-      map.addSource("route", {
-        type: "geojson",
-        data: {
-          type: "Feature",
-          geometry: { type: "LineString", coordinates: coords },
-          properties: {},
-        },
-      });
-      if (firstLayerId) {
-        map.addLayer({ id: "route-line-bg", type: "line", source: "route", paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.8 } }, firstLayerId);
-        map.addLayer({ id: "route-line", type: "line", source: "route", paint: { "line-color": "#0fa24b", "line-width": 5, "line-opacity": 0.9 } }, firstLayerId);
-      } else {
+      if (!map.getSource("route")) {
+        map.addSource("route", {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: coords },
+            properties: {},
+          },
+        });
+      }
+      if (!map.getLayer("route-line-bg")) {
         map.addLayer({ id: "route-line-bg", type: "line", source: "route", paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.8 } });
+      }
+      if (!map.getLayer("route-line")) {
         map.addLayer({ id: "route-line", type: "line", source: "route", paint: { "line-color": "#0fa24b", "line-width": 5, "line-opacity": 0.9 } });
       }
 
