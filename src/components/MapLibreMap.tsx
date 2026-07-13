@@ -259,7 +259,6 @@ export default function MapLibreMap(
 
     map.on("error", () => {});
 
-    map.addControl(new maplibregl.AttributionControl({ compact: true }));
     map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "bottom-right");
 
     mapRef.current = map;

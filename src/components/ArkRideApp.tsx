@@ -274,13 +274,15 @@ function CityMap({
           <button className="map-toolbar-btn zoom-btn" title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>
             <span className="map-btn-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /></svg></span>
           </button>
-          <button className="map-toolbar-btn near-me-btn" title="Find nearest spot" onClick={onNearMe}>
-            <span className="map-btn-icon-wrap near"><Icon name="locate" size={18} /></span> Near me
-          </button>
-          <button className={`map-toolbar-btn sat-btn ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
-            <span className={`map-btn-icon-wrap ${satellite ? "sat-on" : "sat-off"}`}><Icon name={satellite ? "map" : "home"} size={18} /></span> {satellite ? "Map" : "Satellite"}
-          </button>
         </div>
+      </div>
+      <div className="map-float-controls">
+        <button className="map-float-btn near" title="Find nearest spot" onClick={onNearMe}>
+          <Icon name="locate" size={16} /> Near me
+        </button>
+        <button className={`map-float-btn sat ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
+          <Icon name={satellite ? "map" : "home"} size={16} /> {satellite ? "Map" : "Satellite"}
+        </button>
       </div>
       <MapLibreMap
         spots={spots}
@@ -306,7 +308,7 @@ function CityMap({
           </div>
           <div className="map-sheet-actions">
             <button className="map-sheet-btn directions" onClick={() => {
-              window.open(`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&to=${selected.lat},${selected.lng}`, "_blank");
+              (window as any).__parkmeRoute?.(selected.lat, selected.lng);
             }}>
               <Icon name="nav" size={15} /> Directions
             </button>

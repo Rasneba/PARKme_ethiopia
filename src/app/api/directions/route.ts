@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "GraphHopper API key not configured" }, { status: 500 });
   }
 
-  const url = `https://graphhopper.com/api/1/route?point=${fromLat},${fromLng}&point=${toLat},${toLng}&vehicle=car&key=${apiKey}&type=geojson&instructions=true&calc_points=true&locale=en`;
+  const url = `https://graphhopper.com/api/1/route?point=${fromLat},${fromLng}&point=${toLat},${toLng}&vehicle=car&key=${apiKey}&type=geojson&instructions=true&calc_points=true&points_encoded=false&locale=en`;
 
   try {
     const res = await fetch(url);
