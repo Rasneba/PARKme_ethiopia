@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { GoogleMapHandle } from "./GoogleMap";
+import type { MapLibreHandle } from "./MapLibreMap";
 
-const GoogleMap = dynamic(() => import("./GoogleMap"), { ssr: false });
+const MapLibreMap = dynamic(() => import("./MapLibreMap"), { ssr: false });
 
 type IconName =
   | "search" | "bell" | "calendar" | "clock" | "chevron" | "car" | "pin"
@@ -246,7 +246,7 @@ function CityMap({
   satellite: boolean;
   onToggleSatellite: () => void;
   userLocation?: { lat: number; lng: number } | null;
-  mapRef: React.MutableRefObject<GoogleMapHandle | null>;
+  mapRef: React.MutableRefObject<MapLibreHandle | null>;
 }) {
   const selected = spots.find((s) => s.id === selectedSpotId);
   return (
@@ -268,7 +268,7 @@ function CityMap({
           </button>
         </div>
       </div>
-      <GoogleMap
+      <MapLibreMap
         spots={spots}
         onSelectSpot={onSelectSpot}
         onBookSpot={onBook}
@@ -560,7 +560,7 @@ export default function ParkmeApp() {
   const [satellite, setSatellite] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const mapHandleRef = useRef<GoogleMapHandle | null>(null);
+  const mapHandleRef = useRef<MapLibreHandle | null>(null);
 
   const fetchSpots = useCallback((q: string) => {
     setSpotsLoading(true);
