@@ -88,12 +88,19 @@ export default function MapLibreMap(
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: STREET_STYLE,
-      center: [38.7575, 9.0218],
-      zoom: 13,
-    });
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: STREET_STYLE,
+        center: [38.7575, 9.0218],
+        zoom: 13,
+      });
+    } catch {
+      return;
+    }
+
+    map.on("error", () => {});
 
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
     map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "bottom-right");
@@ -102,14 +109,6 @@ export default function MapLibreMap(
 
     map.on("load", () => {
       renderClusteredMarkers(map);
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => placeUserMarker(map, pos.coords.latitude, pos.coords.longitude),
-          () => {},
-          { timeout: 5000, enableHighAccuracy: true },
-        );
-      }
     });
 
     return () => {
@@ -264,14 +263,16 @@ export default function MapLibreMap(
   // ---- SATELLITE TOGGLE ----
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    const currentStyle = map.getStyle();
-    const isSatellite = currentStyle.sources.esri != null;
-    if (satellite && !isSatellite) {
-      map.setStyle(SATELLITE_STYLE);
-    } else if (!satellite && isSatellite) {
-      map.setStyle(STREET_STYLE);
-    }
+    if (!map || !map.isStyleLoaded()) return;
+    try {
+      const currentStyle = map.getStyle();
+      const isSatellite = currentStyle.sources.esri != null;
+      if (satellite && !isSatellite) {
+        map.setStyle(SATELLITE_STYLE);
+      } else if (!satellite && isSatellite) {
+        map.setStyle(STREET_STYLE);
+      }
+    } catch {}
   }, [satellite]);
 
   // ---- NEAR ME ----

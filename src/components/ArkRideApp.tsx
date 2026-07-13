@@ -158,39 +158,13 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
 
 function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, totalCount, selectedSpotId, hasLocation }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean }) {
   const [filterOpen, setFilterOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
 
-  useEffect(() => {
-    if (!inputRef.current || autocompleteRef.current) return;
-    const checkGoogle = setInterval(() => {
-      const g = (window as any).google;
-      if (g?.maps?.places) {
-        clearInterval(checkGoogle);
-        if (!inputRef.current || autocompleteRef.current) return;
-        const ac = new g.maps.places.Autocomplete(inputRef.current, {
-          types: ["geocode"],
-          componentRestrictions: { country: "et" },
-        });
-        ac.addListener("place_changed", () => {
-          const place = ac.getPlace();
-          if (place?.formatted_address) {
-            onSearch(place.formatted_address);
-          } else if (place?.name) {
-            onSearch(place.name);
-          }
-        });
-        autocompleteRef.current = ac;
-      }
-    }, 300);
-    return () => clearInterval(checkGoogle);
-  }, [onSearch]);
   return (
     <section className="search-column">
       <div className="welcome-line"><p>{greetByHour()}</p><h1>Where are you parking today?</h1></div>
       <div className="search-box">
         <Icon name="search" size={20} />
-        <input ref={inputRef} value={searchQuery} onChange={(e) => onSearch(e.target.value)} placeholder="Search by name, area, or address..." aria-label="Search parking location" />
+        <input value={searchQuery} onChange={(e) => onSearch(e.target.value)} placeholder="Search by name, area, or address..." aria-label="Search parking location" />
         <button className="filter-button" aria-label="Open filters" onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" size={19} /></button>
         {filterOpen && <div className="filter-popover"><b>Filters</b><label><input type="checkbox" defaultChecked /> Available only</label><label><input type="checkbox" /> Covered</label><label><input type="checkbox" defaultChecked /> Under 50 ETB/hr</label></div>}
       </div>
