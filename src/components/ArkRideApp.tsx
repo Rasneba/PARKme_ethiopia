@@ -196,7 +196,7 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
   );
 }
 
-function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, totalCount, selectedSpotId, hasLocation }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean }) {
+function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, onDirections, totalCount, selectedSpotId, hasLocation }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; onDirections: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean }) {
   const [filterOpen, setFilterOpen] = useState(false);
 
   return (
@@ -226,7 +226,7 @@ function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBo
                 <b>{spot.price} <small>ETB</small></b>
                 <span>/ hour</span>
                 <div className="place-card-actions">
-                  <button className="place-directions-btn" title="Get directions" onClick={(e) => { e.stopPropagation(); window.open(`https://www.graphhopper.com/maps/?point=${spot.lat},${spot.lng}&vehicle=car`, "_blank"); }}>
+                  <button className="place-directions-btn" title="Get directions" onClick={(e) => { e.stopPropagation(); onDirections(spot); }}>
                     <Icon name="nav" size={14} />
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); onBook(spot); }}>Reserve</button>
@@ -251,6 +251,7 @@ function CityMap({
   onToggleSatellite,
   userLocation,
   mapRef,
+  onCancel,
 }: {
   spots: ApiSpot[];
   onSelectSpot: (s: ApiSpot) => void;
@@ -261,6 +262,7 @@ function CityMap({
   onToggleSatellite: () => void;
   userLocation?: { lat: number; lng: number } | null;
   mapRef: React.MutableRefObject<MapLibreHandle | null>;
+  onCancel: () => void;
 }) {
   const selected = spots.find((s) => s.id === selectedSpotId);
   return (
@@ -287,7 +289,12 @@ function CityMap({
       />
       {selected && (
         <div className="map-spot-sheet">
-          <div className="map-sheet-kicker">SELECTED SPOT</div>
+          <div className="map-sheet-kicker">
+            <span>SELECTED SPOT</span>
+            <button className="map-sheet-close" onClick={() => { (window as any).__parkmeClearRoute?.(); onCancel(); }} title="Cancel and pick a new spot">
+              <Icon name="close" size={14} />
+            </button>
+          </div>
           <div className="map-sheet-row">
             <div className="map-sheet-info">
               <b>{selected.name}</b>
@@ -635,6 +642,13 @@ export default function ParkmeApp() {
     setSelectedSpotId(spot.id);
   }
 
+  function handleDirections(spot: ApiSpot) {
+    setSelectedSpotId(spot.id);
+    setTimeout(() => {
+      (window as any).__parkmeRoute?.(spot.lat, spot.lng);
+    }, 600);
+  }
+
   const navItems = [
     { icon: "grid" as IconName, label: "Find a spot", view: "spots" as const, active: view === "spots" },
     { icon: "calendar" as IconName, label: "My bookings", view: "bookings" as const, active: view === "bookings" },
@@ -679,8 +693,8 @@ export default function ParkmeApp() {
         <div className="workspace">
           {view === "spots" && (
             <div className="content-grid">
-              <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} />
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} />
+              <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => handleDirections(s)} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} />
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); (window as any).__parkmeClearRoute?.(); }} />
             </div>
           )}
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}

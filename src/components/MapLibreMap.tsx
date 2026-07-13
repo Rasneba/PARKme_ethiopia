@@ -186,6 +186,7 @@ export default function MapLibreMap(
       if (coords.length < 2) return;
 
       clearRoute();
+      const firstLayerId = map.getStyle().layers?.[0]?.id;
       map.addSource("route", {
         type: "geojson",
         data: {
@@ -194,18 +195,13 @@ export default function MapLibreMap(
           properties: {},
         },
       });
-      map.addLayer({
-        id: "route-line-bg",
-        type: "line",
-        source: "route",
-        paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.8 },
-      }, map.getStyle().layers?.[0]?.id);
-      map.addLayer({
-        id: "route-line",
-        type: "line",
-        source: "route",
-        paint: { "line-color": "#0fa24b", "line-width": 5, "line-opacity": 0.9 },
-      }, map.getStyle().layers?.[0]?.id);
+      if (firstLayerId) {
+        map.addLayer({ id: "route-line-bg", type: "line", source: "route", paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.8 } }, firstLayerId);
+        map.addLayer({ id: "route-line", type: "line", source: "route", paint: { "line-color": "#0fa24b", "line-width": 5, "line-opacity": 0.9 } }, firstLayerId);
+      } else {
+        map.addLayer({ id: "route-line-bg", type: "line", source: "route", paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.8 } });
+        map.addLayer({ id: "route-line", type: "line", source: "route", paint: { "line-color": "#0fa24b", "line-width": 5, "line-opacity": 0.9 } });
+      }
 
       const destSpot = spotsRef.current.find((s: any) => s.lat === destLat && s.lng === destLng);
       const spotName = destSpot?.name || "destination";
