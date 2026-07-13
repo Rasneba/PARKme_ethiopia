@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import Supercluster from "supercluster";
 
@@ -12,30 +12,45 @@ export interface MapLibreHandle {
   flyToNearest: (lat: number, lng: number) => void;
 }
 
+const GH_KEY = process.env.NEXT_PUBLIC_GRAPHHOPPER_API_KEY || "";
+
 const GREEN_PIN = `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0fa24b"/><stop offset="100%" stop-color="#086a32"/></linearGradient></defs><path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z" fill="url(#pg)" stroke="white" stroke-width="2.5"/><text x="16" y="20" text-anchor="middle" fill="white" font-size="14" font-weight="900" font-family="Arial">P</text></svg>`;
 const RED_PIN = `<svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pr" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e54d3f"/><stop offset="100%" stop-color="#ac3c31"/></linearGradient></defs><path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 28 20 28s20-13 20-28C40 8.95 31.05 0 20 0z" fill="url(#pr)" stroke="white" stroke-width="3"/><text x="20" y="24" text-anchor="middle" fill="white" font-size="16" font-weight="900" font-family="Arial">P</text></svg>`;
 const BLUE_DOT = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#4098df" stroke="white" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="white"/></svg>`;
 
-const STREET_STYLE = {
+const GRAPHHOPPER_STYLE = {
   version: 8,
   sources: {
-    osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, attribution: "&copy; OpenStreetMap contributors" },
+    gh: {
+      type: "raster",
+      tiles: [`https://tiles.graphhopper.com/api/maps/${GH_KEY}/style/osm/{z}/{x}/{y}.png`],
+      tileSize: 256,
+      attribution: "&copy; GraphHopper &copy; OpenStreetMap contributors",
+    },
   },
-  layers: [{ id: "osm", type: "raster", source: "osm", minzoom: 0, maxzoom: 19 }],
+  layers: [{ id: "gh-base", type: "raster", source: "gh", minzoom: 0, maxzoom: 19 }],
 } as any;
 
 const SATELLITE_STYLE = {
   version: 8,
   sources: {
-    esri: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, attribution: "&copy; Esri, Maxar, Earthstar" },
+    esri: {
+      type: "raster",
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+      tileSize: 256,
+      attribution: "&copy; Esri, Maxar, Earthstar",
+    },
   },
   layers: [{ id: "esri", type: "raster", source: "esri", minzoom: 0, maxzoom: 19 }],
 } as any;
 
-function createInfoHTML(spot: any, isNearest?: boolean): string {
+function createInfoHTML(spot: any, isNearest?: boolean, userLoc?: { lat: number; lng: number } | null): string {
   const dist = spot.distanceKm != null
     ? `${spot.distanceKm < 1 ? Math.round(spot.distanceKm * 1000) + " m" : spot.distanceKm.toFixed(1) + " km"} away`
     : "";
+  const ghLink = userLoc
+    ? `https://www.graphhopper.com/maps/?point=${userLoc.lat},${userLoc.lng}&point=${spot.lat},${spot.lng}&vehicle=car`
+    : `https://www.graphhopper.com/maps/?point=${spot.lat},${spot.lng}&vehicle=car`;
   return `<div style="font-family:Arial,sans-serif;min-width:200px;max-width:260px;padding:4px 0;">
     ${isNearest ? '<div style="display:inline-block;padding:3px 7px;margin-bottom:6px;background:#4098df;color:white;border-radius:5px;font-size:9px;font-weight:800;">NEAREST TO YOU</div>' : ""}
     <b style="font-size:14px;color:#131614;">${spot.name}</b>
@@ -45,9 +60,49 @@ function createInfoHTML(spot: any, isNearest?: boolean): string {
       <span style="font-size:10px;color:#888;">${dist || spot.availableSpots + " spots"}</span>
     </div>
     <div style="display:flex;gap:6px;margin-top:8px;">
-      <a href="https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&to=${spot.lat},${spot.lng}" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;background:#dcf8e4;color:#086a32;border:none;border-radius:8px;font-size:11px;font-weight:800;text-decoration:none;cursor:pointer;">&#9654; Directions</a>
+      <button onclick="window.__parkmeRoute?.(${spot.lat},${spot.lng})" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;background:#dcf8e4;color:#086a32;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">&#9654; Directions</button>
       <button onclick="window.__parkmeSelectSpot?.(${spot.id})" style="flex:1;padding:8px;background:linear-gradient(135deg,#111a13,#168b45);color:white;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">Select & Reserve</button>
     </div>
+    ${userLoc ? `<a href="${ghLink}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:6px;color:#888;font-size:9px;text-decoration:underline;">Open full route in GraphHopper</a>` : ""}
+  </div>`;
+}
+
+function formatDuration(ms: number): string {
+  const totalMin = Math.round(ms / 60000);
+  if (totalMin < 1) return "< 1 min";
+  if (totalMin < 60) return `${totalMin} min`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h}h ${m}m`;
+}
+
+function formatDistance(m: number): string {
+  if (m < 1000) return `${Math.round(m)} m`;
+  return `${(m / 1000).toFixed(1)} km`;
+}
+
+function createDirectionsHTML(instructions: any[], distance: number, time: number, spotName: string): string {
+  const steps = instructions.map((ins: any) => {
+    const icon = ins.sign === 0 ? "&#8594;" : ins.sign === -1 ? "&#8619;" : ins.sign === 1 ? "&#8618;" : ins.sign === -2 ? "&#8634;" : ins.sign === 2 ? "&#8635;" : "&#9654;";
+    const text = ins.text || "";
+    const d = formatDistance(ins.distance || 0);
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
+      <span style="font-size:14px;min-width:18px;text-align:center;">${icon}</span>
+      <div style="flex:1;"><span style="font-size:11px;color:#333;">${text}</span><br/><span style="font-size:9px;color:#aaa;">${d}</span></div>
+    </div>`;
+  }).join("");
+
+  return `<div style="font-family:Arial,sans-serif;min-width:240px;max-width:280px;max-height:320px;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <b style="font-size:12px;color:#131614;">Route to ${spotName}</b>
+      <button onclick="window.__parkmeClearRoute?.()" style="background:none;border:none;color:#e54d3f;cursor:pointer;font-size:16px;line-height:1;">&times;</button>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:8px;padding:6px 0;background:#f7faf8;border-radius:6px;justify-content:center;">
+      <span style="font-size:11px;color:#333;"><b>${formatDistance(distance)}</b></span>
+      <span style="font-size:11px;color:#333;"><b>${formatDuration(time)}</b></span>
+    </div>
+    ${steps}
+    <a href="https://www.graphhopper.com/maps/?point=0,0&point=0,0&vehicle=car" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;padding:6px;background:#0fa24b;color:white;border-radius:6px;font-size:11px;font-weight:800;text-decoration:none;">Open in GraphHopper</a>
   </div>`;
 }
 
@@ -77,12 +132,114 @@ export default function MapLibreMap(
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const selectedIdRef = useRef<number | null>(null);
+  const userLocRef = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => { selectedIdRef.current = selectedSpotId; }, [selectedSpotId]);
   const spotsRef = useRef(spots);
   useEffect(() => { spotsRef.current = spots; }, [spots]);
   const onSelectSpotRef = useRef(onSelectSpot);
   useEffect(() => { onSelectSpotRef.current = onSelectSpot; }, [onSelectSpot]);
+  useEffect(() => { userLocRef.current = userLocation || null; }, [userLocation]);
+
+  const clearRoute = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    try {
+      if (map.getLayer("route-line")) map.removeLayer("route-line");
+      if (map.getLayer("route-line-bg")) map.removeLayer("route-line-bg");
+      if (map.getSource("route")) map.removeSource("route");
+    } catch {}
+    popupRef.current?.remove();
+  }, []);
+
+  const showRoute = useCallback(async (destLat: number, destLng: number) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const userLoc = userLocRef.current;
+    if (!userLoc) {
+      popupRef.current?.remove();
+      popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: true, maxWidth: "260px" })
+        .setLngLat([destLng, destLat])
+        .setHTML('<div style="font-family:Arial;padding:8px;font-size:12px;color:#333;">Enable <b>location</b> to get directions from your position.</div>')
+        .addTo(map);
+      return;
+    }
+
+    popupRef.current?.remove();
+    popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: true, maxWidth: "280px" })
+      .setLngLat([destLng, destLat])
+      .setHTML('<div style="font-family:Arial;padding:12px;font-size:12px;color:#888;text-align:center;">Calculating route...</div>')
+      .addTo(map);
+
+    try {
+      const res = await fetch(
+        `/api/directions?from_lat=${userLoc.lat}&from_lng=${userLoc.lng}&to_lat=${destLat}&to_lng=${destLng}`
+      );
+      const data = await res.json();
+
+      if (!res.ok || !data.route) {
+        popupRef.current?.setHTML(`<div style="font-family:Arial;padding:12px;font-size:12px;color:#e54d3f;">${data.error || "No route found"}</div>`);
+        return;
+      }
+
+      const coords = data.route.points?.coordinates || [];
+      if (coords.length < 2) return;
+
+      clearRoute();
+      map.addSource("route", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: coords },
+          properties: {},
+        },
+      });
+      map.addLayer({
+        id: "route-line-bg",
+        type: "line",
+        source: "route",
+        paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.8 },
+      }, map.getStyle().layers?.[0]?.id);
+      map.addLayer({
+        id: "route-line",
+        type: "line",
+        source: "route",
+        paint: { "line-color": "#0fa24b", "line-width": 5, "line-opacity": 0.9 },
+      }, map.getStyle().layers?.[0]?.id);
+
+      const destSpot = spotsRef.current.find((s: any) => s.lat === destLat && s.lng === destLng);
+      const spotName = destSpot?.name || "destination";
+      const dirHTML = createDirectionsHTML(data.instructions, data.distance, data.time, spotName);
+      popupRef.current?.remove();
+      popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: true, maxWidth: "280px" })
+        .setLngLat([destLng, destLat])
+        .setHTML(dirHTML)
+        .addTo(map);
+
+      const bounds = new maplibregl.LngLatBounds();
+      bounds.extend([userLoc.lng, userLoc.lat]);
+      bounds.extend([destLng, destLat]);
+      coords.forEach((c: number[]) => bounds.extend(c as [number, number]));
+      map.fitBounds(bounds, { padding: 60, duration: 800 });
+    } catch {
+      popupRef.current?.setHTML('<div style="font-family:Arial;padding:12px;font-size:12px;color:#e54d3f;">Route calculation failed.</div>');
+    }
+  }, [clearRoute]);
+
+  useEffect(() => {
+    (window as any).__parkmeRoute = (lat: number, lng: number) => {
+      showRoute(lat, lng);
+    };
+    (window as any).__parkmeClearRoute = () => {
+      clearRoute();
+    };
+    return () => {
+      delete (window as any).__parkmeRoute;
+      delete (window as any).__parkmeClearRoute;
+    };
+  }, [showRoute, clearRoute]);
+
+  useEffect(() => { selectedIdRef.current = selectedSpotId; }, [selectedSpotId]);
 
   // ---- INIT MAP ----
   useEffect(() => {
@@ -92,7 +249,7 @@ export default function MapLibreMap(
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: STREET_STYLE,
+        style: GRAPHHOPPER_STYLE,
         center: [38.7575, 9.0218],
         zoom: 13,
       });
@@ -191,13 +348,10 @@ export default function MapLibreMap(
     popupRef.current?.remove();
     popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: true, maxWidth: "280px" })
       .setLngLat(lnglat)
-      .setHTML(createInfoHTML(spot, isNearest))
+      .setHTML(createInfoHTML(spot, isNearest, userLocRef.current))
       .addTo(map);
 
-    // Highlight marker — remove and recreate since MapLibre doesn't support setElement
-    markersRef.current.forEach((m, id) => {
-      m.remove();
-    });
+    markersRef.current.forEach((m) => m.remove());
     markersRef.current.clear();
 
     spotsRef.current.forEach((s) => {
@@ -219,7 +373,6 @@ export default function MapLibreMap(
       markersRef.current.set(s.id, marker);
     });
 
-    // Re-add user marker if exists
     if (userMarkerRef.current) {
       const pos = userMarkerRef.current.getLngLat();
       const el = document.createElement("div");
@@ -368,7 +521,7 @@ export default function MapLibreMap(
       if (satellite && !isSatellite) {
         map.setStyle(SATELLITE_STYLE);
       } else if (!satellite && isSatellite) {
-        map.setStyle(STREET_STYLE);
+        map.setStyle(GRAPHHOPPER_STYLE);
       }
     } catch {}
   }, [satellite]);
