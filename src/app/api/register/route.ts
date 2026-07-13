@@ -37,10 +37,10 @@ export async function POST(request: NextRequest) {
 
     const [user] = await db
       .insert(users)
-      .values({ name, email, phone, passwordHash })
+      .values({ name, email, phone, passwordHash, isHost: false })
       .returning({ id: users.id, name: users.name, email: users.email, createdAt: users.createdAt });
 
-    return NextResponse.json({ user: { ...user, fullName: user.name, role: "driver" } }, { status: 201 });
+    return NextResponse.json({ user: { ...user, fullName: user.name, role: "driver", isHost: false } }, { status: 201 });
   } catch {
     return err("Internal server error. Please try again.", 500);
   }

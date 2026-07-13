@@ -25,6 +25,8 @@ export async function GET() {
 
   const paidBookings = allBookings.filter((b) => b.status !== "cancelled");
   const totalEarningsEtb = paidBookings.reduce((sum, b) => sum + b.amountEtb, 0);
+  const hostPayoutEtb = Math.round(totalEarningsEtb * 0.85);
+  const platformFeeEtb = totalEarningsEtb - hostPayoutEtb;
   const activeBookings = paidBookings.filter((b) => b.status === "active" || b.status === "confirmed");
   const averageRating = spaces.length ? spaces.reduce((sum, s) => sum + s.ratingTenths, 0) / spaces.length / 10 : 0;
   const totalCapacity = spaces.reduce((sum, s) => sum + s.totalSpots, 0);
@@ -49,6 +51,8 @@ export async function GET() {
   return NextResponse.json({
     summary: {
       totalEarningsEtb,
+      hostPayoutEtb,
+      platformFeeEtb,
       bookingCount: paidBookings.length,
       activeBookingCount: activeBookings.length,
       occupancyRate,

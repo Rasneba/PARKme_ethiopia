@@ -139,6 +139,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 .map-toolbar-btn.sat-btn { border-color: #b8d0e8; background: linear-gradient(135deg, rgba(228,242,255,.96), rgba(255,255,252,.96)) !important; }
 .map-toolbar-btn.sat-btn:hover { border-color: #4098df; background: linear-gradient(135deg, #e4f2ff, #fff) !important; }
 .map-toolbar-btn.sat-btn.active { border-color: #086a32; }
+.map-toolbar-btn.zoom-btn { padding: 8px !important; min-width: 38px; justify-content: center; }
+.map-toolbar-btn.zoom-btn .map-btn-icon-wrap { width: 26px; height: 26px; background: rgba(240,243,238,.8); border-radius: 6px; }
+.map-toolbar-btn.zoom-btn:hover .map-btn-icon-wrap { background: var(--green); color: white; }
 .map-toolbar button { width: 33px; height: 33px; }
 .map-road { position: absolute; z-index: 1; background: #f7f6e9; box-shadow: 0 0 0 2px rgba(141,160,139,.19); }.road-a { width: 140%; height: 15px; top: 48%; left: -20%; transform: rotate(-17deg); }.road-b { width: 128%; height: 11px; top: 25%; left: -14%; transform: rotate(40deg); }.road-c { width: 112%; height: 14px; top: 68%; left: -12%; transform: rotate(15deg); }.road-d { width: 110%; height: 9px; top: 49%; left: 0; transform: rotate(83deg); }.road-e { width: 80%; height: 9px; top: 66%; left: 17%; transform: rotate(-56deg); }
 .map-label { position: absolute; z-index: 2; color: rgba(58,83,58,.7); font-size: 10px; font-weight: 700; }.landmark-one { top: 17%; left: 22%; }.landmark-two { top: 55%; left: 55%; }.landmark-three { top: 36%; right: 13%; }

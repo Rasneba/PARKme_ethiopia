@@ -29,6 +29,7 @@ export async function getCurrentUser() {
       email: users.email,
       name: users.name,
       phone: users.phone,
+      isHost: users.isHost,
       createdAt: users.createdAt,
     })
     .from(users)

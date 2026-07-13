@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { LeafletMapHandle } from "./LeafletMap";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 
@@ -208,6 +209,7 @@ function CityMap({
   satellite,
   onToggleSatellite,
   userLocation,
+  mapRef,
 }: {
   spots: ApiSpot[];
   onSelectSpot: (s: ApiSpot) => void;
@@ -217,6 +219,7 @@ function CityMap({
   satellite: boolean;
   onToggleSatellite: () => void;
   userLocation?: { lat: number; lng: number } | null;
+  mapRef: React.MutableRefObject<LeafletMapHandle | null>;
 }) {
   const selected = spots.find((s) => s.id === selectedSpotId);
   return (
@@ -224,6 +227,12 @@ function CityMap({
       <div className="map-toolbar">
         <span className="map-toolbar-count"><Icon name="map" size={15} /> {spots.length} spot{spots.length !== 1 ? "s" : ""}</span>
         <div className="map-toolbar-btns">
+          <button className="map-toolbar-btn zoom-btn" title="Zoom in" onClick={() => mapRef.current?.zoomIn()}>
+            <span className="map-btn-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></span>
+          </button>
+          <button className="map-toolbar-btn zoom-btn" title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>
+            <span className="map-btn-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /></svg></span>
+          </button>
           <button className="map-toolbar-btn near-me-btn" title="Find nearest spot" onClick={onNearMe}>
             <span className="map-btn-icon-wrap near"><Icon name="locate" size={18} /></span> Near me
           </button>
@@ -240,6 +249,7 @@ function CityMap({
         onNearMe={onNearMe}
         satellite={satellite}
         userLocation={userLocation}
+        mapRef={mapRef}
       />
       {selected && (
         <div className="map-spot-sheet">
@@ -447,7 +457,7 @@ function ProfileDrawer({ user, onClose, onOwner, onLogout }: { user: User; onClo
 }
 
 function OwnerPortal({ onClose }: { onClose: () => void }) {
-  const [data, setData] = useState<{ summary: { totalEarningsEtb: number; bookingCount: number; occupancyRate: number; averageRating: number }; spaces: { id: number; name: string; priceHourlyEtb: number; availableSpots: number; totalSpots: number; isActive: boolean }[]; weeklyEarnings: { day: string; amountEtb: number }[] } | null>(null);
+  const [data, setData] = useState<{ summary: { totalEarningsEtb: number; hostPayoutEtb: number; platformFeeEtb: number; bookingCount: number; occupancyRate: number; averageRating: number }; spaces: { id: number; name: string; priceHourlyEtb: number; availableSpots: number; totalSpots: number; isActive: boolean }[]; weeklyEarnings: { day: string; amountEtb: number }[] } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetch("/api/host/dashboard").then((r) => r.ok ? r.json() : null).then((d) => { setData(d); setLoading(false); }).catch(() => setLoading(false)); }, []);
@@ -474,9 +484,9 @@ function OwnerPortal({ onClose }: { onClose: () => void }) {
           {loading ? <div className="view-loading"><p>Loading dashboard...</p></div> : data && <>
             <div className="owner-intro"><div><p className="eyebrow">HOST PERFORMANCE</p><h1>Welcome to your host dashboard.</h1><p>Manage your parking spaces and track earnings.</p></div></div>
             <div className="owner-metrics">
-              <article><span className="metric-icon green"><Icon name="wallet" size={20} /></span><p>Total earnings</p><h2>{data.summary.totalEarningsEtb.toLocaleString()} <small>ETB</small></h2></article>
-              <article><span className="metric-icon yellow"><Icon name="calendar" size={20} /></span><p>Bookings</p><h2>{data.summary.bookingCount}</h2></article>
-              <article><span className="metric-icon red"><Icon name="chart" size={20} /></span><p>Occupancy</p><h2>{data.summary.occupancyRate}<small>%</small></h2></article>
+              <article><span className="metric-icon green"><Icon name="wallet" size={20} /></span><p>Your payout (85%)</p><h2>{data.summary.hostPayoutEtb.toLocaleString()} <small>ETB</small></h2></article>
+              <article><span className="metric-icon yellow"><Icon name="wallet" size={20} /></span><p>Platform fee (15%)</p><h2>{data.summary.platformFeeEtb.toLocaleString()} <small>ETB</small></h2></article>
+              <article><span className="metric-icon red"><Icon name="calendar" size={20} /></span><p>Bookings</p><h2>{data.summary.bookingCount}</h2></article>
               <article><span className="metric-icon slate"><Icon name="star" size={20} /></span><p>Guest rating</p><h2>{data.summary.averageRating}</h2></article>
             </div>
             <div className="owner-grid">
@@ -524,6 +534,7 @@ export default function ParkmeApp() {
   const [satellite, setSatellite] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const mapHandleRef = useRef<LeafletMapHandle | null>(null);
 
   const fetchSpots = useCallback((q: string) => {
     setSpotsLoading(true);
@@ -630,7 +641,7 @@ export default function ParkmeApp() {
           {view === "spots" && (
             <div className="content-grid">
               <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} />
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} />
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen(true); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} />
             </div>
           )}
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}
