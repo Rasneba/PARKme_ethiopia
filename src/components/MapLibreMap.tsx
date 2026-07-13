@@ -276,7 +276,7 @@ export default function MapLibreMap(
             minzoom: 12,
             paint: {
               "line-color": [
-                "match", ["get", "class"],
+                "match", ["get", "c"],
                 "motorway", "#e892a2",
                 "trunk", "#f9b",
                 "primary", "#fc3",
@@ -285,15 +285,12 @@ export default function MapLibreMap(
                 "residential", "#fff",
                 "unclassified", "#fff",
                 "service", "#ddd",
-                "footway", "#fa8",
-                "path", "#fa8",
-                "cycleway", "#82d8f4",
                 "#ccc",
               ],
               "line-width": [
                 "interpolate", ["linear"], ["zoom"],
                 12, [
-                  "match", ["get", "class"],
+                  "match", ["get", "c"],
                   "motorway", 2.5,
                   "trunk", 2,
                   "primary", 1.8,
@@ -302,7 +299,7 @@ export default function MapLibreMap(
                   1,
                 ],
                 16, [
-                  "match", ["get", "class"],
+                  "match", ["get", "c"],
                   "motorway", 5,
                   "trunk", 4,
                   "primary", 3.5,
@@ -310,8 +307,6 @@ export default function MapLibreMap(
                   "tertiary", 2.5,
                   "residential", 2,
                   "service", 1.5,
-                  "footway", 1.5,
-                  "path", 1.5,
                   2,
                 ],
               ],
@@ -471,7 +466,7 @@ export default function MapLibreMap(
       `}</style>
       <div
         ref={containerRef}
-        style={{ width: "100%", height: "100%", minHeight: "500px", borderRadius: "16px" }}
+        style={{ width: "100%", height: "100%", minHeight: "300px", borderRadius: "16px" }}
       />
     </>
   );

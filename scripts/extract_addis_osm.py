@@ -1,6 +1,8 @@
 """
 Extract Addis Ababa roads and buildings from a local Geofabrik PBF file.
 
+Optimized for small output size (< 3 MB total) suitable for static web serving.
+
 Usage:
   1. Download ethiopia-latest.osm.pbf to temp/ folder
   2. Run: python scripts/extract_addis_osm.py
@@ -15,31 +17,48 @@ from pathlib import Path
 
 import osmium
 
-# Addis Ababa bounding box: south, west, north, east
-# Wider area to capture the full metro + surroundings
-BBOX_SOUTH = 8.85
-BBOX_WEST = 38.65
-BBOX_NORTH = 9.10
-BBOX_EAST = 38.92
+BBOX_SOUTH = 8.90
+BBOX_WEST = 38.70
+BBOX_NORTH = 9.05
+BBOX_EAST = 38.87
 
-ROAD_TAGS = {
-    "motorway", "trunk", "primary", "secondary", "tertiary",
+MAJOR_ROADS = {
+    "motorway", "motorway_link", "trunk", "trunk_link",
+    "primary", "primary_link", "secondary", "secondary_link",
+    "tertiary", "tertiary_link",
     "residential", "unclassified", "service", "living_street",
-    "footway", "path", "cycleway", "pedestrian",
 }
 
-MAX_NODES_PER_WAY = 300
+COORD_PREC = 4
+MAX_NODES_PER_WAY = 40
+MIN_BUILDING_AREA = 250.0
 
 
 def in_bbox(lon, lat):
     return BBOX_SOUTH <= lat <= BBOX_NORTH and BBOX_WEST <= lon <= BBOX_EAST
 
 
+def r4(v):
+    return round(v, COORD_PREC)
+
+
 def simplify_coords(coords):
     if len(coords) <= MAX_NODES_PER_WAY:
-        return coords
+        return [[r4(x), r4(y)] for x, y in coords]
     step = math.ceil(len(coords) / MAX_NODES_PER_WAY)
-    return [coords[i] for i in range(0, len(coords), step)]
+    return [[r4(x), r4(y)] for i, (x, y) in enumerate(coords) if i % step == 0]
+
+
+def ring_area_sqm(coords):
+    n = len(coords)
+    if n < 3:
+        return 0.0
+    a = 0.0
+    for i in range(n):
+        j = (i + 1) % n
+        a += coords[i][0] * coords[j][1]
+        a -= coords[j][0] * coords[i][1]
+    return abs(a) * 111319.9 * 111319.9 * math.cos(math.radians(9.0))
 
 
 class OsmExtractor(osmium.SimpleHandler):
@@ -57,64 +76,64 @@ class OsmExtractor(osmium.SimpleHandler):
         if in_bbox(n.location.lon, n.location.lat):
             self.nodes[n.id] = (n.location.lon, n.location.lat)
             self.node_count += 1
-            if self.node_count % 100000 == 0:
+            if self.node_count % 200000 == 0:
                 elapsed = time.time() - self.t
-                print(f"  Nodes: {self.node_count:,} in bbox ({elapsed:.0f}s)")
+                print(f"  Nodes: {self.node_count:,} ({elapsed:.0f}s)")
 
     def way(self, w):
         tags = w.tags
         highway = tags.get("highway", "")
         building = tags.get("building", "")
 
-        if highway in ROAD_TAGS:
-            coords = []
-            for ref in w.nodes:
-                if ref.location.valid():
-                    lon, lat = ref.location.lon, ref.location.lat
-                    if in_bbox(lon, lat) or ref.ref in self.nodes:
+        if highway in MAJOR_ROADS:
+            name = tags.get("name", "")
+            if name or highway not in ("residential", "unclassified", "service", "living_street"):
+                coords = []
+                for ref in w.nodes:
+                    if ref.location.valid():
+                        lon, lat = ref.location.lon, ref.location.lat
                         pos = self.nodes.get(ref.ref, (lon, lat))
-                        coords.append(list(pos))
-            if len(coords) >= 2:
-                self.roads.append({
-                    "type": "Feature",
-                    "properties": {
-                        "class": highway,
-                        "name": tags.get("name", ""),
-                        "oneway": tags.get("oneway", ""),
-                        "lanes": tags.get("lanes", ""),
-                    },
-                    "geometry": {
-                        "type": "LineString",
-                        "coordinates": simplify_coords(coords),
-                    },
-                })
-                self.road_count += 1
+                        if pos and in_bbox(pos[0], pos[1]):
+                            coords.append(pos)
+                if len(coords) >= 2:
+                    props = {"c": highway}
+                    if name:
+                        props["n"] = name
+                    self.roads.append({
+                        "type": "Feature",
+                        "properties": props,
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": simplify_coords(coords),
+                        },
+                    })
+                    self.road_count += 1
 
         if building:
             coords = []
             for ref in w.nodes:
                 if ref.location.valid():
                     lon, lat = ref.location.lon, ref.location.lat
-                    if in_bbox(lon, lat) or ref.ref in self.nodes:
-                        pos = self.nodes.get(ref.ref, (lon, lat))
-                        coords.append(list(pos))
+                    pos = self.nodes.get(ref.ref, (lon, lat))
+                    if pos and in_bbox(pos[0], pos[1]):
+                        coords.append(pos)
             if len(coords) >= 4:
                 if coords[0] != coords[-1]:
                     coords.append(coords[0])
-                props = {"name": tags.get("name", "")}
-                if building != "yes":
-                    props["type"] = building
-                self.buildings.append({
-                    "type": "Feature",
-                    "properties": props,
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [coords],
-                    },
-                })
-                self.building_count += 1
+                if ring_area_sqm(coords) >= MIN_BUILDING_AREA:
+                    simplified = simplify_coords(coords)
+                    if len(simplified) >= 4:
+                        self.buildings.append({
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": [simplified],
+                            },
+                        })
+                        self.building_count += 1
 
-        if (self.road_count + self.building_count) % 5000 == 0 and (self.road_count + self.building_count) > 0:
+        total = self.road_count + self.building_count
+        if total % 10000 == 0 and total > 0:
             elapsed = time.time() - self.t
             print(f"  Roads: {self.road_count:,} | Buildings: {self.building_count:,} ({elapsed:.0f}s)")
 
@@ -124,14 +143,12 @@ def main():
     pbf_path = project_root / "temp" / "ethiopia-latest.osm.pbf"
 
     if not pbf_path.exists():
-        print(f"ERROR: PBF file not found at {pbf_path}")
-        print("Download it from: https://download.geofabrik.de/africa/ethiopia-latest.osm.pbf")
-        print("Save it to the temp/ folder in the project root.")
+        print(f"ERROR: PBF not found at {pbf_path}")
+        print("Download from: https://download.geofabrik.de/africa/ethiopia-latest.osm.pbf")
         sys.exit(1)
 
-    print(f"Processing: {pbf_path}")
-    print(f"BBox: {BBOX_SOUTH},{BBOX_WEST} to {BBOX_NORTH},{BBOX_EAST} (Addis Ababa)")
-    print(f"File size: {pbf_path.stat().st_size / 1024 / 1024:.0f} MB")
+    print(f"File: {pbf_path.stat().st_size / 1024 / 1024:.0f} MB")
+    print(f"BBox: {BBOX_SOUTH},{BBOX_WEST} -> {BBOX_NORTH},{BBOX_EAST}")
     print()
 
     t0 = time.time()
@@ -139,28 +156,23 @@ def main():
     handler.apply_file(str(pbf_path), locations=True, idx="flex_mem")
     t1 = time.time()
 
-    print(f"\nParsing complete in {t1 - t0:.0f}s")
-    print(f"  Nodes in bbox: {handler.node_count:,}")
-    print(f"  Roads: {handler.road_count:,}")
-    print(f"  Buildings: {handler.building_count:,}")
+    print(f"\nParsed in {t1 - t0:.0f}s | Nodes: {handler.node_count:,} | Roads: {handler.road_count:,} | Buildings: {handler.building_count:,}")
 
     public_dir = project_root / "public"
     public_dir.mkdir(exist_ok=True)
 
-    roads_geo = {"type": "FeatureCollection", "features": handler.roads}
     roads_path = public_dir / "osm-roads.geojson"
     with open(roads_path, "w") as f:
-        json.dump(roads_geo, f, separators=(",", ":"))
-    print(f"\n  -> {roads_path.name}: {roads_path.stat().st_size / 1024:.0f} KB")
+        json.dump({"type": "FeatureCollection", "features": handler.roads}, f, separators=(",", ":"))
+    print(f"  -> {roads_path.name}: {roads_path.stat().st_size / 1024:.0f} KB")
 
-    buildings_geo = {"type": "FeatureCollection", "features": handler.buildings}
     buildings_path = public_dir / "osm-buildings.geojson"
     with open(buildings_path, "w") as f:
-        json.dump(buildings_geo, f, separators=(",", ":"))
+        json.dump({"type": "FeatureCollection", "features": handler.buildings}, f, separators=(",", ":"))
     print(f"  -> {buildings_path.name}: {buildings_path.stat().st_size / 1024:.0f} KB")
 
     total = (roads_path.stat().st_size + buildings_path.stat().st_size) / 1024
-    print(f"\nDone! Total: {total:.0f} KB in public/")
+    print(f"\nTotal: {total:.0f} KB")
 
 
 if __name__ == "__main__":
