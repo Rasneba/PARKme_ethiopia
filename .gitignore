@@ -4,3 +4,6 @@ node_modules
 .env.local
 .env.*.local
 .vercel
+temp/
+public/osm-roads.geojson
+public/osm-buildings.geojson

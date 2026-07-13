@@ -109,6 +109,7 @@ export default function MapLibreMap(
 
     map.on("load", () => {
       renderClusteredMarkers(map);
+      loadOsmOverlay(map);
     });
 
     return () => {
@@ -242,6 +243,108 @@ export default function MapLibreMap(
         .setLngLat([lng, lat])
         .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML("<b>You are here</b>"))
         .addTo(map);
+    }
+  }
+
+  // ---- OSM ROAD/BUILDING OVERLAY ----
+  async function loadOsmOverlay(map: maplibregl.Map) {
+    try {
+      const [roadsRes, buildingsRes] = await Promise.allSettled([
+        fetch("/osm-roads.geojson"),
+        fetch("/osm-buildings.geojson"),
+      ]);
+
+      let hasBuildings = false;
+
+      if (buildingsRes.status === "fulfilled" && buildingsRes.value.ok) {
+        const buildings = await buildingsRes.value.json();
+        if (buildings.features?.length) {
+          map.addSource("osm-buildings", { type: "geojson", data: buildings });
+          hasBuildings = true;
+        }
+      }
+
+      if (roadsRes.status === "fulfilled" && roadsRes.value.ok) {
+        const roads = await roadsRes.value.json();
+        if (roads.features?.length) {
+          map.addSource("osm-roads", { type: "geojson", data: roads });
+
+          map.addLayer({
+            id: "osm-roads",
+            type: "line",
+            source: "osm-roads",
+            minzoom: 12,
+            paint: {
+              "line-color": [
+                "match", ["get", "class"],
+                "motorway", "#e892a2",
+                "trunk", "#f9b",
+                "primary", "#fc3",
+                "secondary", "#f7d29a",
+                "tertiary", "#fed",
+                "residential", "#fff",
+                "unclassified", "#fff",
+                "service", "#ddd",
+                "footway", "#fa8",
+                "path", "#fa8",
+                "cycleway", "#82d8f4",
+                "#ccc",
+              ],
+              "line-width": [
+                "interpolate", ["linear"], ["zoom"],
+                12, [
+                  "match", ["get", "class"],
+                  "motorway", 2.5,
+                  "trunk", 2,
+                  "primary", 1.8,
+                  "secondary", 1.5,
+                  "tertiary", 1,
+                  1,
+                ],
+                16, [
+                  "match", ["get", "class"],
+                  "motorway", 5,
+                  "trunk", 4,
+                  "primary", 3.5,
+                  "secondary", 3,
+                  "tertiary", 2.5,
+                  "residential", 2,
+                  "service", 1.5,
+                  "footway", 1.5,
+                  "path", 1.5,
+                  2,
+                ],
+              ],
+            },
+          }, map.getStyle().layers?.[0]?.id);
+        }
+      }
+
+      if (hasBuildings) {
+        map.addLayer({
+          id: "osm-buildings-fill",
+          type: "fill",
+          source: "osm-buildings",
+          minzoom: 15,
+          paint: {
+            "fill-color": "#d6d6d6",
+            "fill-opacity": 0.35,
+          },
+        }, map.getStyle().layers?.[0]?.id);
+
+        map.addLayer({
+          id: "osm-buildings-outline",
+          type: "line",
+          source: "osm-buildings",
+          minzoom: 15,
+          paint: {
+            "line-color": "#aaa",
+            "line-width": 0.5,
+          },
+        }, map.getStyle().layers?.[0]?.id);
+      }
+    } catch {
+      // GeoJSON files not yet generated — silently skip
     }
   }
 
