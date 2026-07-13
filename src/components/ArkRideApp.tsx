@@ -186,7 +186,7 @@ function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBo
                 <b>{spot.price} <small>ETB</small></b>
                 <span>/ hour</span>
                 <div className="place-card-actions">
-                  <button className="place-directions-btn" title="Get directions" onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}`, "_blank"); }}>
+                  <button className="place-directions-btn" title="Get directions" onClick={(e) => { e.stopPropagation(); window.open(`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&to=${spot.lat},${spot.lng}`, "_blank"); }}>
                     <Icon name="nav" size={14} />
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); onBook(spot); }}>Reserve</button>
@@ -266,7 +266,7 @@ function CityMap({
           </div>
           <div className="map-sheet-actions">
             <button className="map-sheet-btn directions" onClick={() => {
-              window.open(`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`, "_blank");
+              window.open(`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&to=${selected.lat},${selected.lng}`, "_blank");
             }}>
               <Icon name="nav" size={15} /> Directions
             </button>
