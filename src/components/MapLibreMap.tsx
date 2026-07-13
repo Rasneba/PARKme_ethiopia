@@ -82,27 +82,30 @@ function formatDistance(m: number): string {
 }
 
 function createDirectionsHTML(instructions: any[], distance: number, time: number, spotName: string, fromLat: number, fromLng: number, toLat: number, toLng: number): string {
-  const steps = instructions.map((ins: any) => {
-    const icon = ins.sign === 0 ? "&#8594;" : ins.sign === -1 ? "&#8619;" : ins.sign === 1 ? "&#8618;" : ins.sign === -2 ? "&#8634;" : ins.sign === 2 ? "&#8635;" : "&#9654;";
+  const filtered = instructions.filter((ins: any) => ins.distance > 0 || ins.sign === 0);
+  const steps = filtered.map((ins: any, i: number) => {
+    const icon = ins.sign === 0 ? "&#8594;" : ins.sign === -1 ? "&#8619;" : ins.sign === 1 ? "&#8618;" : ins.sign === -2 ? "&#8634;" : ins.sign === 2 ? "&#8635;" : ins.sign === -3 ? "&#8634;" : ins.sign === 3 ? "&#8635;" : "&#9654;";
     const text = ins.text || "";
     const d = formatDistance(ins.distance || 0);
-    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
-      <span style="font-size:14px;min-width:18px;text-align:center;">${icon}</span>
-      <div style="flex:1;"><span style="font-size:11px;color:#333;">${text}</span><br/><span style="font-size:9px;color:#aaa;">${d}</span></div>
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;">
+      <span style="font-size:16px;min-width:22px;text-align:center;color:#0fa24b;font-weight:700;">${icon}</span>
+      <div style="flex:1;"><span style="font-size:12px;color:#131614;font-weight:500;">${text}</span><br/><span style="font-size:10px;color:#888;">${d}</span></div>
     </div>`;
   }).join("");
 
-  return `<div style="font-family:Arial,sans-serif;min-width:240px;max-width:280px;max-height:320px;overflow-y:auto;">
+  return `<div style="font-family:Arial,sans-serif;min-width:260px;width:300px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <b style="font-size:12px;color:#131614;">Route to ${spotName}</b>
-      <button onclick="window.__parkmeClearRoute?.()" style="background:none;border:none;color:#e54d3f;cursor:pointer;font-size:16px;line-height:1;">&times;</button>
+      <b style="font-size:13px;color:#131614;">Route to ${spotName}</b>
+      <button onclick="window.__parkmeClearRoute?.()" style="background:none;border:none;color:#e54d3f;cursor:pointer;font-size:18px;line-height:1;padding:0 4px;">&times;</button>
     </div>
-    <div style="display:flex;gap:12px;margin-bottom:8px;padding:6px 0;background:#f7faf8;border-radius:6px;justify-content:center;">
-      <span style="font-size:11px;color:#333;"><b>${formatDistance(distance)}</b></span>
-      <span style="font-size:11px;color:#333;"><b>${formatDuration(time)}</b></span>
+    <div style="display:flex;gap:16px;margin-bottom:10px;padding:8px 0;background:#f7faf8;border-radius:8px;justify-content:center;">
+      <span style="font-size:12px;color:#131614;font-weight:700;">&#128207; ${formatDistance(distance)}</span>
+      <span style="font-size:12px;color:#131614;font-weight:700;">&#9200; ${formatDuration(time)}</span>
     </div>
-    ${steps}
-    <a href="https://www.graphhopper.com/maps/?point=${fromLat},${fromLng}&point=${toLat},${toLng}&vehicle=car" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;padding:6px;background:#0fa24b;color:white;border-radius:6px;font-size:11px;font-weight:800;text-decoration:none;">Open in GraphHopper</a>
+    <div style="max-height:360px;overflow-y:auto;scrollbar-width:thin;">
+      ${steps}
+    </div>
+    <a href="https://www.graphhopper.com/maps/?point=${fromLat},${fromLng}&point=${toLat},${toLng}&vehicle=car" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;padding:8px;background:#0fa24b;color:white;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">Open in GraphHopper</a>
   </div>`;
 }
 
@@ -207,7 +210,7 @@ export default function MapLibreMap(
       const spotName = destSpot?.name || "destination";
       const dirHTML = createDirectionsHTML(data.instructions, data.distance, data.time, spotName, userLoc.lat, userLoc.lng, destLat, destLng);
       popupRef.current?.remove();
-      popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: true, maxWidth: "280px" })
+      popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: false, maxWidth: "340px" })
         .setLngLat([destLng, destLat])
         .setHTML(dirHTML)
         .addTo(map);
