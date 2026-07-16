@@ -1,24 +1,41 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
-const databaseUrl = process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required");
-}
-
 const globalForDb = globalThis as typeof globalThis & {
-  __arenaNextJsPostgresqlPool?: Pool;
+  __parkmePool?: Pool;
+  __parkmeDb?: NodePgDatabase;
 };
 
-export const pool =
-  globalForDb.__arenaNextJsPostgresqlPool ??
-  new Pool({
-    connectionString: databaseUrl,
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.__arenaNextJsPostgresqlPool = pool;
+function getPool(): Pool {
+  if (globalForDb.__parkmePool) return globalForDb.__parkmePool;
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is required");
+  }
+  const pool = new Pool({ connectionString: databaseUrl });
+  globalForDb.__parkmePool = pool;
+  return pool;
 }
 
-export const db = drizzle(pool);
+function getDb(): NodePgDatabase {
+  if (globalForDb.__parkmeDb) return globalForDb.__parkmeDb;
+  const dbInstance = drizzle(getPool());
+  if (process.env.NODE_ENV !== "production") {
+    globalForDb.__parkmeDb = dbInstance;
+  }
+  return dbInstance;
+}
+
+export const pool = {
+  get current() {
+    return getPool();
+  },
+} as unknown as Pool;
+
+export const db = new Proxy({} as NodePgDatabase, {
+  get(_target, prop, receiver) {
+    const instance = getDb() as any;
+    const value = instance[prop];
+    return typeof value === "function" ? value.bind(instance) : value;
+  },
+}) as unknown as NodePgDatabase;
