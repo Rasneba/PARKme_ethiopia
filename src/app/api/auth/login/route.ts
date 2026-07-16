@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSessionCookie, SESSION_DURATION_MS } from "@/lib/auth";
 import { v4 as uuid } from "uuid";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;

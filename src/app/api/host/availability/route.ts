@@ -4,6 +4,8 @@ import { availabilityBlocks, parkingSpaces } from "@/db/schema";
 import { and, asc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   await ensureParkmeSeeded();
   const blocks = await db.select().from(availabilityBlocks).orderBy(asc(availabilityBlocks.blockedDate));

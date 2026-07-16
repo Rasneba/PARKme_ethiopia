@@ -5,6 +5,8 @@ import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-helpers";
 
+export const dynamic = "force-dynamic";
+
 type RouteContext = { params: Promise<{ bookingId: string }> };
 
 export async function POST(_: Request, context: RouteContext) {

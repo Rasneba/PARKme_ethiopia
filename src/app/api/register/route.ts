@@ -4,6 +4,8 @@ import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { hashSync } from "bcryptjs";
 
+export const dynamic = "force-dynamic";
+
 function err(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }

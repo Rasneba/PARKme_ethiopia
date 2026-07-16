@@ -4,6 +4,8 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-helpers";
 
+export const dynamic = "force-dynamic";
+
 export async function POST() {
   let userId: string;
   try {

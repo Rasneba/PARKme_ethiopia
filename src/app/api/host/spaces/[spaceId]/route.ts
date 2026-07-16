@@ -4,6 +4,8 @@ import { parkingSpaces } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 type RouteContext = { params: Promise<{ spaceId: string }> };
 
 export async function PATCH(request: NextRequest, context: RouteContext) {

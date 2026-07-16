@@ -1,21 +1,16 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import ParkmeLanding from "@/components/ParkmeLanding";
 
-export default function HomePage() {
-  const router = useRouter();
-  const [checking, setChecking] = useState(true);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.ok ? r.json() : null)
-      .then((u) => { if (u) router.replace("/app"); else setChecking(false); })
-      .catch(() => setChecking(false));
-  }, [router]);
+export default async function HomePage() {
+  await db.execute(sql`select 1`);
 
-  if (checking) return null;
+  const user = await getCurrentUser();
+  if (user) redirect("/app");
 
   return <ParkmeLanding />;
 }

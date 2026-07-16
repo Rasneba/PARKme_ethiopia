@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MapLibreHandle } from "./MapLibreMap";
 
@@ -9,7 +8,7 @@ const MapLibreMap = dynamic(() => import("./MapLibreMap"), { ssr: false });
 
 type IconName =
   | "search" | "bell" | "calendar" | "clock" | "chevron" | "car" | "pin"
-  | "star" | "filter" | "wallet" | "plus" | "minus" | "arrow" | "close" | "check"
+  | "star" | "filter" | "wallet" | "plus" | "arrow" | "close" | "check"
   | "lock" | "grid" | "home" | "receipt" | "help" | "settings" | "building"
   | "chart" | "edit" | "copy" | "scan" | "sparkle" | "shield" | "menu" | "logout"
   | "nav" | "map" | "locate";
@@ -28,7 +27,6 @@ function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number
     filter: <><path d="M4 6h16M7 12h10M10 18h4" /><circle cx="8" cy="6" r="1.5" fill="white" /><circle cx="15" cy="12" r="1.5" fill="white" /><circle cx="12" cy="18" r="1.5" fill="white" /></>,
     wallet: <><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H19v14H6.5A2.5 2.5 0 0 1 4 16.5v-9Z" /><path d="M4 8h15" /><path d="M16 13h3" /></>,
     plus: <path d="M12 5v14M5 12h14" />,
-    minus: <line x1="5" y1="12" x2="19" y2="12" />,
     arrow: <><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></>,
     close: <path d="m6 6 12 12M18 6 6 18" />,
     check: <path d="m5 12 4.2 4.2L19 6.5" />,
@@ -298,29 +296,16 @@ function CityMap({
   return (
     <section className="map-column" aria-label="Map of parking spots">
       <div className="map-toolbar">
-        <span className="map-toolbar-count">
-          <Icon name="map" size={14} /> {spots.length} spot{spots.length !== 1 ? "s" : ""} nearby
-        </span>
+        <span className="map-toolbar-count"><Icon name="map" size={15} /> {spots.length} spot{spots.length !== 1 ? "s" : ""}</span>
       </div>
-
-      {/* Ride-app style vertical control stack on the right side of the map */}
-      <div className="map-control-stack">
-        <div className="map-zoom-group">
-          <button className="map-circle-btn" title="Zoom in" onClick={() => mapRef.current?.zoomIn()}>
-            <Icon name="plus" size={17} stroke={2.2} />
-          </button>
-          <button className="map-circle-btn" title="Zoom out" onClick={() => mapRef.current?.zoomOut()}>
-            <Icon name="minus" size={17} stroke={2.2} />
-          </button>
-        </div>
-        <button className="map-circle-btn near-me" title="Nearest parking spot" onClick={onNearMe}>
-          <Icon name="locate" size={18} stroke={2.2} />
+      <div className="map-float-controls">
+        <button className="map-float-btn near" title="Find nearest spot" onClick={onNearMe}>
+          <Icon name="locate" size={16} /> Near me
         </button>
-        <button className={`map-circle-btn satellite-toggle ${satellite ? "active" : ""}`} title="Toggle view" onClick={onToggleSatellite}>
-          <Icon name={satellite ? "map" : "grid"} size={18} stroke={2.2} />
+        <button className={`map-float-btn sat ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
+          <Icon name={satellite ? "map" : "home"} size={16} /> {satellite ? "Map" : "Satellite"}
         </button>
       </div>
-
       <MapLibreMap
         spots={spots}
         onSelectSpot={onSelectSpot}
@@ -330,14 +315,12 @@ function CityMap({
         userLocation={userLocation}
         mapRef={mapRef}
       />
-
       {selected && (
         <div className="map-spot-sheet">
-          <div className="sheet-drag-handle" />
           <div className="map-sheet-kicker">
-            <span>SPOT SELECTION</span>
-            <button className="map-sheet-close" onClick={() => { (window as any).__parkmeClearRoute?.(); onCancel(); }} title="Close">
-              <Icon name="close" size={13} />
+            <span>SELECTED SPOT</span>
+            <button className="map-sheet-close" onClick={() => { (window as any).__parkmeClearRoute?.(); onCancel(); }} title="Cancel and pick a new spot">
+              <Icon name="close" size={14} />
             </button>
           </div>
           <div className="map-sheet-row">
@@ -347,17 +330,17 @@ function CityMap({
             </div>
             <div className="map-sheet-price">
               <b>{selected.price} <small>ETB/hr</small></b>
-              <span>{selected.distanceKm != null ? `${formatDistance(selected.distanceKm)} away` : `${selected.availableSpots} available`}</span>
+              <span>{selected.distanceKm != null ? `${formatDistance(selected.distanceKm)} away` : `${selected.availableSpots} spots`}</span>
             </div>
           </div>
           <div className="map-sheet-actions">
             <button className="map-sheet-btn directions" onClick={() => {
               (window as any).__parkmeRoute?.(selected.lat, selected.lng);
             }}>
-              <Icon name="nav" size={14} /> Show Route
+              <Icon name="nav" size={15} /> Directions
             </button>
             <button className="map-sheet-btn reserve" onClick={() => onBook(selected)}>
-              <Icon name="car" size={14} /> Book Space Now
+              <Icon name="car" size={15} /> Reserve now
             </button>
           </div>
         </div>
@@ -627,9 +610,7 @@ export default function ParkmeApp() {
   const mapHandleRef = useRef<MapLibreHandle | null>(null);
 
   const fetchSpots = useCallback((q: string, cat: string = "all") => {
-    Promise.resolve().then(() => {
-      setSpotsLoading(true);
-    });
+    setSpotsLoading(true);
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (cat && cat !== "all") params.set("category", cat);
@@ -727,7 +708,7 @@ export default function ParkmeApp() {
   return (
     <main className="parkme-shell">
       <aside className={`sidebar ${menuOpen ? "mobile-visible" : ""}`}>
-        <Link href="/" className="brand" style={{ textDecoration: "none" }}><div className="brand-mark"><span>Park</span><b>me</b></div><em>ethiopia</em></Link>
+        <a href="/" className="brand" style={{ textDecoration: "none" }}><div className="brand-mark"><span>Park</span><b>me</b></div><em>ethiopia</em></a>
         <button className="sidebar-close" onClick={() => setMenuOpen(false)}><Icon name="close" size={20} /></button>
         <nav>{navItems.map((item) => <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setView(item.view); setMenuOpen(false); }}><Icon name={item.icon} size={20} /><span>{item.label}</span>{item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}</button>)}</nav>
         <div className="sidebar-bottom">

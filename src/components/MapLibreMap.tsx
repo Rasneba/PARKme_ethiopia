@@ -13,7 +13,6 @@ export interface MapLibreHandle {
 }
 
 const GH_KEY = process.env.NEXT_PUBLIC_GRAPHHOPPER_API_KEY || "";
-const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
 
 const GREEN_PIN = `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0fa24b"/><stop offset="100%" stop-color="#086a32"/></linearGradient></defs><path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z" fill="url(#pg)" stroke="white" stroke-width="2.5"/><text x="16" y="20" text-anchor="middle" fill="white" font-size="14" font-weight="900" font-family="Arial">P</text></svg>`;
 const RED_PIN = `<svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pr" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e54d3f"/><stop offset="100%" stop-color="#ac3c31"/></linearGradient></defs><path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 28 20 28s20-13 20-28C40 8.95 31.05 0 20 0z" fill="url(#pr)" stroke="white" stroke-width="3"/><text x="20" y="24" text-anchor="middle" fill="white" font-size="16" font-weight="900" font-family="Arial">P</text></svg>`;
@@ -31,20 +30,6 @@ const GRAPHHOPPER_STYLE = {
   },
   layers: [{ id: "gh-base", type: "raster", source: "gh", minzoom: 0, maxzoom: 19 }],
 } as any;
-
-const GEBETA_STYLE_URL = "https://tiles.gebeta.app/styles/standard/style.json";
-
-function gebetaTransformRequest(url: string, resourceType?: string): any {
-  if (GEBETA_TOKEN && url.startsWith("https://tiles.gebeta.app")) {
-    return {
-      url,
-      headers: { Authorization: `Bearer ${GEBETA_TOKEN}` },
-    };
-  }
-  return { url };
-}
-
-const useGebeta = GEBETA_TOKEN.length > 0;
 
 const SATELLITE_STYLE = {
   version: 8,
@@ -263,10 +248,9 @@ export default function MapLibreMap(
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: useGebeta ? GEBETA_STYLE_URL : GRAPHHOPPER_STYLE,
+        style: GRAPHHOPPER_STYLE,
         center: [38.7575, 9.0218],
         zoom: 13,
-        transformRequest: useGebeta ? gebetaTransformRequest : undefined,
       });
     } catch {
       return;
@@ -535,10 +519,7 @@ export default function MapLibreMap(
       if (satellite && !isSatellite) {
         map.setStyle(SATELLITE_STYLE);
       } else if (!satellite && isSatellite) {
-        map.setStyle(useGebeta ? GEBETA_STYLE_URL : GRAPHHOPPER_STYLE);
-        if (useGebeta) {
-          map.setTransformRequest(gebetaTransformRequest);
-        }
+        map.setStyle(GRAPHHOPPER_STYLE);
       }
     } catch {}
   }, [satellite]);

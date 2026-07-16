@@ -5,6 +5,8 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-helpers";
 
+export const dynamic = "force-dynamic";
+
 function error(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }

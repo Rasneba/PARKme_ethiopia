@@ -4,6 +4,8 @@ import { parkingSpaces } from "@/db/schema";
 import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 let migrated = false;
 
 async function ensureCategoryColumn() {

@@ -8,6 +8,8 @@ import { v4 as uuid } from "uuid";
 import { sessions } from "@/db/schema";
 import { SESSION_DURATION_MS } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;

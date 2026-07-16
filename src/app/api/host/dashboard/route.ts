@@ -5,6 +5,8 @@ import { asc, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-helpers";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   await ensureParkmeSeeded();
   let userId: string;
