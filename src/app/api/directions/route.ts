@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
+const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_MAP_TOKEN || process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
 
 function decodePolyline(str: string): [number, number][] {
   const coords: [number, number][] = [];

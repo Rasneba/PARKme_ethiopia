@@ -13,15 +13,12 @@ export interface MapLibreHandle {
 }
 
 const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
-const GEBETA_MAP_TOKEN = process.env.NEXT_PUBLIC_GEBETA_MAP_TOKEN || GEBETA_TOKEN;
 
 const GREEN_PIN = `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0fa24b"/><stop offset="100%" stop-color="#086a32"/></linearGradient></defs><path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z" fill="url(#pg)" stroke="white" stroke-width="2.5"/><text x="16" y="20" text-anchor="middle" fill="white" font-size="14" font-weight="900" font-family="Arial">P</text></svg>`;
 const RED_PIN = `<svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pr" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e54d3f"/><stop offset="100%" stop-color="#ac3c31"/></linearGradient></defs><path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 28 20 28s20-13 20-28C40 8.95 31.05 0 20 0z" fill="url(#pr)" stroke="white" stroke-width="3"/><text x="20" y="24" text-anchor="middle" fill="white" font-size="16" font-weight="900" font-family="Arial">P</text></svg>`;
 const BLUE_DOT = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#4098df" stroke="white" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="white"/></svg>`;
 
-const GEBETA_STYLE_URL = "https://tiles.gebeta.app/styles/standard/style.json";
-
-const OSM_FALLBACK_STYLE = {
+const OSM_BASE_STYLE = {
   version: 8,
   sources: {
     osm: {
@@ -34,15 +31,7 @@ const OSM_FALLBACK_STYLE = {
   layers: [{ id: "osm-base", type: "raster", source: "osm", minzoom: 0, maxzoom: 19 }],
 } as any;
 
-function gebetaTransformRequest(url: string, resourceType?: string): any {
-  if (GEBETA_MAP_TOKEN && url.startsWith("https://tiles.gebeta.app")) {
-    const sep = url.includes("?") ? "&" : "?";
-    return {
-      url: `${url}${sep}apiKey=${GEBETA_MAP_TOKEN}`,
-    };
-  }
-  return { url };
-}
+const BASE_STYLE = OSM_BASE_STYLE;
 
 const SATELLITE_STYLE = {
   version: 8,
@@ -261,26 +250,13 @@ export default function MapLibreMap(
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: GEBETA_STYLE_URL,
+        style: BASE_STYLE,
         center: [38.7575, 9.0218],
         zoom: 13,
-        transformRequest: gebetaTransformRequest,
       });
     } catch {
       return;
     }
-
-    let styleFailed = false;
-    const fallbackToOsm = () => {
-      if (styleFailed) return;
-      styleFailed = true;
-      try { map.setStyle(OSM_FALLBACK_STYLE); } catch {}
-    };
-    map.on("error", (e: any) => {
-      if (!styleFailed && (e?.error?.message || "").toString().toLowerCase().includes("style")) {
-        fallbackToOsm();
-      }
-    });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "top-right");
 
@@ -290,18 +266,10 @@ export default function MapLibreMap(
       renderClusteredMarkers(map);
     });
 
-    const fallbackTimer = setTimeout(() => {
-      if (!map.isStyleLoaded() || Object.keys(map.getStyle()?.sources || {}).length === 0) {
-        fallbackToOsm();
-        setTimeout(() => renderClusteredMarkers(map), 600);
-      }
-    }, 6000);
-
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current.clear();
       popupRef.current?.remove();
-      clearTimeout(fallbackTimer);
       map.remove();
       mapRef.current = null;
     };
@@ -453,8 +421,7 @@ export default function MapLibreMap(
       if (satellite && !isSatellite) {
         map.setStyle(SATELLITE_STYLE);
       } else if (!satellite && isSatellite) {
-        map.setStyle(GEBETA_STYLE_URL);
-        map.setTransformRequest(gebetaTransformRequest);
+        map.setStyle(OSM_BASE_STYLE);
       }
     } catch {}
   }, [satellite]);

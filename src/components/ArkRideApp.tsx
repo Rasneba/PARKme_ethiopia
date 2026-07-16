@@ -663,7 +663,10 @@ export default function ParkmeApp() {
   }, [spots, userLocation]);
 
   function handleNearMe() {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      alert("Location is not available on this device/browser.");
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
@@ -673,8 +676,21 @@ export default function ParkmeApp() {
         );
         if (nearest.length > 0) setSelectedSpotId(nearest[0].id);
       },
-      () => {},
-      { timeout: 5000, enableHighAccuracy: true },
+      (err) => {
+        let msg = "Could not get your location.";
+        if (err.code === err.PERMISSION_DENIED) {
+          msg = "Location permission denied. Please enable location access in your browser settings, then tap Near me again.";
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          msg = "Your location is currently unavailable. Showing the closest spot to the city center instead.";
+        }
+        const fallback = [...spots].sort((a, b) =>
+          haversineKm(9.0218, 38.7575, a.lat, a.lng) -
+          haversineKm(9.0218, 38.7575, b.lat, b.lng)
+        );
+        if (fallback.length > 0) setSelectedSpotId(fallback[0].id);
+        alert(msg);
+      },
+      { timeout: 8000, enableHighAccuracy: true, maximumAge: 0 },
     );
   }
 
