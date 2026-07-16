@@ -154,7 +154,6 @@ function CityMap({
   onBook,
   selectedSpotId,
   onNearMe,
-  onLocate,
   satellite,
   onToggleSatellite,
   userLocation,
@@ -166,7 +165,6 @@ function CityMap({
   onBook: (s: ApiSpot) => void;
   selectedSpotId: number | null;
   onNearMe: () => void;
-  onLocate: () => void;
   satellite: boolean;
   onToggleSatellite: () => void;
   userLocation?: { lat: number; lng: number } | null;
@@ -187,9 +185,6 @@ function CityMap({
           <Icon name={satellite ? "map" : "home"} size={16} /> {satellite ? "Map" : "Satellite"}
         </button>
       </div>
-      <button className="locate-gps-btn" title="Center on my location" onClick={onLocate}>
-        <Icon name="crosshair" size={22} />
-      </button>
       <MapLibreMap
         spots={spots}
         onSelectSpot={onSelectSpot}
@@ -409,67 +404,6 @@ function ProfileDrawer({ user, onClose, onOwner, onLogout }: { user: User; onClo
   );
 }
 
-function OwnerPortal({ onClose }: { onClose: () => void }) {
-  const [data, setData] = useState<{ summary: { totalEarningsEtb: number; hostPayoutEtb: number; platformFeeEtb: number; bookingCount: number; occupancyRate: number; averageRating: number }; spaces: { id: number; name: string; priceHourlyEtb: number; availableSpots: number; totalSpots: number; isActive: boolean }[]; weeklyEarnings: { day: string; amountEtb: number }[] } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { fetch("/api/host/dashboard").then((r) => r.ok ? r.json() : null).then((d) => { setData(d); setLoading(false); }).catch(() => setLoading(false)); }, []);
-
-  async function adjustPrice(id: number, change: number) {
-    const spot = data?.spaces.find((s) => s.id === id);
-    if (!spot) return;
-    const next = Math.max(25, spot.priceHourlyEtb + change);
-    const r = await fetch(`/api/host/spaces/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ priceHourlyEtb: next }) });
-    if (r.ok) setData((prev) => prev ? { ...prev, spaces: prev.spaces.map((s) => s.id === id ? { ...s, priceHourlyEtb: next } : s) } : prev);
-  }
-
-  const maxChart = Math.max(...(data?.weeklyEarnings.map((d) => d.amountEtb) ?? [1]), 1);
-
-  return (
-    <div className="owner-overlay" role="dialog" aria-modal="true">
-      <section className="owner-portal">
-        <header className="owner-header">
-          <div className="owner-logo"><span>Park</span><b>me</b><i>host</i></div>
-          <div className="owner-nav"><button className="active">Overview</button><button>Spaces</button><button>Bookings</button></div>
-          <button className="icon-button" onClick={onClose} aria-label="Close"><Icon name="close" size={20} /></button>
-        </header>
-        <main className="owner-main">
-          {loading ? <div className="view-loading"><p>Loading dashboard...</p></div> : data && <>
-            <div className="owner-intro"><div><p className="eyebrow">HOST PERFORMANCE</p><h1>Welcome to your host dashboard.</h1><p>Manage your parking spaces and track earnings.</p></div></div>
-            <div className="owner-metrics">
-              <article><span className="metric-icon green"><Icon name="wallet" size={20} /></span><p>Your payout (85%)</p><h2>{data.summary.hostPayoutEtb.toLocaleString()} <small>ETB</small></h2></article>
-              <article><span className="metric-icon yellow"><Icon name="wallet" size={20} /></span><p>Platform fee (15%)</p><h2>{data.summary.platformFeeEtb.toLocaleString()} <small>ETB</small></h2></article>
-              <article><span className="metric-icon red"><Icon name="calendar" size={20} /></span><p>Bookings</p><h2>{data.summary.bookingCount}</h2></article>
-              <article><span className="metric-icon slate"><Icon name="star" size={20} /></span><p>Guest rating</p><h2>{data.summary.averageRating}</h2></article>
-            </div>
-            <div className="owner-grid">
-              <section className="earnings-chart">
-                <div className="panel-heading"><h2>Weekly earnings</h2></div>
-                <div className="chart-bars">{data.weeklyEarnings.map((d) => (
-                  <div className="chart-bar-col" key={d.day}><div className="chart-bar" style={{ height: `${(d.amountEtb / maxChart) * 100}%` }} /><span>{d.day}</span></div>
-                ))}</div>
-              </section>
-              <section className="active-spaces">
-                <div className="panel-heading"><h2>Your spaces</h2></div>
-                {data.spaces.map((s) => (
-                  <div className="owner-space-row" key={s.id}>
-                    <span className="owner-space-photo">P</span>
-                    <div><b>{s.name}</b><small>{s.availableSpots}/{s.totalSpots} spots Â· {s.priceHourlyEtb} ETB/hr</small></div>
-                    <div className="space-controls">
-                      <button onClick={() => void adjustPrice(s.id, -5)}>-</button>
-                      <button onClick={() => void adjustPrice(s.id, 5)}>+</button>
-                    </div>
-                  </div>
-                ))}
-              </section>
-            </div>
-          </>}
-        </main>
-      </section>
-    </div>
-  );
-}
-
 export default function ParkmeApp() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -478,7 +412,6 @@ export default function ParkmeApp() {
   const [view, setView] = useState<"spots" | "bookings" | "wallet" | "history">("spots");
   const [bookingSpot, setBookingSpot] = useState<ApiSpot | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [ownerOpen, setOwnerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [spots, setSpots] = useState<ApiSpot[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -537,11 +470,25 @@ export default function ParkmeApp() {
   useEffect(() => { if (user) fetch("/api/bookings?status=active").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { const b = (d.bookings ?? [])[0]; if (b) setActiveBooking(b); }).catch(() => {}); }, [user]);
 
   useEffect(() => {
+    // Restore last known location from cache so we don't re-prompt every load
+    try {
+      const raw = localStorage.getItem("parkme_loc");
+      if (raw) {
+        const cached = JSON.parse(raw);
+        if (cached && typeof cached.lat === "number" && typeof cached.lng === "number") {
+          setUserLocation({ lat: cached.lat, lng: cached.lng });
+        }
+      }
+    } catch {}
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        saveLocation(loc);
+      },
       () => {},
-      { timeout: 5000, enableHighAccuracy: true },
+      { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
     );
   }, []);
 
@@ -589,12 +536,17 @@ export default function ParkmeApp() {
     );
   }
 
+  function saveLocation(loc: { lat: number; lng: number }) {
+    try { localStorage.setItem("parkme_loc", JSON.stringify({ ...loc, t: Date.now() })); } catch {}
+  }
+
   function handleLocate() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(loc);
+        saveLocation(loc);
         mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
         if (pendingRouteSpot) {
           const spot = pendingRouteSpot;
@@ -603,7 +555,7 @@ export default function ParkmeApp() {
         }
       },
       () => {},
-      { timeout: 5000, enableHighAccuracy: true },
+      { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
     );
   }
 
@@ -613,11 +565,12 @@ export default function ParkmeApp() {
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(loc);
+        saveLocation(loc);
         mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
         setTimeout(() => handleNearMe(), 700);
       },
       () => handleNearMe(),
-      { timeout: 5000, enableHighAccuracy: true },
+      { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
     );
   }
 
@@ -660,7 +613,7 @@ export default function ParkmeApp() {
         <div className="sidebar-bottom">
           {user ? (
             <>
-              <button className="host-callout" onClick={() => setOwnerOpen(true)}><span><Icon name="building" size={20} /></span><div><b>List your space</b><small>Earn with Parkme</small></div><Icon name="chevron" size={16} /></button>
+              <button className="host-callout" onClick={() => { setMenuOpen(false); router.push("/host"); }}><span><Icon name="building" size={20} /></span><div><b>List your space</b><small>Earn with Parkme</small></div><Icon name="chevron" size={16} /></button>
               <div className="side-user"><Avatar name={user.name} size="sm" /><div><b>{user.name}</b><small>{user.email}</small></div><button onClick={() => setProfileOpen(true)} aria-label="Open profile"><Icon name="chevron" size={16} /></button></div>
             </>
           ) : (
@@ -688,7 +641,7 @@ export default function ParkmeApp() {
         <div className="workspace">
           {view === "spots" && (
             <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onLocate={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId}         onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
 
               {/* Uber-style floating "Where to?" pill → center on me + Near Me */}
               <button className="mobile-search-float" onClick={() => handleLocateThenNear()}>
@@ -751,8 +704,7 @@ export default function ParkmeApp() {
 
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onAuth={(u) => setUser(u)} initialRole={authOpen} />}
       {bookingSpot && <BookingModal spot={bookingSpot} onClose={() => setBookingSpot(null)} onBooked={() => { fetchSpots(searchQuery); setActiveBooking(null); }} user={user} />}
-      {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setOwnerOpen(true); }} onLogout={() => setUser(null)} />}
-      {ownerOpen && <OwnerPortal onClose={() => setOwnerOpen(false)} />}
+      {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setMenuOpen(false); router.push("/host"); }} onLogout={() => setUser(null)} />}
     </main>
   );
 }

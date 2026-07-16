@@ -5,7 +5,7 @@ export type IconName =
   | "star" | "filter" | "wallet" | "plus" | "arrow" | "close" | "check"
   | "lock" | "grid" | "home" | "receipt" | "help" | "settings" | "building"
   | "chart" | "edit" | "copy" | "scan" | "sparkle" | "shield" | "menu" | "logout"
-  | "nav" | "map" | "locate" | "crosshair" | "list";
+  | "nav" | "map" | "locate" | "crosshair" | "list" | "camera";
 
 export function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number; stroke?: number }) {
   const shared = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: stroke, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
@@ -44,6 +44,7 @@ export function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?:
     locate: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /><circle cx="12" cy="12" r="8" /></>,
     crosshair: <><circle cx="12" cy="12" r="8" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></>,
     list: <><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></>,
+    camera: <><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" /><circle cx="12" cy="13" r="3.2" /></>,
   };
   return <svg {...shared}>{paths[name]}</svg>;
 }

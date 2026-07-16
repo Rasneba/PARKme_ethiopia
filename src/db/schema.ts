@@ -55,6 +55,7 @@ export const parkingSpaces = pgTable(
     availableSpots: integer("available_spots").notNull().default(0),
     totalSpots: integer("total_spots").notNull().default(0),
     hostName: text("host_name").notNull().default("Host"),
+    photos: text("photos").array().notNull().default([]),
     lat: real("lat").notNull().default(9.0192),
     lng: real("lng").notNull().default(38.7525),
     isActive: boolean("is_active").notNull().default(true),

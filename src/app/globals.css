@@ -302,18 +302,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
   .route-step div span { font-size: 14px; font-weight: 600; display: block; color: #1b1b1b; }
   .route-step div small { font-size: 12px; color: #717171; }
   .route-loading { padding: 22px; text-align: center; color: #717171; font-size: 14px; }
-
-  /* --- Floating GPS recenter button (bottom-right, Uber circle) --- */
-  .locate-gps-btn { position: absolute; z-index: 14; right: 14px; bottom: 22px; width: 50px; height: 50px; display: grid; place-items: center; background: #fff; border: none; border-radius: 50%; color: #121212; box-shadow: 0 4px 16px rgba(0,0,0,.18); cursor: pointer; transition: transform .15s; }
-  .locate-gps-btn:active { transform: scale(.92); }
-  .locate-gps-btn svg { width: 24px; height: 24px; }
 }
 
 /* Small phones */
 @media (max-width: 560px) {
   .mobile-search-float { top: calc(10px + var(--sat)); left: 10px; right: 10px; height: 48px; }
   .mobile-search-float .search-float-text { font-size: 15px; }
-  .locate-gps-btn { right: 12px; bottom: 16px; width: 46px; height: 46px; }
   .map-float-controls { bottom: 16px; left: 12px; }
   .mobile-action-bar { max-height: 56vh; }
   .mobile-spot-info b { font-size: 17px; }
@@ -324,7 +318,34 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 @media (max-width: 860px) {
   .map-spot-sheet { display: none; }
   .content-grid.route-active .mobile-action-bar.route-mode { max-height: 50vh; }
-  .content-grid.route-active .locate-gps-btn { bottom: 210px; }
+}
+
+/* --- /find list-only page mobile layout --- */
+@media (max-width: 860px) {
+  .search-column { padding-top: calc(64px + var(--sat)); }
+  .search-top { padding: 0 14px; }
+  .booking-type-tabs { margin-top: 12px; }
+  .booking-type-tab { font-size: 12px; padding: 10px 4px; }
+  .when-row { grid-template-columns: 1fr; gap: 8px; }
+  .when-field input { font-size: 13px; }
+  .quick-destinations { padding: 12px 14px 0; flex-wrap: nowrap; overflow-x: auto; }
+  .category-chips { padding: 10px 14px; flex-wrap: nowrap; overflow-x: auto; }
+  .results-heading { padding: 14px 14px 6px; }
+  .place-list { padding: 0 14px 120px; }
+  /* Hide location / rate / reserve meta on mobile list (map handles location) */
+  .place-meta { display: none; }
+  .place-price > span { display: none; }
+  .place-card { grid-template-columns: 86px minmax(0, 1fr); }
+  .place-price { grid-column: 2; justify-items: start; display: flex; align-items: center; gap: 8px; }
+  .place-price b { font-size: 15px; }
+  .place-card-actions { margin-top: 0; margin-left: auto; }
+}
+
+@media (max-width: 560px) {
+  .booking-type-tab { font-size: 11px; padding: 9px 2px; }
+  .place-card { grid-template-columns: 76px minmax(0, 1fr); gap: 10px; padding: 9px; }
+  .place-image { height: 76px; }
+  .place-name-line h3 { font-size: 14px; }
 }
 
 /* Parkme vivid color pass */
@@ -882,4 +903,50 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
   .find-list .search-column { padding-top: calc(64px + var(--sat)); }
   /* Hide desktop sidebar chrome, show mobile menu */
   .find-list .search-column .welcome-line { display: none; }
+}
+
+/* --- /host marketplace listing page --- */
+.host-page { min-height: 100vh; background: #f6f8f5; color: #15241b; padding-bottom: 40px; }
+.host-header { display: flex; align-items: center; gap: 12px; padding: calc(14px + var(--sat)) 16px 10px; }
+.host-back { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #fff; border: 1px solid #e3e8e3; color: #15241b; transform: rotate(180deg); }
+.host-brand { font-size: 20px; font-weight: 800; }
+.host-brand span { color: #15241b; } .host-brand b { color: var(--green); } .host-brand i { color: #9aa89e; font-style: normal; font-weight: 600; margin-left: 4px; }
+.host-header-tag { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--green-dark); background: var(--green-soft); padding: 5px 10px; border-radius: 20px; }
+.host-hero { padding: 8px 20px 18px; }
+.host-hero h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.4px; }
+.host-hero p { margin-top: 6px; color: #5c6b61; font-size: 14px; line-height: 1.5; max-width: 520px; }
+.host-form { max-width: 620px; margin: 0 auto; padding: 0 16px; display: grid; gap: 14px; }
+.host-section { background: #fff; border: 1px solid #e8ede9; border-radius: 16px; padding: 18px 16px; }
+.host-section h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+.host-field { display: grid; gap: 6px; margin-bottom: 12px; }
+.host-field span, .host-label { font-size: 12px; font-weight: 600; color: #4a574e; }
+.host-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.host-field input { height: 46px; border: 1px solid #d9e0db; border-radius: 11px; padding: 0 14px; font-size: 15px; background: #fafcfb; outline: none; }
+.host-field input:focus { border-color: var(--green); background: #fff; }
+.host-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.host-chips button { display: inline-flex; align-items: center; gap: 6px; padding: 9px 13px; border: 1px solid #d9e0db; border-radius: 22px; background: #fafcfb; font-size: 13px; font-weight: 600; color: #4a574e; cursor: pointer; }
+.host-chips button.active { background: var(--green); border-color: var(--green); color: #fff; }
+.host-photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.host-photo { position: relative; aspect-ratio: 1/1; border: 2px dashed #cdd6d0; border-radius: 14px; display: grid; place-items: center; cursor: pointer; overflow: hidden; background: #f3f6f4; }
+.host-photo.filled { border-style: solid; border-color: var(--green); }
+.host-photo span { display: grid; place-items: center; gap: 4px; color: #8a988f; }
+.host-photo em { font-style: normal; font-size: 11px; }
+.host-photo img { width: 100%; height: 100%; object-fit: cover; }
+.host-photo-remove { position: absolute; top: 5px; right: 5px; width: 24px; height: 24px; display: grid; place-items: center; border: none; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; }
+.host-message { font-size: 13px; padding: 10px 14px; border-radius: 10px; }
+.host-message.info { background: #eaf4ee; color: var(--green-dark); }
+.host-message.err { background: #fdecea; color: #c0392b; }
+.host-submit { height: 52px; border: none; border-radius: 14px; background: var(--green); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
+.host-submit:disabled { opacity: .6; cursor: default; }
+.host-fineprint { text-align: center; font-size: 11px; color: #8a988f; margin-top: -4px; }
+.host-success { max-width: 460px; margin: 12vh auto 0; text-align: center; padding: 0 24px; }
+.host-success-icon { width: 72px; height: 72px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 50%; background: var(--green-soft); color: var(--green-dark); }
+.host-success h1 { font-size: 24px; font-weight: 800; }
+.host-success p { color: #5c6b61; margin: 8px 0 22px; line-height: 1.5; }
+.host-success-actions { display: grid; gap: 10px; }
+.host-btn { height: 48px; display: grid; place-items: center; border-radius: 12px; border: 1px solid #d9e0db; background: #fff; font-weight: 700; font-size: 15px; text-decoration: none; color: #15241b; }
+.host-btn.primary { background: var(--green); border-color: var(--green); color: #fff; }
+
+@media (max-width: 560px) {
+  .host-row { grid-template-columns: 1fr; }
 }
