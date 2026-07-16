@@ -12,24 +12,23 @@ export interface MapLibreHandle {
   flyToNearest: (lat: number, lng: number) => void;
 }
 
-const GH_KEY = process.env.NEXT_PUBLIC_GRAPHHOPPER_API_KEY || "";
+const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
 
 const GREEN_PIN = `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0fa24b"/><stop offset="100%" stop-color="#086a32"/></linearGradient></defs><path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z" fill="url(#pg)" stroke="white" stroke-width="2.5"/><text x="16" y="20" text-anchor="middle" fill="white" font-size="14" font-weight="900" font-family="Arial">P</text></svg>`;
 const RED_PIN = `<svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pr" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e54d3f"/><stop offset="100%" stop-color="#ac3c31"/></linearGradient></defs><path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 28 20 28s20-13 20-28C40 8.95 31.05 0 20 0z" fill="url(#pr)" stroke="white" stroke-width="3"/><text x="20" y="24" text-anchor="middle" fill="white" font-size="16" font-weight="900" font-family="Arial">P</text></svg>`;
 const BLUE_DOT = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#4098df" stroke="white" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="white"/></svg>`;
 
-const GRAPHHOPPER_STYLE = {
-  version: 8,
-  sources: {
-    gh: {
-      type: "raster",
-      tiles: [`https://tiles.graphhopper.com/api/maps/${GH_KEY}/style/osm/{z}/{x}/{y}.png`],
-      tileSize: 256,
-      attribution: "&copy; GraphHopper &copy; OpenStreetMap contributors",
-    },
-  },
-  layers: [{ id: "gh-base", type: "raster", source: "gh", minzoom: 0, maxzoom: 19 }],
-} as any;
+const GEBETA_STYLE_URL = "https://tiles.gebeta.app/styles/standard/style.json";
+
+function gebetaTransformRequest(url: string, resourceType?: string): any {
+  if (GEBETA_TOKEN && url.startsWith("https://tiles.gebeta.app")) {
+    return {
+      url,
+      headers: { Authorization: `Bearer ${GEBETA_TOKEN}` },
+    };
+  }
+  return { url };
+}
 
 const SATELLITE_STYLE = {
   version: 8,
@@ -49,8 +48,8 @@ function createInfoHTML(spot: any, isNearest?: boolean, userLoc?: { lat: number;
     ? `${spot.distanceKm < 1 ? Math.round(spot.distanceKm * 1000) + " m" : spot.distanceKm.toFixed(1) + " km"} away`
     : "";
   const ghLink = userLoc
-    ? `https://www.graphhopper.com/maps/?point=${userLoc.lat},${userLoc.lng}&point=${spot.lat},${spot.lng}&vehicle=car`
-    : `https://www.graphhopper.com/maps/?point=${spot.lat},${spot.lng}&vehicle=car`;
+    ? `https://gebeta.app/maps?point=${userLoc.lat},${userLoc.lng}&point=${spot.lat},${spot.lng}`
+    : `https://gebeta.app/maps?point=${spot.lat},${spot.lng}`;
   return `<div style="font-family:Arial,sans-serif;min-width:200px;max-width:260px;padding:4px 0;">
     ${isNearest ? '<div style="display:inline-block;padding:3px 7px;margin-bottom:6px;background:#4098df;color:white;border-radius:5px;font-size:9px;font-weight:800;">NEAREST TO YOU</div>' : ""}
     <b style="font-size:14px;color:#131614;">${spot.name}</b>
@@ -63,7 +62,7 @@ function createInfoHTML(spot: any, isNearest?: boolean, userLoc?: { lat: number;
       <button onclick="window.__parkmeRoute?.(${spot.lat},${spot.lng})" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;background:#dcf8e4;color:#086a32;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">&#9654; Directions</button>
       <button onclick="window.__parkmeSelectSpot?.(${spot.id})" style="flex:1;padding:8px;background:linear-gradient(135deg,#111a13,#168b45);color:white;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">Select & Reserve</button>
     </div>
-    ${userLoc ? `<a href="${ghLink}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:6px;color:#888;font-size:9px;text-decoration:underline;">Open full route in GraphHopper</a>` : ""}
+    ${userLoc ? `<a href="${ghLink}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:6px;color:#888;font-size:9px;text-decoration:underline;">Open full route in Gebeta</a>` : ""}
   </div>`;
 }
 
@@ -105,7 +104,7 @@ function createDirectionsHTML(instructions: any[], distance: number, time: numbe
     <div style="max-height:360px;overflow-y:auto;scrollbar-width:thin;">
       ${steps}
     </div>
-    <a href="https://www.graphhopper.com/maps/?point=${fromLat},${fromLng}&point=${toLat},${toLng}&vehicle=car" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;padding:8px;background:#0fa24b;color:white;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">Open in GraphHopper</a>
+    <a href="https://gebeta.app/maps?point=${fromLat},${fromLng}&point=${toLat},${toLng}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;padding:8px;background:#0fa24b;color:white;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">Open in Gebeta</a>
   </div>`;
 }
 
@@ -248,9 +247,10 @@ export default function MapLibreMap(
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: GRAPHHOPPER_STYLE,
+        style: GEBETA_STYLE_URL,
         center: [38.7575, 9.0218],
         zoom: 13,
+        transformRequest: gebetaTransformRequest,
       });
     } catch {
       return;
@@ -264,7 +264,6 @@ export default function MapLibreMap(
 
     map.on("load", () => {
       renderClusteredMarkers(map);
-      loadOsmOverlay(map);
     });
 
     return () => {
@@ -397,103 +396,6 @@ export default function MapLibreMap(
     }
   }
 
-  // ---- OSM ROAD/BUILDING OVERLAY ----
-  async function loadOsmOverlay(map: maplibregl.Map) {
-    try {
-      const [roadsRes, buildingsRes] = await Promise.allSettled([
-        fetch("/osm-roads.geojson"),
-        fetch("/osm-buildings.geojson"),
-      ]);
-
-      let hasBuildings = false;
-
-      if (buildingsRes.status === "fulfilled" && buildingsRes.value.ok) {
-        const buildings = await buildingsRes.value.json();
-        if (buildings.features?.length) {
-          map.addSource("osm-buildings", { type: "geojson", data: buildings });
-          hasBuildings = true;
-        }
-      }
-
-      if (roadsRes.status === "fulfilled" && roadsRes.value.ok) {
-        const roads = await roadsRes.value.json();
-        if (roads.features?.length) {
-          map.addSource("osm-roads", { type: "geojson", data: roads });
-
-          map.addLayer({
-            id: "osm-roads",
-            type: "line",
-            source: "osm-roads",
-            minzoom: 12,
-            paint: {
-              "line-color": [
-                "match", ["get", "c"],
-                "motorway", "#e892a2",
-                "trunk", "#f9b",
-                "primary", "#fc3",
-                "secondary", "#f7d29a",
-                "tertiary", "#fed",
-                "residential", "#fff",
-                "unclassified", "#fff",
-                "service", "#ddd",
-                "#ccc",
-              ],
-              "line-width": [
-                "interpolate", ["linear"], ["zoom"],
-                12, [
-                  "match", ["get", "c"],
-                  "motorway", 2.5,
-                  "trunk", 2,
-                  "primary", 1.8,
-                  "secondary", 1.5,
-                  "tertiary", 1,
-                  1,
-                ],
-                16, [
-                  "match", ["get", "c"],
-                  "motorway", 5,
-                  "trunk", 4,
-                  "primary", 3.5,
-                  "secondary", 3,
-                  "tertiary", 2.5,
-                  "residential", 2,
-                  "service", 1.5,
-                  2,
-                ],
-              ],
-            },
-          }, map.getStyle().layers?.[0]?.id);
-        }
-      }
-
-      if (hasBuildings) {
-        map.addLayer({
-          id: "osm-buildings-fill",
-          type: "fill",
-          source: "osm-buildings",
-          minzoom: 15,
-          paint: {
-            "fill-color": "#d6d6d6",
-            "fill-opacity": 0.35,
-          },
-        }, map.getStyle().layers?.[0]?.id);
-
-        map.addLayer({
-          id: "osm-buildings-outline",
-          type: "line",
-          source: "osm-buildings",
-          minzoom: 15,
-          paint: {
-            "line-color": "#aaa",
-            "line-width": 0.5,
-          },
-        }, map.getStyle().layers?.[0]?.id);
-      }
-    } catch {
-      // GeoJSON files not yet generated — silently skip
-    }
-  }
-
   // ---- UPDATE MARKERS on spots / moveend ----
   useEffect(() => {
     const map = mapRef.current;
@@ -519,7 +421,8 @@ export default function MapLibreMap(
       if (satellite && !isSatellite) {
         map.setStyle(SATELLITE_STYLE);
       } else if (!satellite && isSatellite) {
-        map.setStyle(GRAPHHOPPER_STYLE);
+        map.setStyle(GEBETA_STYLE_URL);
+        map.setTransformRequest(gebetaTransformRequest);
       }
     } catch {}
   }, [satellite]);

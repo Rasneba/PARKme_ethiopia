@@ -742,9 +742,16 @@ export default function ParkmeApp() {
         <div className="workspace">
           {view === "spots" && (
             <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
-              <div className={`search-panel-wrap ${selectedSpotId ? "mobile-hidden" : ""}`}>
+              <div className={`search-panel-wrap ${selectedSpotId || !mobileListOpen ? "mobile-hidden" : ""}`}>
                 <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => handleDirections(s)} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} activeCategory={activeCategory} onCategoryChange={onCategoryChange} />
               </div>
+              {!selectedSpotId && !routeActive && (
+                <button className="mobile-list-toggle" onClick={() => setMobileListOpen(!mobileListOpen)}>
+                  <Icon name="pin" size={15} />
+                  {spotsWithDistance.length} spot{spotsWithDistance.length !== 1 ? "s" : ""} found{userLocation ? " nearby" : ""}
+                  <Icon name={mobileListOpen ? "chevron" : "arrow"} size={14} />
+                </button>
+              )}
               <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
               {selectedSpotId && (() => {
                 const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);
