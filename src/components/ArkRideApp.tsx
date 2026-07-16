@@ -199,12 +199,13 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
         <Icon name={gateOpen ? "copy" : "chevron"} size={16} />
       </button>
       {gateOpen && <button className="copy-gate-btn" onClick={() => { navigator.clipboard.writeText(booking.gateCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}><Icon name="copy" size={14} /> {copied ? "Copied!" : "Copy code"}</button>}
+      {active && <button className="extend-btn" onClick={() => { if (confirm("Extend this booking by 1 hour?")) fetch(`/api/bookings/${booking.id}/extend`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ addHours: 1 }) }).then(() => onOpen()); }}><Icon name="clock" size={15} /> Extend by 1 hour</button>}
       <button className="pass-details" onClick={onOpen}>View parking pass <Icon name="arrow" size={16} /></button>
     </section>
   );
 }
 
-function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, onDirections, totalCount, selectedSpotId, hasLocation, activeCategory, onCategoryChange }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; onDirections: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean; activeCategory: string; onCategoryChange: (cat: string) => void }) {
+function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, onDirections, totalCount, selectedSpotId, hasLocation, activeCategory, onCategoryChange, bookingType, onBookingTypeChange, parkFrom, onParkFrom, parkUntil, onParkUntil }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; onDirections: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean; activeCategory: string; onCategoryChange: (cat: string) => void; bookingType: "hourly" | "monthly" | "airport"; onBookingTypeChange: (t: "hourly" | "monthly" | "airport") => void; parkFrom: string; onParkFrom: (v: string) => void; parkUntil: string; onParkUntil: (v: string) => void }) {
   const [filterOpen, setFilterOpen] = useState(false);
 
   const categories = [
@@ -216,15 +217,57 @@ function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBo
     { key: "standard", label: "Standard", icon: "car" as IconName },
   ];
 
+  const quickDestinations = [
+    { key: "airport", label: "Bole Airport", icon: "nav" as IconName },
+    { key: "stadium", label: "Stadiums", icon: "star" as IconName },
+    { key: "station", label: "Stations", icon: "pin" as IconName },
+    { key: "mall", label: "Malls", icon: "building" as IconName },
+  ];
+
   return (
     <section className="search-column">
       <div className="search-top">
         <div className="welcome-line"><p>{greetByHour()}</p><h1>Where are you parking today?</h1></div>
+
+        {/* JustPark-style booking type tabs */}
+        <div className="booking-type-tabs">
+          {(["hourly", "monthly", "airport"] as const).map((t) => (
+            <button key={t} className={`booking-type-tab ${bookingType === t ? "active" : ""}`} onClick={() => onBookingTypeChange(t)}>
+              {t === "hourly" ? "Hourly / Daily" : t === "monthly" ? "Monthly" : "Airport"}
+            </button>
+          ))}
+        </div>
+
+        {/* JustPark "When?" date pickers */}
+        {bookingType !== "monthly" && (
+          <div className="when-row">
+            <label className="when-field">
+              <span><Icon name="clock" size={14} /> From</span>
+              <input type="datetime-local" value={parkFrom} onChange={(e) => onParkFrom(e.target.value)} />
+            </label>
+            <label className="when-field">
+              <span><Icon name="arrow" size={14} /> Until</span>
+              <input type="datetime-local" value={parkUntil} onChange={(e) => onParkUntil(e.target.value)} />
+            </label>
+          </div>
+        )}
+
         <div className="search-box">
           <Icon name="search" size={20} />
           <input value={searchQuery} onChange={(e) => onSearch(e.target.value)} placeholder="Search by name, area, or address..." aria-label="Search parking location" />
           <button className="filter-button" aria-label="Open filters" onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" size={19} /></button>
         </div>
+
+        {/* JustPark quick-destination chips */}
+        <div className="quick-destinations">
+          {quickDestinations.map((d) => (
+            <button key={d.key} className="quick-dest" onClick={() => onSearch(d.label)}>
+              <Icon name={d.icon} size={15} />
+              <span>{d.label}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="category-chips">
           {categories.map((cat) => (
             <button key={cat.key} className={`category-chip ${activeCategory === cat.key ? "active" : ""}`} onClick={() => onCategoryChange(cat.key)}>
@@ -610,8 +653,10 @@ export default function ParkmeApp() {
   const [satellite, setSatellite] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [mobileListOpen, setMobileListOpen] = useState(false);
-  const [listOpen, setListOpen] = useState(true);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [bookingType, setBookingType] = useState<"hourly" | "monthly" | "airport">("hourly");
+  const [parkFrom, setParkFrom] = useState(() => { const d = new Date(); d.setMinutes(0, 0, 0); return d.toISOString().slice(0, 16); });
+  const [parkUntil, setParkUntil] = useState(() => { const d = new Date(); d.setHours(d.getHours() + 2, 0, 0, 0); return d.toISOString().slice(0, 16); });
   const [routeActive, setRouteActive] = useState(false);
   const [routeData, setRouteData] = useState<{ distance: number; time: number; instructions: any[] } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -779,33 +824,29 @@ export default function ParkmeApp() {
 
         <div className="workspace">
           {view === "spots" && (
-            <div className={`content-grid ${routeActive ? "route-active" : ""} ${listOpen ? "" : "list-collapsed"}`}>
-              <div className={`search-panel-wrap ${!listOpen ? "collapsed" : ""} ${selectedSpotId || !mobileListOpen ? "mobile-hidden" : ""}`}>
-                <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => handleDirections(s)} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} activeCategory={activeCategory} onCategoryChange={onCategoryChange} />
-              </div>
-              {!listOpen && (
-                <button className="list-toggle-fab" onClick={() => setListOpen(true)} title="Show spot list">
-                  <Icon name="list" size={18} />
-                </button>
-              )}
-              {!selectedSpotId && !routeActive && (
-                <button className="mobile-list-toggle" onClick={() => setMobileListOpen(!mobileListOpen)}>
-                  <Icon name="pin" size={15} />
-                  {spotsWithDistance.length} spot{spotsWithDistance.length !== 1 ? "s" : ""} found{userLocation ? " nearby" : ""}
-                  <Icon name={mobileListOpen ? "chevron" : "arrow"} size={14} />
-                </button>
-              )}
-              <button className="mobile-search-float" onClick={() => setListOpen(!listOpen)}>
-                <Icon name="pin" size={18} />
-                <span>{searchQuery || "Where are you parking today?"}</span>
-                <div className="search-float-avatar"><Icon name="search" size={16} /></div>
-              </button>
+            <div className={`content-grid ${routeActive ? "route-active" : ""} ${mobileSearchOpen ? "mobile-search-open" : ""}`}>
               <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onLocate={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
+
+              {/* Uber-style floating "Where to?" pill */}
+              <button className="mobile-search-float" onClick={() => setMobileSearchOpen(true)}>
+                <span className="search-float-pin"><Icon name="pin" size={18} /></span>
+                <span className="search-float-text">{searchQuery || "Where are you parking today?"}</span>
+                <span className="search-float-avatar"><Icon name="search" size={15} /></span>
+              </button>
+
+              {/* Search overlay (full screen) */}
+              <div className="search-panel-wrap">
+                <button className="mobile-search-close" onClick={() => setMobileSearchOpen(false)} aria-label="Back to map"><Icon name="arrow" size={20} /></button>
+                <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => { setMobileSearchOpen(false); handleSelectSpot(s); }} onBook={(s) => { setMobileSearchOpen(false); if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => { setMobileSearchOpen(false); handleDirections(s); }} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} activeCategory={activeCategory} onCategoryChange={onCategoryChange} bookingType={bookingType} onBookingTypeChange={setBookingType} parkFrom={parkFrom} onParkFrom={setParkFrom} parkUntil={parkUntil} onParkUntil={setParkUntil} />
+              </div>
+
+              {/* Uber-style bottom sheet for selected spot */}
               {selectedSpotId && (() => {
                 const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);
                 if (!spot) return null;
                 return (
                   <div className={`mobile-action-bar ${routeActive ? "route-mode" : ""}`}>
+                    <div className="sheet-handle" />
                     {routeActive ? (
                       <div className="mobile-route-panel">
                         <div className="route-panel-header">
@@ -835,7 +876,7 @@ export default function ParkmeApp() {
                           <button className="mobile-btn directions" onClick={() => handleDirections(spot)}><Icon name="nav" size={16} /> Directions</button>
                           <button className="mobile-btn reserve" onClick={() => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(spot); }}><Icon name="car" size={16} /> Reserve</button>
                         </div>
-                        <button className="mobile-back-btn" onClick={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={16} /> Back to list</button>
+                        <button className="mobile-back-btn" onClick={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={16} /> Back to map</button>
                       </div>
                     )}
                   </div>
