@@ -20,6 +20,19 @@ const BLUE_DOT = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://
 
 const GEBETA_STYLE_URL = "https://tiles.gebeta.app/styles/standard/style.json";
 
+const OSM_FALLBACK_STYLE = {
+  version: 8,
+  sources: {
+    osm: {
+      type: "raster",
+      tiles: ["https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png", "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "&copy; OpenStreetMap contributors",
+    },
+  },
+  layers: [{ id: "osm-base", type: "raster", source: "osm", minzoom: 0, maxzoom: 19 }],
+} as any;
+
 function gebetaTransformRequest(url: string, resourceType?: string): any {
   if (GEBETA_TOKEN && url.startsWith("https://tiles.gebeta.app")) {
     return {
@@ -256,7 +269,17 @@ export default function MapLibreMap(
       return;
     }
 
-    map.on("error", () => {});
+    let styleFailed = false;
+    const fallbackToOsm = () => {
+      if (styleFailed) return;
+      styleFailed = true;
+      try { map.setStyle(OSM_FALLBACK_STYLE); } catch {}
+    };
+    map.on("error", (e: any) => {
+      if (!styleFailed && (e?.error?.message || "").toString().toLowerCase().includes("style")) {
+        fallbackToOsm();
+      }
+    });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "top-right");
 
@@ -266,10 +289,18 @@ export default function MapLibreMap(
       renderClusteredMarkers(map);
     });
 
+    const fallbackTimer = setTimeout(() => {
+      if (!map.isStyleLoaded() || Object.keys(map.getStyle()?.sources || {}).length === 0) {
+        fallbackToOsm();
+        setTimeout(() => renderClusteredMarkers(map), 600);
+      }
+    }, 6000);
+
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current.clear();
       popupRef.current?.remove();
+      clearTimeout(fallbackTimer);
       map.remove();
       mapRef.current = null;
     };

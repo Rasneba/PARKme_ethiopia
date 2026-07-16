@@ -56,12 +56,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Gebeta API token not configured" }, { status: 500 });
   }
 
-  const url = `https://mapapi.gebeta.app/api/route/direction/?origin=${fromLat},${fromLng}&destination=${toLat},${toLng}&instruction=1&format=valhalla`;
+  const url = `https://mapapi.gebeta.app/api/route/direction/?origin=${fromLat},${fromLng}&destination=${toLat},${toLng}&instruction=1&format=valhalla&apiKey=${GEBETA_TOKEN}`;
 
   try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${GEBETA_TOKEN}` },
-    });
+    const res = await fetch(url);
     const data = await res.json();
 
     if (data.msg === "error" || data.error || !data.trip || !data.trip.legs || !data.trip.legs.length) {
