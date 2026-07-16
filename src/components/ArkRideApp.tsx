@@ -11,7 +11,7 @@ type IconName =
   | "star" | "filter" | "wallet" | "plus" | "arrow" | "close" | "check"
   | "lock" | "grid" | "home" | "receipt" | "help" | "settings" | "building"
   | "chart" | "edit" | "copy" | "scan" | "sparkle" | "shield" | "menu" | "logout"
-  | "nav" | "map" | "locate";
+  | "nav" | "map" | "locate" | "crosshair" | "list";
 
 function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number; stroke?: number }) {
   const shared = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: stroke, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
@@ -48,6 +48,8 @@ function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number
     nav: <><polygon points="3 11 22 2 13 21 11 13 3 11" /></>,
     map: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
     locate: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /><circle cx="12" cy="12" r="8" /></>,
+    crosshair: <><circle cx="12" cy="12" r="8" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></>,
+    list: <><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></>,
   };
   return <svg {...shared}>{paths[name]}</svg>;
 }
@@ -275,6 +277,7 @@ function CityMap({
   onBook,
   selectedSpotId,
   onNearMe,
+  onLocate,
   satellite,
   onToggleSatellite,
   userLocation,
@@ -286,6 +289,7 @@ function CityMap({
   onBook: (s: ApiSpot) => void;
   selectedSpotId: number | null;
   onNearMe: () => void;
+  onLocate: () => void;
   satellite: boolean;
   onToggleSatellite: () => void;
   userLocation?: { lat: number; lng: number } | null;
@@ -306,6 +310,9 @@ function CityMap({
           <Icon name={satellite ? "map" : "home"} size={16} /> {satellite ? "Map" : "Satellite"}
         </button>
       </div>
+      <button className="locate-gps-btn" title="Center on my location" onClick={onLocate}>
+        <Icon name="crosshair" size={22} />
+      </button>
       <MapLibreMap
         spots={spots}
         onSelectSpot={onSelectSpot}
@@ -604,6 +611,7 @@ export default function ParkmeApp() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [mobileListOpen, setMobileListOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(true);
   const [routeActive, setRouteActive] = useState(false);
   const [routeData, setRouteData] = useState<{ distance: number; time: number; instructions: any[] } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -674,7 +682,10 @@ export default function ParkmeApp() {
           haversineKm(pos.coords.latitude, pos.coords.longitude, a.lat, a.lng) -
           haversineKm(pos.coords.latitude, pos.coords.longitude, b.lat, b.lng)
         );
-        if (nearest.length > 0) setSelectedSpotId(nearest[0].id);
+        if (nearest.length > 0) {
+          setSelectedSpotId(nearest[0].id);
+          handleDirections(nearest[0]);
+        }
       },
       (err) => {
         let msg = "Could not get your location.";
@@ -694,6 +705,19 @@ export default function ParkmeApp() {
     );
   }
 
+  function handleLocate() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
+      },
+      () => {},
+      { timeout: 5000, enableHighAccuracy: true },
+    );
+  }
+
   function handleSelectSpot(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
     setRouteActive(false);
@@ -703,9 +727,7 @@ export default function ParkmeApp() {
   function handleDirections(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
     setRouteActive(true);
-    setTimeout(() => {
-      (window as any).__parkmeRoute?.(spot.lat, spot.lng);
-    }, 600);
+    (window as any).__parkmeRoute?.(spot.lat, spot.lng);
     if (userLocation) {
       fetch(`/api/directions?from_lat=${userLocation.lat}&from_lng=${userLocation.lng}&to_lat=${spot.lat}&to_lng=${spot.lng}`)
         .then((r) => r.ok ? r.json() : null)
@@ -757,10 +779,15 @@ export default function ParkmeApp() {
 
         <div className="workspace">
           {view === "spots" && (
-            <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
-              <div className={`search-panel-wrap ${selectedSpotId || !mobileListOpen ? "mobile-hidden" : ""}`}>
+            <div className={`content-grid ${routeActive ? "route-active" : ""} ${listOpen ? "" : "list-collapsed"}`}>
+              <div className={`search-panel-wrap ${!listOpen ? "collapsed" : ""} ${selectedSpotId || !mobileListOpen ? "mobile-hidden" : ""}`}>
                 <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => handleDirections(s)} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} activeCategory={activeCategory} onCategoryChange={onCategoryChange} />
               </div>
+              {!listOpen && (
+                <button className="list-toggle-fab" onClick={() => setListOpen(true)} title="Show spot list">
+                  <Icon name="list" size={18} />
+                </button>
+              )}
               {!selectedSpotId && !routeActive && (
                 <button className="mobile-list-toggle" onClick={() => setMobileListOpen(!mobileListOpen)}>
                   <Icon name="pin" size={15} />
@@ -768,7 +795,12 @@ export default function ParkmeApp() {
                   <Icon name={mobileListOpen ? "chevron" : "arrow"} size={14} />
                 </button>
               )}
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
+              <button className="mobile-search-float" onClick={() => setListOpen(!listOpen)}>
+                <Icon name="pin" size={18} />
+                <span>{searchQuery || "Where are you parking today?"}</span>
+                <div className="search-float-avatar"><Icon name="search" size={16} /></div>
+              </button>
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onLocate={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
               {selectedSpotId && (() => {
                 const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);
                 if (!spot) return null;

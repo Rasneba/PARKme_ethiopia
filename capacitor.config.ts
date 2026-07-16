@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'prakme-ethiopia',
   webDir: 'out',
   server: {
-    url: 'https://prakme-ethiopia.vercel.app',
+    url: 'https://parkmeethiopia.vercel.app',
     cleartext: false
   }
 };
