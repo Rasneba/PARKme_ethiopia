@@ -1,61 +1,16 @@
-"use client";
+﻿"use client";
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { MapLibreHandle } from "./MapLibreMap";
+import { Icon, type IconName } from "./Icon";
+import { SearchPanel, type ApiSpot } from "./SearchPanel";
+import { formatDistance, formatDuration, greetByHour } from "@/lib/format";
 
 const MapLibreMap = dynamic(() => import("./MapLibreMap"), { ssr: false });
 
-type IconName =
-  | "search" | "bell" | "calendar" | "clock" | "chevron" | "car" | "pin"
-  | "star" | "filter" | "wallet" | "plus" | "arrow" | "close" | "check"
-  | "lock" | "grid" | "home" | "receipt" | "help" | "settings" | "building"
-  | "chart" | "edit" | "copy" | "scan" | "sparkle" | "shield" | "menu" | "logout"
-  | "nav" | "map" | "locate" | "crosshair" | "list";
-
-function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number; stroke?: number }) {
-  const shared = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: stroke, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
-  const paths: Record<IconName, React.ReactNode> = {
-    search: <><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></>,
-    bell: <><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
-    calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></>,
-    clock: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3.5 2" /></>,
-    chevron: <path d="m9 18 6-6-6-6" />,
-    car: <><path d="M5 16 6.7 9h10.6l1.7 7" /><path d="M3.5 16.5h17v3a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-3Z" /><circle cx="7" cy="17.5" r="1" fill="currentColor" /><circle cx="17" cy="17.5" r="1" fill="currentColor" /></>,
-    pin: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.4" /></>,
-    star: <path d="m12 3 2.75 5.57 6.15.9-4.45 4.33 1.05 6.12L12 17.03l-5.5 2.89 1.05-6.12L3.1 9.47l6.15-.9L12 3Z" />,
-    filter: <><path d="M4 6h16M7 12h10M10 18h4" /><circle cx="8" cy="6" r="1.5" fill="white" /><circle cx="15" cy="12" r="1.5" fill="white" /><circle cx="12" cy="18" r="1.5" fill="white" /></>,
-    wallet: <><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H19v14H6.5A2.5 2.5 0 0 1 4 16.5v-9Z" /><path d="M4 8h15" /><path d="M16 13h3" /></>,
-    plus: <path d="M12 5v14M5 12h14" />,
-    arrow: <><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></>,
-    close: <path d="m6 6 12 12M18 6 6 18" />,
-    check: <path d="m5 12 4.2 4.2L19 6.5" />,
-    lock: <><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><path d="M12 14v2" /></>,
-    grid: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></>,
-    home: <><path d="m4 11 8-7 8 7v9H4v-9Z" /><path d="M9 20v-5h6v5" /></>,
-    receipt: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" /><path d="M9 8h6M9 12h6" /></>,
-    help: <><circle cx="12" cy="12" r="9" /><path d="M9.8 9a2.4 2.4 0 1 1 4.35 1.42c-1.1 1.36-2.15 1.62-2.15 3.08" /><path d="M12 17h.01" /></>,
-    settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.2 2.2-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.04 1.56v.09h-3.12v-.09a1.7 1.7 0 0 0-1.04-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.2-2.2.06-.06A1.7 1.7 0 0 0 6.72 15a1.7 1.7 0 0 0-1.56-1.04h-.09v-3.12h.09A1.7 1.7 0 0 0 6.72 9.8a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.2-2.2.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.04-1.56v-.09h3.12v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.2 2.2-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.04h.09v3.12h-.09A1.7 1.7 0 0 0 19.4 15Z" /></>,
-    building: <><path d="M4 21V5l8-3v19M12 8h8v13" /><path d="M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2" /></>,
-    chart: <><path d="M4 20V4M4 20h17" /><path d="m7 16 4-5 3 2 5-7" /></>,
-    edit: <><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-4-4L4 16v4Z" /><path d="m13.5 6.5 4 4" /></>,
-    copy: <><rect x="9" y="9" width="10" height="10" rx="1" /><path d="M15 9V5H5v10h4" /></>,
-    scan: <><path d="M5 9V5h4M15 5h4v4M19 15v4h-4M9 19H5v-4" /><path d="M8 12h8" /></>,
-    sparkle: <path d="m12 3 1.45 5.55L19 10l-5.55 1.45L12 17l-1.45-5.55L5 10l5.55-1.45L12 3ZM19 16l.65 2.35L22 19l-2.35.65L19 22l-.65-2.35L16 19l2.35-.65L19 16Z" />,
-    shield: <><path d="M12 3 19 6v5c0 4.7-3 7.6-7 10-4-2.4-7-5.3-7-10V6l7-3Z" /><path d="m9 12 2 2 4-4" /></>,
-    menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
-    logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>,
-    nav: <><polygon points="3 11 22 2 13 21 11 13 3 11" /></>,
-    map: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
-    locate: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /><circle cx="12" cy="12" r="8" /></>,
-    crosshair: <><circle cx="12" cy="12" r="8" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></>,
-    list: <><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></>,
-  };
-  return <svg {...shared}>{paths[name]}</svg>;
-}
-
 type User = { id: string; email: string; name: string; isHost?: boolean };
-type ApiSpot = { id: number; slug: string; name: string; address: string; neighborhood: string; label: string; category: string; tone: string; price: number; rating: string; availableSpots: number; totalSpots: number; spaces: string; hostName: string; lat: number; lng: number; distanceKm?: number };
 type Booking = { id: string; reference: string; status: string; parkingDate: string; startAt: string; endAt: string; durationHours: number; spaceLabel: string; paymentMethod: string; amountEtb: number; gateCode: string; checkInAt: string | null; createdAt: string; spotId: number; spotName: string; spotAddress: string };
 type WalletTx = { id: string; reference: string; type: string; amountEtb: number; provider: string | null; note: string; createdAt: string };
 
@@ -70,20 +25,8 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function formatDistance(km: number): string {
-  if (km < 1) return `${Math.round(km * 1000)} m`;
-  return `${km.toFixed(1)} km`;
-}
-
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${Math.round(seconds)} sec`;
-  if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
-  return `${Math.floor(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`;
-}
-
 function formatDate(d: Date) { return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); }
 function formatTime(d: Date) { return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }); }
-function greetByHour() { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; }
 
 function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
   const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
@@ -133,12 +76,12 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
           <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">WELCOME TO PARKME</p><h2>How will you use Parkme?</h2></div></div>
           <div className="auth-role-grid">
             <button className="auth-role-card" onClick={() => pickRole("driver")}>
-              <span className="auth-role-emoji">🚗</span>
+              <span className="auth-role-emoji">ðŸš—</span>
               <b>I&apos;m a Driver</b>
               <small>Find &amp; reserve parking spots</small>
             </button>
             <button className="auth-role-card auth-role-gold" onClick={() => pickRole("host")}>
-              <span className="auth-role-emoji">🏠</span>
+              <span className="auth-role-emoji">ðŸ </span>
               <b>I&apos;m a Host</b>
               <small>List your space &amp; earn money</small>
             </button>
@@ -156,7 +99,7 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
         <div className="modal-heading">
           <span className={`modal-icon ${isDriver ? "" : "modal-icon-gold"}`}><Icon name={isDriver ? "car" : "building"} size={22} /></span>
           <div>
-            <p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"} · {isDriver ? "DRIVER" : "HOST"}</p>
+            <p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"} Â· {isDriver ? "DRIVER" : "HOST"}</p>
             <h2>{mode === "login" ? "Log in to Parkme" : "Sign up for Parkme"}</h2>
           </div>
         </div>
@@ -201,115 +144,6 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
       {gateOpen && <button className="copy-gate-btn" onClick={() => { navigator.clipboard.writeText(booking.gateCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}><Icon name="copy" size={14} /> {copied ? "Copied!" : "Copy code"}</button>}
       {active && <button className="extend-btn" onClick={() => { if (confirm("Extend this booking by 1 hour?")) fetch(`/api/bookings/${booking.id}/extend`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ addHours: 1 }) }).then(() => onOpen()); }}><Icon name="clock" size={15} /> Extend by 1 hour</button>}
       <button className="pass-details" onClick={onOpen}>View parking pass <Icon name="arrow" size={16} /></button>
-    </section>
-  );
-}
-
-function SearchPanel({ spots, loading, searchQuery, onSearch, onSelectSpot, onBook, onDirections, totalCount, selectedSpotId, hasLocation, activeCategory, onCategoryChange, bookingType, onBookingTypeChange, parkFrom, onParkFrom, parkUntil, onParkUntil }: { spots: ApiSpot[]; loading: boolean; searchQuery: string; onSearch: (q: string) => void; onSelectSpot: (s: ApiSpot) => void; onBook: (s: ApiSpot) => void; onDirections: (s: ApiSpot) => void; totalCount: number; selectedSpotId: number | null; hasLocation: boolean; activeCategory: string; onCategoryChange: (cat: string) => void; bookingType: "hourly" | "monthly" | "airport"; onBookingTypeChange: (t: "hourly" | "monthly" | "airport") => void; parkFrom: string; onParkFrom: (v: string) => void; parkUntil: string; onParkUntil: (v: string) => void }) {
-  const [filterOpen, setFilterOpen] = useState(false);
-
-  const categories = [
-    { key: "all", label: "All spots", icon: "grid" as IconName },
-    { key: "ev_charging", label: "EV Charging", icon: "sparkle" as IconName },
-    { key: "cctv", label: "CCTV Covered", icon: "shield" as IconName },
-    { key: "24hr", label: "24/7 Open", icon: "clock" as IconName },
-    { key: "wheelchair", label: "Accessible", icon: "check" as IconName },
-    { key: "standard", label: "Standard", icon: "car" as IconName },
-  ];
-
-  const quickDestinations = [
-    { key: "airport", label: "Bole Airport", icon: "nav" as IconName },
-    { key: "stadium", label: "Stadiums", icon: "star" as IconName },
-    { key: "station", label: "Stations", icon: "pin" as IconName },
-    { key: "mall", label: "Malls", icon: "building" as IconName },
-  ];
-
-  return (
-    <section className="search-column">
-      <div className="search-top">
-        <div className="welcome-line"><p>{greetByHour()}</p><h1>Where are you parking today?</h1></div>
-
-        {/* JustPark-style booking type tabs */}
-        <div className="booking-type-tabs">
-          {(["hourly", "monthly", "airport"] as const).map((t) => (
-            <button key={t} className={`booking-type-tab ${bookingType === t ? "active" : ""}`} onClick={() => onBookingTypeChange(t)}>
-              {t === "hourly" ? "Hourly / Daily" : t === "monthly" ? "Monthly" : "Airport"}
-            </button>
-          ))}
-        </div>
-
-        {/* JustPark "When?" date pickers */}
-        {bookingType !== "monthly" && (
-          <div className="when-row">
-            <label className="when-field">
-              <span><Icon name="clock" size={14} /> From</span>
-              <input type="datetime-local" value={parkFrom} onChange={(e) => onParkFrom(e.target.value)} />
-            </label>
-            <label className="when-field">
-              <span><Icon name="arrow" size={14} /> Until</span>
-              <input type="datetime-local" value={parkUntil} onChange={(e) => onParkUntil(e.target.value)} />
-            </label>
-          </div>
-        )}
-
-        <div className="search-box">
-          <Icon name="search" size={20} />
-          <input value={searchQuery} onChange={(e) => onSearch(e.target.value)} placeholder="Search by name, area, or address..." aria-label="Search parking location" />
-          <button className="filter-button" aria-label="Open filters" onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" size={19} /></button>
-        </div>
-
-        {/* JustPark quick-destination chips */}
-        <div className="quick-destinations">
-          {quickDestinations.map((d) => (
-            <button key={d.key} className="quick-dest" onClick={() => onSearch(d.label)}>
-              <Icon name={d.icon} size={15} />
-              <span>{d.label}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="category-chips">
-          {categories.map((cat) => (
-            <button key={cat.key} className={`category-chip ${activeCategory === cat.key ? "active" : ""}`} onClick={() => onCategoryChange(cat.key)}>
-              <Icon name={cat.icon} size={14} />
-              <span>{cat.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="results-heading"><div><span className="eyebrow">{hasLocation ? "AVAILABLE NEARBY" : "ALL SPOTS"}</span><h2>{totalCount} spot{totalCount !== 1 ? "s" : ""} found{hasLocation ? " nearby" : ""}</h2></div></div>
-      {loading ? <div className="loading-state">Searching...</div> : (
-        <div className="place-list">
-          {spots.map((spot) => (
-            <article className={`place-card ${selectedSpotId === spot.id ? "selected" : ""}`} key={spot.id} onClick={() => onSelectSpot(spot)}>
-              <div className={`place-image ${spot.tone}`}>
-                <span className="place-kind">{spot.label}</span>
-                <span className="place-cat-tag">{spot.category === "ev_charging" ? "EV" : spot.category === "cctv" ? "CCTV" : spot.category === "24hr" ? "24/7" : spot.category === "wheelchair" ? "ACC" : ""}</span>
-                <div className="car-shape"><Icon name="car" size={29} /></div>
-              </div>
-              <div className="place-info">
-                <div className="place-name-line"><h3>{spot.name}</h3><span className="rating"><Icon name="star" size={13} stroke={2.4} /> {spot.rating}</span></div>
-                <p>{spot.address}</p>
-                <div className="place-meta">
-                  <span><Icon name="pin" size={14} />{spot.availableSpots} spots</span>
-                  {spot.distanceKm != null && <span className="place-distance"><Icon name="locate" size={13} /> {formatDistance(spot.distanceKm)}</span>}
-                </div>
-              </div>
-              <div className="place-price">
-                <b>{spot.price} <small>ETB</small></b>
-                <span>/ hour</span>
-                <div className="place-card-actions">
-                  <button className="place-directions-btn" title="Get directions" onClick={(e) => { e.stopPropagation(); onDirections(spot); }}>
-                    <Icon name="nav" size={14} />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); onBook(spot); }}>Reserve</button>
-                </div>
-              </div>
-            </article>
-          ))}
-          {spots.length === 0 && <p className="empty-state">No parking spots found nearby.</p>}
-        </div>
-      )}
     </section>
   );
 }
@@ -412,10 +246,10 @@ function BookingsView({ onBook }: { onBook: () => void }) {
     <section className="view-panel">
       <div className="view-header"><h2>My Bookings</h2><button className="add-space" onClick={onBook}><Icon name="plus" size={16} /> New booking</button></div>
       {active.length > 0 && <div className="view-section"><h3>Active Now</h3>{active.map((b) => (
-        <div className="booking-row" key={b.id}><span className="booking-status active"><Icon name="car" size={16} /></span><div><b>{b.spotName}</b><small>{b.spaceLabel} · {b.durationHours}h · {b.amountEtb} ETB</small></div><StatusDot text={b.status} /></div>
+        <div className="booking-row" key={b.id}><span className="booking-status active"><Icon name="car" size={16} /></span><div><b>{b.spotName}</b><small>{b.spaceLabel} Â· {b.durationHours}h Â· {b.amountEtb} ETB</small></div><StatusDot text={b.status} /></div>
       ))}</div>}
       {upcoming.length > 0 && <div className="view-section"><h3>Upcoming</h3>{upcoming.map((b) => (
-        <div className="booking-row" key={b.id}><span className="booking-status upcoming"><Icon name="calendar" size={16} /></span><div><b>{b.spotName}</b><small>{formatDate(new Date(b.startAt))} · {formatTime(new Date(b.startAt))} · {b.amountEtb} ETB</small></div><span className="booking-ref">{b.reference}</span></div>
+        <div className="booking-row" key={b.id}><span className="booking-status upcoming"><Icon name="calendar" size={16} /></span><div><b>{b.spotName}</b><small>{formatDate(new Date(b.startAt))} Â· {formatTime(new Date(b.startAt))} Â· {b.amountEtb} ETB</small></div><span className="booking-ref">{b.reference}</span></div>
       ))}</div>}
       {bookings.length === 0 && <div className="empty-view"><Icon name="receipt" size={40} /><h3>No bookings yet</h3><p>Find and reserve a parking spot to get started.</p><button className="confirm-booking" onClick={onBook}>Find a spot <Icon name="arrow" size={16} /></button></div>}
     </section>
@@ -457,7 +291,7 @@ function WalletView() {
         {transactions.map((tx) => (
           <div className="activity-row" key={tx.id}>
             <span className={`activity-icon ${tx.amountEtb > 0 ? "green" : "yellow"}`}><Icon name={tx.amountEtb > 0 ? "plus" : "car"} size={17} /></span>
-            <div><b>{tx.note}</b><small>{formatDate(new Date(tx.createdAt))} · {tx.provider ?? ""}</small></div>
+            <div><b>{tx.note}</b><small>{formatDate(new Date(tx.createdAt))} Â· {tx.provider ?? ""}</small></div>
             <strong className={tx.amountEtb > 0 ? "positive" : ""}>{tx.amountEtb > 0 ? "+" : ""}{tx.amountEtb} ETB</strong>
           </div>
         ))}
@@ -481,7 +315,7 @@ function HistoryView() {
       {past.length > 0 ? past.map((b) => (
         <div className="booking-row history-row" key={b.id}>
           <span className="booking-date"><b>{new Date(b.createdAt).getDate()}</b><small>{new Date(b.createdAt).toLocaleDateString("en-US", { month: "short" })}</small></span>
-          <div><b>{b.spotName}</b><small>{b.durationHours}h · {b.amountEtb} ETB · {b.reference}</small></div>
+          <div><b>{b.spotName}</b><small>{b.durationHours}h Â· {b.amountEtb} ETB Â· {b.reference}</small></div>
           <span className={`history-status ${b.status}`}>{b.status}</span>
         </div>
       )) : <div className="empty-view"><Icon name="receipt" size={40} /><h3>No history yet</h3><p>Your past parking sessions will appear here.</p></div>}
@@ -539,7 +373,7 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
           <p className="secure-note"><Icon name="shield" size={15} /> Secured by Parkme payments</p>
         </> : <>
           <div className="ticket-celebration"><span><Icon name="sparkle" size={20} /></span><div><p>YOU&apos;RE ALL SET!</p><h2>Parking confirmed</h2></div></div>
-          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PARKME PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{spot.name}</h3><p>{spot.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>{formatTime(new Date())}</b><span>{formatDate(new Date())}</span></div><div><small>DURATION</small><b>{duration} hours</b></div><div><small>SPACE</small><b>{bookingGateCode ? `${bookingGateCode.slice(0, 2)} · ${bookingGateCode.slice(2)}` : "B · 27"}</b></div></div><div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Check in"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Checked in!" : "CHECK IN AT GATE"}</p><b>{scanned ? `Welcome! Code: ${bookingGateCode}` : "Scan your ticket"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Done" : "Open scanner"}</button></div></div></div>
+          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PARKME PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{spot.name}</h3><p>{spot.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>{formatTime(new Date())}</b><span>{formatDate(new Date())}</span></div><div><small>DURATION</small><b>{duration} hours</b></div><div><small>SPACE</small><b>{bookingGateCode ? `${bookingGateCode.slice(0, 2)} Â· ${bookingGateCode.slice(2)}` : "B Â· 27"}</b></div></div><div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Check in"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Checked in!" : "CHECK IN AT GATE"}</p><b>{scanned ? `Welcome! Code: ${bookingGateCode}` : "Scan your ticket"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Done" : "Open scanner"}</button></div></div></div>
           <button className="confirm-booking" onClick={() => { onBooked(); onClose(); }}>Done <Icon name="arrow" size={18} /></button>
         </>}
       </div>
@@ -620,7 +454,7 @@ function OwnerPortal({ onClose }: { onClose: () => void }) {
                 {data.spaces.map((s) => (
                   <div className="owner-space-row" key={s.id}>
                     <span className="owner-space-photo">P</span>
-                    <div><b>{s.name}</b><small>{s.availableSpots}/{s.totalSpots} spots · {s.priceHourlyEtb} ETB/hr</small></div>
+                    <div><b>{s.name}</b><small>{s.availableSpots}/{s.totalSpots} spots Â· {s.priceHourlyEtb} ETB/hr</small></div>
                     <div className="space-controls">
                       <button onClick={() => void adjustPrice(s.id, -5)}>-</button>
                       <button onClick={() => void adjustPrice(s.id, 5)}>+</button>
@@ -637,6 +471,7 @@ function OwnerPortal({ onClose }: { onClose: () => void }) {
 }
 
 export default function ParkmeApp() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [authOpen, setAuthOpen] = useState<false | "driver" | "host">(false);
@@ -653,10 +488,6 @@ export default function ParkmeApp() {
   const [satellite, setSatellite] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [bookingType, setBookingType] = useState<"hourly" | "monthly" | "airport">("hourly");
-  const [parkFrom, setParkFrom] = useState(() => { const d = new Date(); d.setMinutes(0, 0, 0); return d.toISOString().slice(0, 16); });
-  const [parkUntil, setParkUntil] = useState(() => { const d = new Date(); d.setHours(d.getHours() + 2, 0, 0, 0); return d.toISOString().slice(0, 16); });
   const [routeActive, setRouteActive] = useState(false);
   const [routeData, setRouteData] = useState<{ distance: number; time: number; instructions: any[] } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -763,6 +594,20 @@ export default function ParkmeApp() {
     );
   }
 
+  function handleLocateThenNear() {
+    if (!navigator.geolocation) { handleNearMe(); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
+        setTimeout(() => handleNearMe(), 700);
+      },
+      () => handleNearMe(),
+      { timeout: 5000, enableHighAccuracy: true },
+    );
+  }
+
   function handleSelectSpot(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
     setRouteActive(false);
@@ -793,7 +638,7 @@ export default function ParkmeApp() {
       <aside className={`sidebar ${menuOpen ? "mobile-visible" : ""}`}>
         <a href="/" className="brand" style={{ textDecoration: "none" }}><div className="brand-mark"><span>Park</span><b>me</b></div><em>ethiopia</em></a>
         <button className="sidebar-close" onClick={() => setMenuOpen(false)}><Icon name="close" size={20} /></button>
-        <nav>{navItems.map((item) => <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setView(item.view); setMenuOpen(false); }}><Icon name={item.icon} size={20} /><span>{item.label}</span>{item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}</button>)}</nav>
+        <nav>{navItems.map((item) => <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setMenuOpen(false); if (item.label === "Find a spot") { router.push("/find"); return; } setView(item.view); }}><Icon name={item.icon} size={20} /><span>{item.label}</span>{item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}</button>)}</nav>
         <div className="sidebar-bottom">
           {user ? (
             <>
@@ -824,21 +669,15 @@ export default function ParkmeApp() {
 
         <div className="workspace">
           {view === "spots" && (
-            <div className={`content-grid ${routeActive ? "route-active" : ""} ${mobileSearchOpen ? "mobile-search-open" : ""}`}>
+            <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
               <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onLocate={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
 
-              {/* Uber-style floating "Where to?" pill */}
-              <button className="mobile-search-float" onClick={() => setMobileSearchOpen(true)}>
+              {/* Uber-style floating "Where to?" pill → center on me + Near Me */}
+              <button className="mobile-search-float" onClick={() => handleLocateThenNear()}>
                 <span className="search-float-pin"><Icon name="pin" size={18} /></span>
-                <span className="search-float-text">{searchQuery || "Where are you parking today?"}</span>
-                <span className="search-float-avatar"><Icon name="search" size={15} /></span>
+                <span className="search-float-text">{userLocation ? "Near me" : "Where are you parking today?"}</span>
+                <span className="search-float-avatar"><Icon name="crosshair" size={15} /></span>
               </button>
-
-              {/* Search overlay (full screen) */}
-              <div className="search-panel-wrap">
-                <button className="mobile-search-close" onClick={() => setMobileSearchOpen(false)} aria-label="Back to map"><Icon name="arrow" size={20} /></button>
-                <SearchPanel spots={spotsWithDistance} loading={spotsLoading} searchQuery={searchQuery} onSearch={onSearch} onSelectSpot={(s) => { setMobileSearchOpen(false); handleSelectSpot(s); }} onBook={(s) => { setMobileSearchOpen(false); if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} onDirections={(s) => { setMobileSearchOpen(false); handleDirections(s); }} totalCount={spotsWithDistance.length} selectedSpotId={selectedSpotId} hasLocation={!!userLocation} activeCategory={activeCategory} onCategoryChange={onCategoryChange} bookingType={bookingType} onBookingTypeChange={setBookingType} parkFrom={parkFrom} onParkFrom={setParkFrom} parkUntil={parkUntil} onParkUntil={setParkUntil} />
-              </div>
 
               {/* Uber-style bottom sheet for selected spot */}
               {selectedSpotId && (() => {

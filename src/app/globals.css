@@ -263,19 +263,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
   .mobile-search-float .search-float-text { flex: 1; text-align: left; color: #1b1b1b; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mobile-search-float .search-float-avatar { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: #fff; flex-shrink: 0; }
 
-  /* --- Search overlay: full screen, map dims behind --- */
-  .search-panel-wrap { display: none !important; position: absolute !important; z-index: 60; inset: 0; }
-  .content-grid.mobile-search-open .search-panel-wrap { display: block !important; }
-  .content-grid.mobile-search-open .map-column { filter: blur(2px) brightness(.9); }
-  .content-grid .search-column { position: absolute; z-index: 50; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; max-height: 100vh !important; overflow-y: auto; background: #fff; border-top: none; border-radius: 0; padding-top: calc(72px + var(--sat)); -webkit-overflow-scrolling: touch; }
-  .content-grid .search-column .welcome-line { display: none; }
-  .content-grid .search-column .search-box { margin: 0 16px 12px; box-shadow: 0 4px 16px rgba(0,0,0,.08); border-radius: 14px; border: 1px solid #ececec; }
-  .content-grid .search-column .category-chips { padding: 0 16px; flex-wrap: nowrap; overflow-x: auto; }
-  .content-grid .search-column .results-heading { padding: 0 16px; margin: 14px 0 8px; }
-  .content-grid .search-column .place-list { padding: 0 16px 120px; }
-  .mobile-search-close { display: none; }
-  .content-grid.mobile-search-open .mobile-search-close { position: absolute; z-index: 70; top: calc(16px + var(--sat)); left: 14px; width: 42px; height: 42px; display: grid; place-items: center; background: #fff; border: none; border-radius: 50%; color: #121212; box-shadow: 0 4px 16px rgba(0,0,0,.16); cursor: pointer; }
-  .content-grid.mobile-search-open .mobile-search-float { display: none !important; }
+  /* --- Search panel (used on /find, list-only) --- */
+  .search-column { position: relative; z-index: 50; width: 100% !important; max-height: 100vh !important; overflow-y: auto; background: #fff; border-top: none; border-radius: 0; padding-top: calc(72px + var(--sat)); -webkit-overflow-scrolling: touch; }
+  .search-column .welcome-line { display: none; }
+  .search-column .search-box { margin: 0 16px 12px; box-shadow: 0 4px 16px rgba(0,0,0,.08); border-radius: 14px; border: 1px solid #ececec; }
+  .search-column .category-chips { padding: 0 16px; flex-wrap: nowrap; overflow-x: auto; }
+  .search-column .results-heading { padding: 0 16px; margin: 14px 0 8px; }
+  .search-column .place-list { padding: 0 16px 120px; }
 
   /* --- Uber bottom sheet for spot --- */
   .mobile-action-bar { display: block; position: absolute; z-index: 20; left: 0; right: 0; bottom: 0; max-height: 62vh; background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 34px rgba(0,0,0,.18); overflow: hidden; animation: sheetSlideUp .3s cubic-bezier(.4,0,.2,1); -webkit-overflow-scrolling: touch; }
@@ -326,21 +320,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
   .mobile-btn { height: 46px; font-size: 14px; }
 }
 
-/* Small phones */
-@media (max-width: 560px) {
-  .mobile-search-float { top: calc(8px + var(--sat)); left: 10px; right: 10px; padding: 10px 13px; border-radius: 12px; }
-  .mobile-search-float span { font-size: 13px; }
-  .locate-gps-btn { right: 12px; bottom: 14px; width: 44px; height: 44px; }
-  .mobile-action-bar { max-height: 50vh; }
-  .mobile-spot-info b { font-size: 15px; }
-  .mobile-btn { padding: 10px 12px; font-size: 13px; }
-}
-
 /* Mobile route-active: map full, route in bottom sheet */
 @media (max-width: 860px) {
   .map-spot-sheet { display: none; }
   .content-grid.route-active .mobile-action-bar.route-mode { max-height: 50vh; }
-  .content-grid.route-active .search-panel-wrap { display: none !important; }
   .content-grid.route-active .locate-gps-btn { bottom: 210px; }
 }
 
@@ -886,4 +869,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
   .reg-success-card { margin: 0 auto 22px; }
   .footer-links { grid-template-columns: repeat(2, 1fr); }
   .section-container { padding: 0 18px; }
+}
+
+/* --- /find list-only search page (no map) --- */
+.find-workspace { height: 100%; overflow-y: auto; background: #fffefa; }
+.find-list { max-width: 760px; height: 100%; margin: 0 auto; }
+.find-list .search-column { height: 100%; }
+
+@media (max-width: 860px) {
+  .find-workspace { padding: 0; }
+  .find-list { max-width: 100%; }
+  .find-list .search-column { padding-top: calc(64px + var(--sat)); }
+  /* Hide desktop sidebar chrome, show mobile menu */
+  .find-list .search-column .welcome-line { display: none; }
 }
