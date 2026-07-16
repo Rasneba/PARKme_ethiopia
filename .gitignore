@@ -1,0 +1,11 @@
+node_modules
+.next
+.env
+.env.local
+.env.*.local
+.vercel
+temp/
+public/osm-roads.geojson
+public/osm-buildings.geojson
+
+.vercel

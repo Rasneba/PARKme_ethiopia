@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parkme Ethiopia - Complete Documentation</title>
+<style>
+  :root {
+    --green: #16964a;
+    --green-dark: #0d7135;
+    --green-soft: #e6f5e9;
+    --ink: #131614;
+    --muted: #6c746e;
+    --faint: #a5aba5;
+    --canvas: #f3f3ee;
+    --paper: #fffefa;
+    --cream: #f9f8f1;
+    --line: #e5e6df;
+    --yellow: #f3bf29;
+    --red: #dc4438;
+    --blue: #2e83db;
+    --shadow: 0 16px 38px rgba(29,36,30,.08);
+    --radius: 14px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    background: var(--canvas);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  /* Navigation */
+  .doc-nav {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 280px; background: var(--paper);
+    border-right: 1px solid var(--line);
+    overflow-y: auto; padding: 24px 0;
+    z-index: 100;
+  }
+  .doc-nav .logo {
+    padding: 0 24px 20px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 16px;
+  }
+  .doc-nav .logo h2 {
+    font-size: 20px; font-weight: 800;
+    color: var(--green-dark);
+  }
+  .doc-nav .logo span { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+  .doc-nav .nav-group { padding: 0 12px; margin-bottom: 8px; }
+  .doc-nav .nav-group-title {
+    font-size: 10px; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--faint);
+    padding: 8px 12px 4px;
+  }
+  .doc-nav a {
+    display: block; padding: 6px 12px; border-radius: 8px;
+    color: var(--muted); text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    transition: .15s;
+  }
+  .doc-nav a:hover { background: var(--green-soft); color: var(--green-dark); }
+  /* Main content */
+  .doc-main {
+    margin-left: 280px;
+    max-width: 900px;
+    padding: 40px 48px 80px;
+  }
+  .doc-main > h1 {
+    font-size: 36px; font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--green-dark), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .doc-main > .subtitle {
+    font-size: 16px; color: var(--muted);
+    margin-bottom: 32px;
+  }
+  .badge {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 20px; font-size: 11px; font-weight: 700;
+    letter-spacing: .03em;
+  }
+  .badge-green { background: var(--green-soft); color: var(--green-dark); }
+  .badge-yellow { background: #fff4cf; color: #8a6d00; }
+  .badge-red { background: #fdecE9; color: #a82020; }
+  .badge-blue { background: #e8f0fe; color: #1a5fb4; }
+  /* Sections */
+  section { margin-bottom: 48px; }
+  h2 {
+    font-size: 24px; font-weight: 800;
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--green-soft);
+  }
+  h3 {
+    font-size: 18px; font-weight: 700;
+    margin: 28px 0 12px;
+    color: var(--green-dark);
+  }
+  h4 {
+    font-size: 15px; font-weight: 700;
+    margin: 20px 0 8px;
+  }
+  p { margin-bottom: 12px; }
+  /* Cards */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .card-grid .card { margin-bottom: 0; }
+  .card h4 { margin-top: 0; color: var(--ink); }
+  .card p { color: var(--muted); font-size: 13px; margin-bottom: 0; }
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  th {
+    background: var(--cream);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--muted);
+  }
+  td { vertical-align: top; }
+  tr:hover td { background: var(--green-soft); }
+  /* Code */
+  code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--cream);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--green-dark);
+  }
+  pre {
+    background: var(--ink);
+    color: #e0e0e0;
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+  /* Lists */
+  ul, ol { margin: 8px 0 16px 20px; }
+  li { margin-bottom: 4px; }
+  /* Endpoint blocks */
+  .endpoint {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .endpoint-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .method {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: white;
+  }
+  .method-get { background: var(--blue); }
+  .method-post { background: var(--green); }
+  .method-patch { background: var(--yellow); color: var(--ink); }
+  .method-delete { background: var(--red); }
+  .endpoint-url { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .endpoint-desc { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  /* Steps */
+  .steps { counter-reset: step; list-style: none; margin-left: 0; padding-left: 0; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 40px;
+    margin-bottom: 16px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 0;
+    width: 28px; height: 28px;
+    background: var(--green);
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+  }
+  /* Alert boxes */
+  .alert {
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-size: 13px;
+    border-left: 4px solid;
+  }
+  .alert-info { background: #e8f0fe; border-color: var(--blue); color: #1a5fb4; }
+  .alert-warn { background: #fff4cf; border-color: var(--yellow); color: #8a6d00; }
+  .alert-error { background: #fdecE9; border-color: var(--red); color: #a82020; }
+  .alert-success { background: var(--green-soft); border-color: var(--green); color: var(--green-dark); }
+  /* Responsive */
+  @media (max-width: 768px) {
+    .doc-nav { display: none; }
+    .doc-main { margin-left: 0; padding: 20px 16px 60px; }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+  /* Print */
+  @media print {
+    .doc-nav { display: none; }
+    .doc-main { margin-left: 0; }
+  }
+  .toc-back { font-size: 12px; color: var(--green); cursor: pointer; text-decoration: none; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR NAVIGATION -->
+<nav class="doc-nav">
+  <div class="logo">
+    <h2>Parkme Ethiopia</h2>
+    <span>Complete Documentation v1.0</span>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Overview</div>
+    <a href="#executive-summary">Executive Summary</a>
+    <a href="#tech-stack">Technology Stack</a>
+    <a href="#architecture">Architecture</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">User Guides</div>
+    <a href="#driver-guide">Driver Guide</a>
+    <a href="#host-guide">Host Guide</a>
+    <a href="#admin-guide">Admin Guide</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">SRS</div>
+    <a href="#srs-functional">Functional Requirements</a>
+    <a href="#srs-nonfunctional">Non-Functional Requirements</a>
+    <a href="#srs-database">Database Schema</a>
+    <a href="#srs-security">Security</a>
+    <a href="#srs-constraints">Constraints & Assumptions</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Developer</div>
+    <a href="#dev-setup">Local Setup</a>
+    <a href="#dev-project-structure">Project Structure</a>
+    <a href="#dev-api-reference">API Reference</a>
+    <a href="#dev-auth">Authentication</a>
+    <a href="#dev-map">Map System</a>
+    <a href="#dev-components">Component Reference</a>
+    <a href="#dev-pwa">PWA & Service Worker</a>
+    <a href="#dev-osm">OSM Data Pipeline</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Operations</div>
+    <a href="#deployment">Deployment</a>
+    <a href="#env-variables">Environment Variables</a>
+    <a href="#monitoring">Monitoring</a>
+    <a href="#faq">FAQ</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="doc-main">
+
+<!-- ========== OVERVIEW ========== -->
+<h1>Parkme Ethiopia Documentation</h1>
+<p class="subtitle">Software Requirements Specification, User Guides &amp; Developer Reference</p>
+
+<section id="executive-summary">
+<h2>1. Executive Summary</h2>
+<div class="card">
+  <p><strong>Parkme Ethiopia</strong> is a web-based parking-as-a-service (PaaS) platform designed for Addis Ababa, Ethiopia. It enables drivers to find, reserve, and pay for parking spaces in real time, while allowing hosts (parking space owners) to list, manage, and monetize their parking infrastructure.</p>
+</div>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>&#x1F1EA;&#x1F1F9; Ethiopian Focus</h4>
+    <p>Local addresses, Amharic street names, ETB currency, TeleBirr + CBE payments, and coverage across 14+ neighborhoods in Addis Ababa.</p>
+  </div>
+  <div class="card">
+    <h4>&#x1F310; Interactive Map</h4>
+    <p>MapLibre GL with GraphHopper routing, clustered markers, real-time directions, turn-by-turn navigation, and satellite view toggle.</p>
+  </div>
+  <div class="card">
+    <h4>&#x1F4B0; Digital Wallet</h4>
+    <p>Built-in wallet with instant top-up via TeleBirr or Commercial Bank of Ethiopia. Cashless parking payments with real-time balance tracking.</p>
+  </div>
+  <div class="card">
+    <h4>&#x1F3E2; Host Dashboard</h4>
+    <p>Earnings analytics, pricing control, availability management, occupancy metrics, and weekly revenue charts for parking space owners.</p>
+  </div>
+</div>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>&#x1F4F1; PWA Ready</h4>
+    <p>Progressive Web App with offline support, installability, and home screen prompt. Works on iOS, Android, and desktop.</p>
+  </div>
+  <div class="card">
+    <h4>&#x1F512; Secure Auth</h4>
+    <p>Cookie-based sessions, bcrypt password hashing, role-based access (driver/host), and 7-day persistent login.</p>
+  </div>
+</div>
+</section>
+
+<section id="tech-stack">
+<h2>2. Technology Stack</h2>
+<table>
+  <thead><tr><th>Layer</th><th>Technology</th><th>Version</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>Framework</td><td>Next.js</td><td>16.2.6</td><td>React SSR/SSG, API routes, Turbopack</td></tr>
+    <tr><td>UI Library</td><td>React</td><td>19.2.6</td><td>Component-based UI</td></tr>
+    <tr><td>Language</td><td>TypeScript</td><td>5.9.3</td><td>Type safety, developer experience</td></tr>
+    <tr><td>Database</td><td>PostgreSQL (Neon)</td><td>Serverless</td><td>Relational data, ACID transactions</td></tr>
+    <tr><td>ORM</td><td>Drizzle ORM</td><td>0.45.2</td><td>Type-safe SQL queries, migrations</td></tr>
+    <tr><td>Map Engine</td><td>MapLibre GL JS</td><td>5.24.0</td><td>Vector/raster map rendering</td></tr>
+    <tr><td>Routing</td><td>GraphHopper API</td><td>v1</td><td>Car routing, turn-by-turn instructions</td></tr>
+    <tr><td>Clustering</td><td>Supercluster</td><td>8.0.1</td><td>Marker clustering on map</td></tr>
+    <tr><td>Hashing</td><td>bcryptjs</td><td>2.4.3</td><td>Password hashing (10 salt rounds)</td></tr>
+    <tr><td>Styling</td><td>Tailwind CSS + Custom CSS</td><td>4.1.17</td><td>Responsive design, design system</td></tr>
+    <tr><td>Hosting</td><td>Vercel</td><td>&mdash;</td><td>Serverless deployment, edge functions</td></tr>
+    <tr><td>PWA</td><td>Service Worker</td><td>&mdash;</td><td>Offline support, caching</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="architecture">
+<h2>3. Architecture</h2>
+
+<h3>3.1 High-Level Architecture</h3>
+<pre><code>┌──────────────────────────────────────────────────────────┐
+│                      CLIENT (Browser)                     │
+│  ┌──────────┐  ┌───────────┐  ┌───────────────────────┐  │
+│  │ Landing  │  │   App     │  │  MapLibre GL + OSM    │  │
+│  │  Page    │  │   SPA     │  │  GraphHopper Tiles    │  │
+│  └──────────┘  └───────────┘  └───────────────────────┘  │
+└──────────────────────┬───────────────────────────────────┘
+                       │ HTTPS (REST API)
+┌──────────────────────▼───────────────────────────────────┐
+│                  NEXT.JS SERVER                            │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │                  API Routes                          │  │
+│  │  /api/auth/*  /api/bookings  /api/wallet            │  │
+│  │  /api/spots   /api/directions /api/host/*           │  │
+│  └─────────────────────┬───────────────────────────────┘  │
+│                        │                                   │
+│  ┌─────────────────────▼───────────────────────────────┐  │
+│  │              Drizzle ORM + pg Pool                    │  │
+│  └─────────────────────┬───────────────────────────────┘  │
+└────────────────────────┼──────────────────────────────────┘
+                         │
+        ┌────────────────┼──────────────────┐
+        │                │                  │
+   ┌────▼────┐    ┌──────▼──────┐    ┌─────▼──────┐
+   │  Neon   │    │ GraphHopper │    │   Vercel    │
+   │   DB    │    │  Routing API│    │   Hosting   │
+   └─────────┘    └─────────────┘    └─────────────┘</code></pre>
+
+<h3>3.2 Data Flow</h3>
+<ol class="steps">
+  <li><strong>User opens app</strong> &mdash; Landing page renders; if session cookie exists, redirects to <code>/app</code></li>
+  <li><strong>Authentication</strong> &mdash; Modal-based login/signup with role selection (driver or host)</li>
+  <li><strong>Browse spots</strong> &mdash; <code>GET /api/spots</code> returns 26+ seeded parking spaces sorted by price</li>
+  <li><strong>Map rendering</strong> &mdash; MapLibre loads GraphHopper tiles, overlays OSM roads + buildings, clusters markers</li>
+  <li><strong>Select spot</strong> &mdash; Bottom sheet appears with spot details, directions, and reserve button</li>
+  <li><strong>Get directions</strong> &mdash; <code>GET /api/directions</code> proxies to GraphHopper; route drawn as green line on map with turn-by-turn popup</li>
+  <li><strong>Book parking</strong> &mdash; Duration slider, payment method (wallet/TeleBirr), optional coupon; <code>POST /api/bookings</code> creates reservation</li>
+  <li><strong>Wallet payment</strong> &mdash; Balance deducted, transaction recorded; gate code generated</li>
+  <li><strong>Check-in</strong> &mdash; <code>POST /api/bookings/[id]/check-in</code> activates parking session</li>
+  <li><strong>Host dashboard</strong> &mdash; Earnings analytics, pricing control, availability blocks</li>
+</ol>
+
+<h3>3.3 Deployment Pipeline</h3>
+<pre><code>git push origin main
+       │
+       ▼
+GitHub Repository (Rasneba/PARKme_ethiopia)
+       │
+       ▼
+Vercel Auto-Deploy (Production)
+       │
+       ├── Build: Next.js 16.2.6 (Turbopack)
+       ├── Output: Serverless Functions + Static Assets
+       ├── Static: /api/spots, landing page, PWA manifest
+       └── Dynamic: API routes, /app, /login
+       │
+       ▼
+https://prakme-ethiopia.vercel.app</code></pre>
+</section>
+
+<hr>
+
+<!-- ========== USER GUIDES ========== -->
+<h2 id="driver-guide">4. Driver Guide</h2>
+
+<section>
+<h3>4.1 Getting Started</h3>
+<p>As a driver, Parkme Ethiopia helps you find available parking spots near your destination, reserve them in advance, and navigate directly using built-in directions.</p>
+
+<h4>Creating an Account</h4>
+<ol class="steps">
+  <li>Visit <code>https://prakme-ethiopia.vercel.app</code></li>
+  <li>On the landing page, scroll to the registration form or click <strong>"Open App"</strong></li>
+  <li>Select <strong>"I need parking"</strong> (Driver role)</li>
+  <li>Enter your full name, email (e.g., <code>yourname@gmail.com</code>), phone number (<code>+251</code> prefix), and password (min 6 characters)</li>
+  <li>Click <strong>"Create my account"</strong></li>
+  <li>You will be redirected to the app with a 500 ETB welcome bonus in your wallet</li>
+</ol>
+
+<div class="alert alert-info">
+  <strong>Demo account:</strong> Email <code>miki@parkme.et</code> / Password <code>demo1234</code> (pre-loaded with 500 ETB and an active booking)
+</div>
+
+<h3>4.2 Finding Parking</h3>
+<h4>Search Panel</h4>
+<ul>
+  <li>Use the search bar at the top to search by <strong>name, address, or neighborhood</strong></li>
+  <li>Results update in real-time as you type (300ms debounce)</li>
+  <li>Results show: parking name, rating (stars), address, distance from you, available spots, and hourly price in ETB</li>
+</ul>
+
+<h4>Filters</h4>
+<p>Tap the filter icon to access:</p>
+<ul>
+  <li><strong>Available only</strong> &mdash; Hide fully booked spots</li>
+  <li><strong>Covered</strong> &mdash; Show only covered/garage parking</li>
+  <li><strong>Under 50 ETB/hr</strong> &mdash; Budget-friendly options</li>
+</ul>
+
+<h4>Map View</h4>
+<ul>
+  <li><strong>Clustered markers</strong> &mdash; Zoom in to expand clusters into individual pins</li>
+  <li><strong>Pin colors:</strong> Green = available, Red = selected</li>
+  <li><strong>Near Me button</strong> &mdash; Flies to your current GPS location</li>
+  <li><strong>Satellite button</strong> &mdash; Toggle between street map and satellite imagery</li>
+  <li><strong>Zoom controls</strong> &mdash; Native MapLibre +/- buttons at top-right</li>
+</ul>
+
+<h4>Getting Directions</h4>
+<ol class="steps">
+  <li>Tap a parking spot (on map pin or search result)</li>
+  <li>Bottom sheet shows spot details</li>
+  <li>Tap <strong>"Directions"</strong></li>
+  <li>A green route line draws on the map from your location to the parking spot</li>
+  <li>A turn-by-turn directions panel appears showing distance, duration, and step-by-step instructions</li>
+  <li>To cancel and pick a different spot, tap the <strong>X button</strong> on the bottom sheet</li>
+</ol>
+
+<h3>4.3 Reserving a Spot</h3>
+<ol class="steps">
+  <li>Select a parking spot from search or map</li>
+  <li>Tap <strong>"Reserve now"</strong></li>
+  <li>Choose duration: use the slider (1-8 hours) or quick buttons (1h, 2h, 3h, 4h)</li>
+  <li>Select payment method:
+    <ul>
+      <li><strong>ParkmeWallet</strong> &mdash; Instant, uses your wallet balance</li>
+      <li><strong>TeleBirr</strong> &mdash; Mobile money payment</li>
+    </ul>
+  </li>
+  <li>Optional: Enter coupon code <code>PARKME20</code> for 20 ETB off</li>
+  <li>Review total cost (price &times; hours - discount)</li>
+  <li>Tap <strong>"Confirm booking"</strong></li>
+  <li>Confirmation screen shows:
+    <ul>
+      <li>Booking reference (e.g., <code>PR-K3X-729</code>)</li>
+      <li>Space label (e.g., <code>B 27</code>)</li>
+      <li>Arrival time and duration</li>
+      <li>Gate code (tap to reveal, tap to copy)</li>
+    </ul>
+  </li>
+</ol>
+
+<h3>4.4 During Parking</h3>
+<ul>
+  <li><strong>Active timer</strong> &mdash; The "Parking Active" card shows elapsed time in HH:MM:SS</li>
+  <li><strong>Gate code</strong> &mdash; Tap to reveal, tap to copy to clipboard</li>
+  <li><strong>Check-in</strong> &mdash; Mark your arrival to start the active timer</li>
+</ul>
+
+<h3>4.5 Managing Your Wallet</h3>
+<ul>
+  <li>Open profile drawer &rarr; Wallet tab</li>
+  <li>View current balance (top card)</li>
+  <li>Quick top-up: 50, 100, 250, or 500 ETB</li>
+  <li>Select provider: TeleBirr or Commercial Bank of Ethiopia</li>
+  <li>Transaction history shows all deposits (+) and charges (-)</li>
+</ul>
+
+<h3>4.6 Viewing History</h3>
+<p>The History tab shows all past parking sessions with date, location, duration, amount, and status.</p>
+
+<h2 id="host-guide">5. Host Guide</h2>
+
+<section>
+<h3>5.1 Becoming a Host</h3>
+<p>Hosts are parking space owners who list their spaces on Parkme Ethiopia and earn revenue from driver bookings.</p>
+<ol class="steps">
+  <li>Create a regular driver account (or log in to existing account)</li>
+  <li>From the sidebar, click <strong>"Become a host"</strong> or navigate to the Host Dashboard</li>
+  <li>Your account is immediately upgraded to host status (<code>isHost = true</code>)</li>
+  <li>Access the Host Dashboard from the profile drawer</li>
+</ol>
+
+<div class="alert alert-info">
+  <strong>Demo host account:</strong> Email <code>host@parkme.et</code> / Password <code>demo1234</code>
+</div>
+
+<h3>5.2 Host Dashboard</h3>
+<p>The dashboard provides a complete overview of your parking business:</p>
+
+<h4>Revenue Metrics</h4>
+<table>
+  <thead><tr><th>Metric</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Host Payout</strong></td><td>Your 85% share of total earnings</td></tr>
+    <tr><td><strong>Platform Fee</strong></td><td>Parkme's 15% commission</td></tr>
+    <tr><td><strong>Total Bookings</strong></td><td>Count of all bookings across your spaces</td></tr>
+    <tr><td><strong>Guest Rating</strong></td><td>Average rating across all your spaces</td></tr>
+    <tr><td><strong>Occupancy Rate</strong></td><td>Percentage of spots currently occupied</td></tr>
+  </tbody>
+</table>
+
+<h4>Weekly Earnings Chart</h4>
+<p>A bar chart showing earnings for the last 7 days (Mon-Sun), helping you identify peak revenue days.</p>
+
+<h4>Space Management</h4>
+<p>Each of your listed spaces shows:</p>
+<ul>
+  <li><strong>Current price</strong> (ETB/hr) with +/- adjustment buttons</li>
+  <li><strong>Available / Total spots</strong></li>
+  <li><strong>Active status</strong> toggle (on/off)</li>
+</ul>
+
+<h4>Price Adjustment</h4>
+<ul>
+  <li>Minimum: 10 ETB/hr</li>
+  <li>Maximum: 500 ETB/hr</li>
+  <li>Changes take effect immediately for new bookings</li>
+</ul>
+
+<h4>Availability Management</h4>
+<p>Block specific dates when your parking space is unavailable:</p>
+<ul>
+  <li>Select a parking space</li>
+  <li>Choose a date</li>
+  <li>Add an optional reason (max 120 characters)</li>
+  <li>Blocked dates prevent new reservations for that day</li>
+</ul>
+
+<h2 id="admin-guide">6. Admin Guide</h2>
+
+<section>
+<h3>6.1 System Administration</h3>
+<p>Parkme Ethiopia currently operates with a simplified admin model. Full admin features are planned for a future release.</p>
+
+<h4>Current Admin Capabilities</h4>
+<table>
+  <thead><tr><th>Capability</th><th>Method</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>Monitor system health</td><td><code>GET /api/health</code></td><td><span class="badge badge-green">Available</span></td></tr>
+    <tr><td>View all registered users</td><td><code>GET /api/register</code></td><td><span class="badge badge-green">Available</span></td></tr>
+    <tr><td>View all parking spaces</td><td><code>GET /api/spots</code></td><td><span class="badge badge-green">Available</span></td></tr>
+    <tr><td>Seed demo data</td><td>Auto-seed on first access</td><td><span class="badge badge-yellow">Automatic</span></td></tr>
+    <tr><td>Modify pricing</td><td><code>PATCH /api/host/spaces/[id]</code></td><td><span class="badge badge-green">Available</span></td></tr>
+    <tr><td>Delete users</td><td>&mdash;</td><td><span class="badge badge-red">Planned</span></td></tr>
+    <tr><td>Manage disputes</td><td>&mdash;</td><td><span class="badge badge-red">Planned</span></td></tr>
+    <tr><td>Revenue reports</td><td>&mdash;</td><td><span class="badge badge-red">Planned</span></td></tr>
+    <tr><td>Platform configuration</td><td>&mdash;</td><td><span class="badge badge-red">Planned</span></td></tr>
+  </tbody>
+</table>
+
+<h3>6.2 System Monitoring</h3>
+<h4>Health Check</h4>
+<pre><code>GET https://prakme-ethiopia.vercel.app/api/health
+Response: { "ok": true }  // DB connection verified</code></pre>
+
+<h4>User Management</h4>
+<pre><code>GET https://prakme-ethiopia.vercel.app/api/register
+Response: { "users": [...], "count": 42 }</code></pre>
+
+<h3>6.3 Demo Data Seeding</h3>
+<p>The system auto-seeds on first API access if the database is empty:</p>
+<ul>
+  <li><strong>1 demo user:</strong> <code>miki@parkme.et</code> / <code>demo1234</code></li>
+  <li><strong>26 parking spaces</strong> across Addis Ababa neighborhoods</li>
+  <li><strong>500 ETB</strong> wallet balance for demo user</li>
+  <li><strong>1 active booking</strong> at Unity Park Garage</li>
+  <li>Parking prices range from 15-50 ETB/hr</li>
+</ul>
+
+<h3>6.4 Revenue Model</h3>
+<table>
+  <thead><tr><th>Component</th><th>Percentage</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>Host Payout</td><td><strong>85%</strong></td><td>Revenue share to parking space owner</td></tr>
+    <tr><td>Platform Fee</td><td><strong>15%</strong></td><td>Parkme Ethiopia commission</td></tr>
+  </tbody>
+</table>
+</section>
+
+<hr>
+
+<!-- ========== SRS ========== -->
+<h2 id="srs-functional">7. Software Requirements Specification (SRS)</h2>
+
+<section>
+<h3>7.1 Functional Requirements</h3>
+
+<h4>FR-01: User Registration &amp; Authentication</h4>
+<table>
+  <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td>FR-01.1</td><td>Users can register with email, name, phone, password and role (driver/host)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-01.2</td><td>System validates email format, password (min 6 chars), name (min 2 chars)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-01.3</td><td>System rejects duplicate email registrations (HTTP 409)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-01.4</td><td>Users can log in with email and password</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-01.5</td><td>Session maintained via httpOnly cookie (7-day expiry)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-01.6</td><td>Driver accounts cannot access host features unless upgraded</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-01.7</td><td>Users can upgrade to host status via "Become a Host"</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+    <tr><td>FR-01.8</td><td>Users can log out (session destroyed, cookie cleared)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+  </tbody>
+</table>
+
+<h4>FR-02: Parking Space Discovery</h4>
+<table>
+  <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td>FR-02.1</td><td>Users can view all available parking spaces sorted by price</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-02.2</td><td>Users can search by name, address, or neighborhood</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-02.3</td><td>Filter by: available spots, covered only, price under 50 ETB/hr</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-02.4</td><td>Interactive map with clustered markers using Supercluster</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-02.5</td><td>Spot cards show: name, rating, address, distance, availability, price</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-02.6</td><td>Geolocation-based distance calculation (Haversine formula)</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+    <tr><td>FR-02.7</td><td>OSM roads and buildings overlay on the map</td><td><span class="badge badge-blue">Nice to Have</span></td></tr>
+    <tr><td>FR-02.8</td><td>Satellite view toggle (Esri imagery)</td><td><span class="badge badge-blue">Nice to Have</span></td></tr>
+  </tbody>
+</table>
+
+<h4>FR-03: Directions &amp; Routing</h4>
+<table>
+  <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td>FR-03.1</td><td>Users can get driving directions from current location to any spot</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-03.2</td><td>Route drawn as green line on the map</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-03.3</td><td>Turn-by-turn directions panel with distance, duration, and step-by-step instructions</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-03.4</td><td>Cancel route and deselect spot (X button)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-03.5</td><td>Route via GraphHopper API (vehicle=car, GeoJSON output)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+  </tbody>
+</table>
+
+<h4>FR-04: Booking &amp; Reservation</h4>
+<table>
+  <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td>FR-04.1</td><td>Users can reserve a parking spot for 1-8 hours</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-04.2</td><td>System validates available spots before booking</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-04.3</td><td>Unique booking reference generated (PR-XXX-NNN format)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-04.4</td><td>4-digit gate code generated for each booking</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-04.5</td><td>Space label assigned (e.g., "B 27")</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-04.6</td><td>Available spot count decremented atomically</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-04.7</td><td>Coupon code support (PARKME20 = 20 ETB off)</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+    <tr><td>FR-04.8</td><td>Booking confirmation screen with all details</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-04.9</td><td>Active booking timer showing elapsed time</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+    <tr><td>FR-04.10</td><td>Check-in functionality to start active session</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+    <tr><td>FR-04.11</td><td>Booking history view with past sessions</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+  </tbody>
+</table>
+
+<h4>FR-05: Wallet &amp; Payments</h4>
+<table>
+  <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td>FR-05.1</td><td>Users have a digital wallet with balance tracking</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-05.2</td><td>Top-up via TeleBirr or Commercial Bank of Ethiopia (20-10,000 ETB)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-05.3</td><td>Booking charges deducted from wallet balance</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-05.4</td><td>Insufficient balance rejection (HTTP 409)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-05.5</td><td>Transaction history with type, amount, provider, and note</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-05.6</td><td>Quick deposit buttons (50, 100, 250, 500 ETB)</td><td><span class="badge badge-blue">Nice to Have</span></td></tr>
+  </tbody>
+</table>
+
+<h4>FR-06: Host Features</h4>
+<table>
+  <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td>FR-06.1</td><td>Hosts can view earnings dashboard (payout, fees, bookings, rating)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-06.2</td><td>Weekly earnings bar chart (last 7 days)</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+    <tr><td>FR-06.3</td><td>Price adjustment per space (10-500 ETB/hr)</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-06.4</td><td>Toggle space active/inactive status</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-06.5</td><td>Create availability blocks (block dates)</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+    <tr><td>FR-06.6</td><td>Revenue split: 85% host, 15% platform</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-06.7</td><td>Occupancy rate calculation</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+  </tbody>
+</table>
+
+<h4>FR-07: Landing Page &amp; Marketing</h4>
+<table>
+  <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td>FR-07.1</td><td>Public landing page with hero, features, how-it-works, testimonials</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-07.2</td><td>Driver vs Host role comparison section</td><td><span class="badge badge-yellow">Should Have</span></td></tr>
+    <tr><td>FR-07.3</td><td>Inline registration form with role selection</td><td><span class="badge badge-green">Must Have</span></td></tr>
+    <tr><td>FR-07.4</td><td>Scroll-triggered animations (FadeIn, Counter)</td><td><span class="badge badge-blue">Nice to Have</span></td></tr>
+    <tr><td>FR-07.5</td><td>Ethiopian flag ribbon decoration</td><td><span class="badge badge-blue">Nice to Have</span></td></tr>
+    <tr><td>FR-07.6</td><td>14-neighborhood coverage display</td><td><span class="badge badge-blue">Nice to Have</span></td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="srs-nonfunctional">
+<h3>7.2 Non-Functional Requirements</h3>
+
+<table>
+  <thead><tr><th>ID</th><th>Requirement</th><th>Target</th></tr></thead>
+  <tbody>
+    <tr><td>NFR-01</td><td>Page load time</td><td>&lt; 3 seconds on 3G</td></tr>
+    <tr><td>NFR-02</td><td>API response time</td><td>&lt; 500ms for spots, &lt; 2s for directions</td></tr>
+    <tr><td>NFR-03</td><td>Uptime</td><td>99.9% (Vercel SLA)</td></tr>
+    <tr><td>NFR-04</td><td>Concurrent users</td><td>100+ simultaneous sessions</td></tr>
+    <tr><td>NFR-05</td><td>Data encryption</td><td>HTTPS (TLS 1.3), bcrypt for passwords</td></tr>
+    <tr><td>NFR-06</td><td>Offline support</td><td>Service worker caches app shell, last-viewed data</td></tr>
+    <tr><td>NFR-07</td><td>Mobile responsive</td><td>Full support on iOS Safari, Chrome Android</td></tr>
+    <tr><td>NFR-08</td><td>PWA installable</td><td>manifest.json with standalone display mode</td></tr>
+    <tr><td>NFR-09</td><td>Safe area support</td><td>CSS env(safe-area-inset-*) for notched devices</td></tr>
+    <tr><td>NFR-10</td><td>Database</td><td>Neon PostgreSQL serverless with connection pooling</td></tr>
+    <tr><td>NFR-11</td><td>GraphHopper rate limit</td><td>1,000 requests/day (free tier)</td></tr>
+    <tr><td>NFR-12</td><td>GeoJSON file size</td><td>~4.5 MB total (roads + buildings optimized)</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="srs-database">
+<h3>7.3 Database Schema</h3>
+
+<h4>Entity Relationship Diagram</h4>
+<pre><code>users (uuid PK)
+  ├── sessions (user_id FK, CASCADE)
+  ├── bookings (user_id FK, CASCADE)
+  └── wallet_transactions (user_id FK, CASCADE)
+
+parking_spaces (serial PK)
+  ├── bookings (parking_space_id FK, RESTRICT)
+  └── availability_blocks (parking_space_id FK, CASCADE)
+
+bookings (uuid PK)
+  └── reference (unique index)
+
+sessions (uuid PK)
+  └── token (unique index)
+
+wallet_transactions (uuid PK)
+  └── reference (unique index)
+
+availability_blocks (serial PK)
+  └── UNIQUE (parking_space_id, blocked_date)</code></pre>
+
+<h4>Table: users</h4>
+<table>
+  <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>uuid</td><td>PK, default random</td><td>Unique user identifier</td></tr>
+    <tr><td><code>email</code></td><td>text</td><td>NOT NULL, UNIQUE</td><td>Login email address</td></tr>
+    <tr><td><code>name</code></td><td>text</td><td>NOT NULL</td><td>Display name</td></tr>
+    <tr><td><code>password_hash</code></td><td>text</td><td>NOT NULL</td><td>bcrypt-hashed password</td></tr>
+    <tr><td><code>phone</code></td><td>text</td><td>nullable</td><td>Phone number (+251...)</td></tr>
+    <tr><td><code>is_host</code></td><td>boolean</td><td>NOT NULL, default false</td><td>Host role flag</td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL, default now()</td><td>Registration timestamp</td></tr>
+  </tbody>
+</table>
+
+<h4>Table: sessions</h4>
+<table>
+  <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>uuid</td><td>PK, default random</td><td>Session identifier</td></tr>
+    <tr><td><code>user_id</code></td><td>uuid</td><td>NOT NULL, FK &rarr; users.id (CASCADE)</td><td>Session owner</td></tr>
+    <tr><td><code>token</code></td><td>text</td><td>NOT NULL, UNIQUE</td><td>Session token (stored in cookie)</td></tr>
+    <tr><td><code>expires_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>7 days from creation</td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL, default now()</td><td>Creation timestamp</td></tr>
+  </tbody>
+</table>
+
+<h4>Table: parking_spaces</h4>
+<table>
+  <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>serial</td><td>PK</td><td>Auto-increment ID</td></tr>
+    <tr><td><code>slug</code></td><td>text</td><td>NOT NULL, UNIQUE</td><td>URL-safe identifier</td></tr>
+    <tr><td><code>name</code></td><td>text</td><td>NOT NULL</td><td>Parking space name</td></tr>
+    <tr><td><code>address</code></td><td>text</td><td>NOT NULL</td><td>Full address</td></tr>
+    <tr><td><code>neighborhood</code></td><td>text</td><td>NOT NULL</td><td>Area name (Bole, Piassa, etc.)</td></tr>
+    <tr><td><code>kind</code></td><td>text</td><td>default "Open air"</td><td>"Open air" or "Covered"</td></tr>
+    <tr><td><code>tone</code></td><td>text</td><td>default "sage"</td><td>UI color theme: sage, sand, rose</td></tr>
+    <tr><td><code>price_hourly_etb</code></td><td>integer</td><td>NOT NULL</td><td>Price per hour in ETB</td></tr>
+    <tr><td><code>rating_tenths</code></td><td>integer</td><td>default 48</td><td>Rating &times; 10 (48 = 4.8)</td></tr>
+    <tr><td><code>available_spots</code></td><td>integer</td><td>default 0</td><td>Currently available spots</td></tr>
+    <tr><td><code>total_spots</code></td><td>integer</td><td>default 0</td><td>Total capacity</td></tr>
+    <tr><td><code>host_name</code></td><td>text</td><td>default "Host"</td><td>Host display name</td></tr>
+    <tr><td><code>lat</code></td><td>real</td><td>NOT NULL</td><td>Latitude (Addis Ababa)</td></tr>
+    <tr><td><code>lng</code></td><td>real</td><td>NOT NULL</td><td>Longitude (Addis Ababa)</td></tr>
+    <tr><td><code>is_active</code></td><td>boolean</td><td>default true</td><td>Whether space is listed</td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>default now()</td><td>Creation timestamp</td></tr>
+    <tr><td><code>updated_at</code></td><td>timestamptz</td><td>default now()</td><td>Last update timestamp</td></tr>
+  </tbody>
+</table>
+
+<h4>Table: bookings</h4>
+<table>
+  <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>uuid</td><td>PK, default random</td><td>Booking identifier</td></tr>
+    <tr><td><code>reference</code></td><td>text</td><td>NOT NULL, UNIQUE</td><td>PR-XXX-NNN format</td></tr>
+    <tr><td><code>user_id</code></td><td>uuid</td><td>FK &rarr; users.id (CASCADE)</td><td>Booking user</td></tr>
+    <tr><td><code>parking_space_id</code></td><td>integer</td><td>FK &rarr; parking_spaces.id (RESTRICT)</td><td>Parked space</td></tr>
+    <tr><td><code>parking_date</code></td><td>date</td><td>NOT NULL</td><td>Booking date</td></tr>
+    <tr><td><code>start_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>Reservation start</td></tr>
+    <tr><td><code>end_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>Reservation end</td></tr>
+    <tr><td><code>duration_hours</code></td><td>integer</td><td>NOT NULL</td><td>1-12 hours</td></tr>
+    <tr><td><code>space_label</code></td><td>text</td><td>NOT NULL</td><td>Assigned space (e.g. "B 27")</td></tr>
+    <tr><td><code>status</code></td><td>text</td><td>default "confirmed"</td><td>confirmed | active | cancelled | completed</td></tr>
+    <tr><td><code>payment_method</code></td><td>text</td><td>NOT NULL</td><td>wallet or telebirr</td></tr>
+    <tr><td><code>amount_etb</code></td><td>integer</td><td>NOT NULL</td><td>Total cost in ETB</td></tr>
+    <tr><td><code>gate_code</code></td><td>text</td><td>NOT NULL</td><td>4-digit entry code</td></tr>
+    <tr><td><code>check_in_at</code></td><td>timestamptz</td><td>nullable</td><td>Actual check-in time</td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>default now()</td><td>Booking creation time</td></tr>
+  </tbody>
+</table>
+
+<h4>Table: wallet_transactions</h4>
+<table>
+  <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>uuid</td><td>PK, default random</td><td>Transaction ID</td></tr>
+    <tr><td><code>reference</code></td><td>text</td><td>NOT NULL, UNIQUE</td><td>topup-XXX-NNN or wallet-PR-XXX</td></tr>
+    <tr><td><code>user_id</code></td><td>uuid</td><td>FK &rarr; users.id (CASCADE)</td><td>Account owner</td></tr>
+    <tr><td><code>type</code></td><td>text</td><td>NOT NULL</td><td>deposit or parking_charge</td></tr>
+    <tr><td><code>amount_etb</code></td><td>integer</td><td>NOT NULL</td><td>Positive (deposit) or negative (charge)</td></tr>
+    <tr><td><code>provider</code></td><td>text</td><td>nullable</td><td>telebirr, CBE, or ParkmeWallet</td></tr>
+    <tr><td><code>note</code></td><td>text</td><td>NOT NULL</td><td>Description</td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>default now()</td><td>Transaction timestamp</td></tr>
+  </tbody>
+</table>
+
+<h4>Table: availability_blocks</h4>
+<table>
+  <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>serial</td><td>PK</td><td>Block ID</td></tr>
+    <tr><td><code>parking_space_id</code></td><td>integer</td><td>FK &rarr; parking_spaces.id (CASCADE)</td><td>Affected space</td></tr>
+    <tr><td><code>blocked_date</code></td><td>date</td><td>NOT NULL, UNIQUE with space_id</td><td>Date unavailable</td></tr>
+    <tr><td><code>reason</code></td><td>text</td><td>default "Host unavailable"</td><td>Max 120 chars</td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>default now()</td><td>Creation timestamp</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="srs-security">
+<h3>7.4 Security Requirements</h3>
+
+<table>
+  <thead><tr><th>Area</th><th>Implementation</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>Password Storage</td><td>bcryptjs</td><td>10 salt rounds, never stored in plaintext</td></tr>
+    <tr><td>Session Management</td><td>httpOnly cookie</td><td><code>parkme_session</code>, 7-day expiry, secure in production</td></tr>
+    <tr><td>CORS</td><td>Same-origin</td><td>API routes only accept same-origin requests</td></tr>
+    <tr><td>SQL Injection</td><td>Drizzle ORM</td><td>Parameterized queries, no raw SQL</td></tr>
+    <tr><td>XSS</td><td>React escaping</td><td>Automatic JSX escaping, no dangerouslySetInnerHTML in user content</td></tr>
+    <tr><td>Transport</td><td>HTTPS</td><td>Vercel auto-SSL, TLS 1.3</td></tr>
+    <tr><td>Role Enforcement</td><td>API-level</td><td>Host login blocked if <code>isHost = false</code></td></tr>
+    <tr><td>Data Validation</td><td>Server-side</td><td>Email regex, min lengths, max values on all inputs</td></tr>
+    <tr><td>Atomic Operations</td><td>DB transactions</td><td>Booking + wallet deduction are transactional</td></tr>
+    <tr><td>Environment Variables</td><td>.env.local</td><td>Secrets never committed; only <code>NEXT_PUBLIC_*</code> exposed to client</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="srs-constraints">
+<h3>7.5 Constraints &amp; Assumptions</h3>
+
+<h4>Constraints</h4>
+<ul>
+  <li>GraphHopper free tier: 1,000 directions requests/day</li>
+  <li>Neon PostgreSQL: serverless with connection pooling limits</li>
+  <li>Vercel Hobby plan: 10-second function execution timeout</li>
+  <li>No real payment integration (TeleBirr/CBE are simulated)</li>
+  <li>No real-time WebSocket updates (polled via REST)</li>
+</ul>
+
+<h4>Assumptions</h4>
+<ul>
+  <li>Users have modern browsers (Chrome 90+, Safari 14+, Firefox 88+)</li>
+  <li>GPS/Geolocation available on user devices</li>
+  <li>Internet connectivity required for map tiles and API calls</li>
+  <li>All parking spaces are pre-seeded; no self-service listing by hosts yet</li>
+  <li>Currency is Ethiopian Birr (ETB); all prices are integers</li>
+</ul>
+</section>
+
+<hr>
+
+<!-- ========== DEVELOPER ========== -->
+<h2 id="dev-setup">8. Developer Guide</h2>
+
+<section>
+<h3>8.1 Local Development Setup</h3>
+<pre><code># 1. Clone the repository
+git clone https://github.com/Rasneba/PARKme_ethiopia.git
+cd PARKme_ethiopia
+
+# 2. Install dependencies
+npm install
+
+# 3. Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your database URL and GraphHopper API key
+
+# 4. Start development server
+npm run dev
+# Opens at http://localhost:3000
+
+# 5. Available scripts
+npm run build       # Production build
+npm run start       # Start production server
+npm run lint        # ESLint check
+npm run typecheck   # TypeScript type check</code></pre>
+
+<h4>Environment Variables</h4>
+<table>
+  <thead><tr><th>Variable</th><th>Required</th><th>Exposed to Client</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>DATABASE_URL</code></td><td>Yes</td><td>No</td><td>PostgreSQL connection string with SSL</td></tr>
+    <tr><td><code>NEXT_PUBLIC_GRAPHHOPPER_API_KEY</code></td><td>Yes</td><td>Yes</td><td>GraphHopper routing API key</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="dev-project-structure">
+<h3>8.2 Project Structure</h3>
+<pre><code>prakme-ethiopia/
+├── public/
+│   ├── manifest.json          # PWA manifest
+│   ├── sw.js                  # Service worker
+│   ├── icon.svg               # App icon
+│   ├── icon-192.png           # PWA icon 192px
+│   ├── icon-512.png           # PWA icon 512px
+│   ├── apple-touch-icon.svg   # iOS icon
+│   ├── osm-roads.geojson      # OSM roads overlay (1,294 KB)
+│   └── osm-buildings.geojson  # OSM buildings overlay (3,179 KB)
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── auth/
+│   │   │   │   ├── login/route.ts        # POST: email+password login
+│   │   │   │   ├── signup/route.ts       # POST: new account registration
+│   │   │   │   ├── me/route.ts           # GET: current user info
+│   │   │   │   ├── logout/route.ts       # POST: destroy session
+│   │   │   │   └── become-host/route.ts  # POST: upgrade to host
+│   │   │   ├── bookings/
+│   │   │   │   ├── route.ts              # GET/POST: list/create bookings
+│   │   │   │   └── [bookingId]/
+│   │   │   │       └── check-in/route.ts # POST: check in to booking
+│   │   │   ├── directions/route.ts       # GET: GraphHopper proxy
+│   │   │   ├── health/route.ts           # GET: DB health check
+│   │   │   ├── host/
+│   │   │   │   ├── availability/route.ts # GET/POST/DELETE: block dates
+│   │   │   │   ├── dashboard/route.ts    # GET: host analytics
+│   │   │   │   └── spaces/
+│   │   │   │       └── [spaceId]/route.ts# PATCH: update space
+│   │   │   ├── register/route.ts         # GET/POST: user registration
+│   │   │   ├── spots/route.ts            # GET: parking spaces
+│   │   │   └── wallet/route.ts           # GET/POST: wallet balance/topup
+│   │   ├── app/
+│   │   │   └── page.tsx                  # Main app (renders ArkRideApp)
+│   │   ├── login/
+│   │   │   └── page.tsx                  # Login page (empty, modal-based)
+│   │   ├── globals.css                   # Global styles (742 lines)
+│   │   ├── layout.tsx                    # Root layout with PWA meta
+│   │   └── page.tsx                      # Landing page / redirect
+│   ├── components/
+│   │   ├── ArkRideApp.tsx                # Main SPA (714 lines)
+│   │   ├── MapLibreMap.tsx               # Map component (632 lines)
+│   │   ├── ParkmeLanding.tsx             # Landing page (486 lines)
+│   │   └── ParkSpotApp.tsx               # Static prototype (unused)
+│   ├── db/
+│   │   ├── index.ts                      # DB connection (Neon + Drizzle)
+│   │   ├── schema.ts                     # Table definitions
+│   │   └── seed.ts                       # Demo data seeder
+│   └── lib/
+│       ├── auth.ts                       # Session management
+│       └── auth-helpers.ts               # requireUserId/getUserId
+├── scripts/
+│   └── extract_addis_osm.py              # OSM data extraction
+├── docs/
+│   └── documentation.html                # This file
+├── .env.local                            # Environment variables (not in git)
+├── .env.example                          # Environment template
+├── .gitignore                            # Git ignores
+├── .vercelignore                         # Vercel deploy ignores
+├── drizzle.config.json                   # Drizzle ORM config
+├── next.config.ts                        # Next.js config
+├── package.json                          # Dependencies
+├── postcss.config.mjs                    # Tailwind CSS PostCSS
+└── tsconfig.json                         # TypeScript config</code></pre>
+</section>
+
+<section id="dev-api-reference">
+<h3>8.3 API Reference</h3>
+
+<h4>Authentication</h4>
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-url">/api/auth/signup</span>
+  </div>
+  <p class="endpoint-desc">Create a new user account</p>
+  <pre><code>// Request
+{ "email": "user@example.com", "password": "secret123", "name": "John Doe", "role": "driver" }
+
+// Response 201
+{ "user": { "id": "uuid", "email": "user@example.com", "name": "John Doe", "isHost": false } }</code></pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-url">/api/auth/login</span>
+  </div>
+  <p class="endpoint-desc">Authenticate and create session</p>
+  <pre><code>// Request
+{ "email": "user@example.com", "password": "secret123", "role": "driver" }
+
+// Response 200 + Set-Cookie: parkme_session=...
+{ "user": { "id": "uuid", "email": "user@example.com", "name": "John Doe", "isHost": false } }</code></pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-get">GET</span>
+    <span class="endpoint-url">/api/auth/me</span>
+  </div>
+  <p class="endpoint-desc">Get current user from session cookie</p>
+  <pre><code>// Response 200 (authenticated)
+{ "user": { "id": "uuid", "email": "...", "name": "...", "phone": "...", "isHost": true, "createdAt": "..." } }
+
+// Response 401
+{ "user": null }</code></pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-url">/api/auth/logout</span>
+  </div>
+  <p class="endpoint-desc">Destroy session and clear cookie</p>
+  <pre><code>// Response 200
+{ "ok": true }</code></pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-url">/api/auth/become-host</span>
+  </div>
+  <p class="endpoint-desc">Upgrade user to host role (requires auth)</p>
+  <pre><code>// Response 200
+{ "isHost": true }</code></pre>
+</div>
+
+<h4>Parking Spaces</h4>
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-get">GET</span>
+    <span class="endpoint-url">/api/spots?q=search&amp;available=true</span>
+  </div>
+  <p class="endpoint-desc">List parking spaces (auto-seeds DB on first call)</p>
+  <pre><code>// Response 200
+{
+  "spots": [
+    {
+      "id": 1, "slug": "meskel-square-lot", "name": "Meskel Square Lot",
+      "address": "Meskel Square, Addis Ababa", "neighborhood": "Meskel Square",
+      "label": "Open air", "tone": "sage", "price": 30,
+      "rating": "4.8", "availableSpots": 18, "totalSpots": 50,
+      "spaces": "18 spots", "hostName": "Parkme", "lat": 9.0112, "lng": 38.7572
+    }
+  ],
+  "count": 26
+}</code></pre>
+</div>
+
+<h4>Bookings</h4>
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-get">GET</span>
+    <span class="endpoint-url">/api/bookings</span>
+  </div>
+  <p class="endpoint-desc">List user's bookings (requires auth)</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-url">/api/bookings</span>
+  </div>
+  <p class="endpoint-desc">Create a new booking (requires auth)</p>
+  <pre><code>// Request
+{
+  "parkingSpaceId": 1,
+  "durationHours": 2,
+  "paymentMethod": "wallet",
+  "couponCode": "PARKME20"   // optional: 20 ETB off
+}
+
+// Response 201
+{
+  "booking": {
+    "id": "uuid", "reference": "PR-K3X-729", "status": "confirmed",
+    "durationHours": 2, "spaceLabel": "B 27", "amountEtb": 40,
+    "gateCode": "4826", "spotName": "Meskel Square Lot"
+  }
+}</code></pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-url">/api/bookings/[bookingId]/check-in</span>
+  </div>
+  <p class="endpoint-desc">Check in to an active booking (requires auth)</p>
+</div>
+
+<h4>Wallet</h4>
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-get">GET</span>
+    <span class="endpoint-url">/api/wallet</span>
+  </div>
+  <p class="endpoint-desc">Get wallet balance and transaction history (requires auth)</p>
+  <pre><code>// Response 200
+{
+  "balanceEtb": 460,
+  "transactions": [
+    { "id": "uuid", "reference": "topup-K3X-001", "type": "deposit",
+      "amountEtb": 500, "provider": "ParkmeWallet", "note": "Welcome bonus", "createdAt": "..." }
+  ]
+}</code></pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-url">/api/wallet</span>
+  </div>
+  <p class="endpoint-desc">Top up wallet balance (requires auth)</p>
+  <pre><code>// Request
+{ "amountEtb": 200, "provider": "telebirr" }
+
+// Response 201
+{ "transaction": {...}, "balanceEtb": 700 }</code></pre>
+</div>
+
+<h4>Directions</h4>
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-get">GET</span>
+    <span class="endpoint-url">/api/directions?from_lat=9.0188&amp;from_lng=38.7713&amp;to_lat=9.0055&amp;to_lng=38.7635</span>
+  </div>
+  <p class="endpoint-desc">Get driving route via GraphHopper (public, no auth)</p>
+  <pre><code>// Response 200
+{
+  "route": { ...full GraphHopper path... },
+  "distance": 2607,      // meters
+  "time": 325398,         // milliseconds (~5.4 min)
+  "instructions": [
+    { "distance": 42.8, "text": "Continue", "street_name": "" },
+    { "distance": 93.4, "text": "Turn right", "street_name": "" },
+    { "distance": 948.9, "text": "Turn left onto Guinea Conakry Street", "street_name": "Guinea Conakry Street" }
+  ],
+  "points": { "type": "LineString", "coordinates": [[38.771,9.018],[38.770,9.018],...] }
+}</code></pre>
+</div>
+
+<h4>Host Dashboard</h4>
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-get">GET</span>
+    <span class="endpoint-url">/api/host/dashboard</span>
+  </div>
+  <p class="endpoint-desc">Get host analytics (requires auth)</p>
+  <pre><code>// Response 200
+{
+  "summary": {
+    "totalEarningsEtb": 1200, "hostPayoutEtb": 1020, "platformFeeEtb": 180,
+    "bookingCount": 15, "activeBookingCount": 3, "occupancyRate": 65, "averageRating": 4.6
+  },
+  "spaces": [{ "id": 1, "name": "...", "priceHourlyEtb": 35, ... }],
+  "weeklyEarnings": [{ "day": "Mon", "amountEtb": 150 }, ...],
+  "availabilityBlocks": [...]
+}</code></pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-patch">PATCH</span>
+    <span class="endpoint-url">/api/host/spaces/[spaceId]</span>
+  </div>
+  <p class="endpoint-desc">Update space price or active status</p>
+  <pre><code>// Request
+{ "priceHourlyEtb": 40, "isActive": true }
+
+// Response 200
+{ "space": { "id": 1, "name": "...", "priceHourlyEtb": 40, ... } }</code></pre>
+</div>
+
+<h4>Availability</h4>
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-get">GET</span>
+    <span class="endpoint-url">/api/host/availability</span>
+  </div>
+  <p class="endpoint-desc">List all availability blocks</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-url">/api/host/availability</span>
+  </div>
+  <p class="endpoint-desc">Block a date for a parking space</p>
+  <pre><code>// Request
+{ "parkingSpaceId": 1, "blockedDate": "2026-07-20", "reason": "Maintenance" }</code></pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-delete">DELETE</span>
+    <span class="endpoint-url">/api/host/availability?parkingSpaceId=1&amp;blockedDate=2026-07-20</span>
+  </div>
+  <p class="endpoint-desc">Remove an availability block</p>
+</div>
+
+<h4>System</h4>
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-get">GET</span>
+    <span class="endpoint-url">/api/health</span>
+  </div>
+  <p class="endpoint-desc">Check database connectivity</p>
+  <pre><code>// Response 200: { "ok": true }
+// Response 500: { "ok": false }</code></pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-get">GET</span>
+    <span class="endpoint-url">/api/register</span>
+  </div>
+  <p class="endpoint-desc">List all registered users (admin use)</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="method method-post">POST</span>
+    <span class="endpoint-url">/api/register</span>
+  </div>
+  <p class="endpoint-desc">Register user from landing page (no session created)</p>
+</div>
+</section>
+
+<section id="dev-auth">
+<h3>8.4 Authentication Flow</h3>
+<pre><code>┌─────────────┐     POST /api/auth/login      ┌──────────┐
+│   Browser   │ ──────────────────────────────► │  Server  │
+│             │   { email, password, role }     │          │
+│             │                                 │ 1. Find  │
+│             │                                 │    user  │
+│             │                                 │ 2. bcrypt│
+│             │                                 │    check │
+│             │                                 │ 3. Role  │
+│             │                                 │    check │
+│             │                                 │ 4. Create│
+│             │ ◄────────────────────────────── │    session│
+│  Set-Cookie │   200 { user }                  │          │
+│ parkme_     │   Set-Cookie: parkme_session    └──────────┘
+│ session=... │   =uuid-token; HttpOnly;
+│             │   Max-Age=604800; Path=/
+└─────────────┘
+
+┌─────────────┐     GET /api/bookings          ┌──────────┐
+│   Browser   │ ──────────────────────────────► │  Server  │
+│             │   Cookie: parkme_session=...    │          │
+│             │                                 │ 1. Parse │
+│             │                                 │    cookie│
+│             │                                 │ 2. Lookup│
+│             │                                 │    session│
+│             │                                 │ 3. Check │
+│             │                                 │    expiry│
+│             │                                 │ 4. Fetch │
+│             │ ◄────────────────────────────── │    user  │
+│             │   200 { bookings: [...] }       └──────────┘</code></pre>
+</section>
+
+<section id="dev-map">
+<h3>8.5 Map System</h3>
+
+<h4>Map Tiles</h4>
+<table>
+  <thead><tr><th>Layer</th><th>Source</th><th>Zoom Range</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>Base Map</td><td>GraphHopper OSM</td><td>0-19</td><td>OpenStreetMap raster tiles via GraphHopper CDN</td></tr>
+    <tr><td>Satellite</td><td>ArcGIS Esri</td><td>0-19</td><td>World imagery tiles (toggle via button)</td></tr>
+    <tr><td>OSM Roads</td><td><code>/osm-roads.geojson</code></td><td>6+</td><td>Color-coded by road type (5,750 features)</td></tr>
+    <tr><td>OSM Buildings</td><td><code>/osm-buildings.geojson</code></td><td>15+</td><td>Building footprints with fill + outline (16,796 features)</td></tr>
+  </tbody>
+</table>
+
+<h4>Marker System</h4>
+<ul>
+  <li><strong>Cluster circles</strong> &mdash; Green gradient, shows count, click to expand</li>
+  <li><strong>Individual pins</strong> &mdash; Green (available) / Red (selected), teardrop shape</li>
+  <li><strong>User location</strong> &mdash; Blue dot with pulse animation</li>
+  <li><strong>Route line</strong> &mdash; White background (8px) + Green foreground (5px)</li>
+</ul>
+
+<h4>Map Controls</h4>
+<ul>
+  <li><strong>NavigationControl</strong> &mdash; Zoom +/- at top-right (native MapLibre)</li>
+  <li><strong>Near Me</strong> &mdash; Floating bottom-left, flies to user GPS location</li>
+  <li><strong>Satellite</strong> &mdash; Floating bottom-left, toggles satellite/street view</li>
+</ul>
+
+<h4>Window Globals</h4>
+<pre><code>// Global functions exposed by MapLibreMap for inter-component communication
+window.__parkmeRoute(lat, lng)      // Draw route from user to destination
+window.__parkmeClearRoute()         // Remove route line and clear
+window.__parkmeSelectSpot(id)       // Select a spot on the map
+window.__parkmeBookSpot(id)         // Open booking modal for a spot</code></pre>
+</section>
+
+<section id="dev-components">
+<h3>8.6 Component Reference</h3>
+<table>
+  <thead><tr><th>Component</th><th>File</th><th>Lines</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>ParkmeApp</code></td><td>ArkRideApp.tsx</td><td>714</td><td>Main SPA shell: nav, views, modals, state management</td></tr>
+    <tr><td><code>MapLibreMap</code></td><td>MapLibreMap.tsx</td><td>632</td><td>Interactive map with clustering, routing, OSM overlays</td></tr>
+    <tr><td><code>ParkmeLanding</code></td><td>ParkmeLanding.tsx</td><td>486</td><td>Marketing landing page with registration</td></tr>
+    <tr><td><code>SearchPanel</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>Search bar, filters, spot cards with actions</td></tr>
+    <tr><td><code>CityMap</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>Map wrapper with toolbar, floating controls, spot sheet</td></tr>
+    <tr><td><code>BookingModal</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>Duration, payment, coupon, confirmation flow</td></tr>
+    <tr><td><code>WalletView</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>Balance display, top-up, transaction history</td></tr>
+    <tr><td><code>BookingsView</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>Active + upcoming bookings list</td></tr>
+    <tr><td><code>HistoryView</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>Past parking sessions</td></tr>
+    <tr><td><code>OwnerPortal</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>Host dashboard with analytics</td></tr>
+    <tr><td><code>AuthModal</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>Login/signup with role selection</td></tr>
+    <tr><td><code>ProfileDrawer</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>User profile, wallet, passes, settings</td></tr>
+    <tr><td><code>BookingTimerCard</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>Active booking timer + gate code</td></tr>
+    <tr><td><code>Icon</code></td><td>ArkRideApp.tsx</td><td>&mdash;</td><td>33 inline SVG icons (no external dependencies)</td></tr>
+  </tbody>
+</table>
+</section>
+
+<section id="dev-pwa">
+<h3>8.7 PWA &amp; Service Worker</h3>
+
+<h4>Manifest Configuration</h4>
+<pre><code>{
+  "name": "Parkme Ethiopia",
+  "short_name": "Parkme",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0fa24b",
+  "background_color": "#f7f5ec"
+}</code></pre>
+
+<h4>Service Worker Strategy</h4>
+<ul>
+  <li><strong>Pre-cache</strong> &mdash; <code>/</code>, <code>/app</code>, <code>/manifest.json</code></li>
+  <li><strong>Network-first</strong> &mdash; All GET requests try network, fall back to cache</li>
+  <li><strong>Cache name:</strong> <code>parkme-v1</code></li>
+  <li><strong>Activation:</strong> Cleans old caches on version upgrade</li>
+</ul>
+</section>
+
+<section id="dev-osm">
+<h3>8.8 OSM Data Pipeline</h3>
+
+<h4>Extraction Script</h4>
+<pre><code># scripts/extract_addis_osm.py
+# Extracts roads and buildings from Geofabrik Ethiopia PBF
+
+# Input:  temp/ethiopia-latest.osm.pbf (132.4 MB)
+# Output: public/osm-roads.geojson    (1,294 KB, 5,750 features)
+#         public/osm-buildings.geojson (3,179 KB, 16,796 features)
+
+# Parameters:
+# Bounding box: lat 8.90-9.05, lon 38.70-38.87 (Addis Ababa)
+# Road types: motorway, trunk, primary, secondary, tertiary, residential
+# Coordinate precision: 4 decimal places
+# Max nodes per way: 40 (simplification)
+# Min building area: 250 sq meters
+
+# Run:
+pip install osmium
+python scripts/extract_addis_osm.py</code></pre>
+
+<h4>Optimization Details</h4>
+<ul>
+  <li>Compact JSON separators (<code>(",",":")</code>) reduce file size</li>
+  <li>Short property keys (<code>"c"</code> for class, <code>"n"</code> for name)</li>
+  <li>4 decimal coordinate precision (~11 meter accuracy)</li>
+  <li>Node reduction: max 40 nodes per way</li>
+  <li>Small building filtering: skip &lt;250 sqm</li>
+  <li>Unnamed minor roads skipped</li>
+  <li>Total size: ~4.5 MB (serves well over CDN)</li>
+</ul>
+</section>
+
+<hr>
+
+<!-- ========== OPERATIONS ========== -->
+<h2 id="deployment">9. Deployment</h2>
+
+<section>
+<h3>9.1 Vercel Deployment</h3>
+<pre><code># Production deployment
+git push origin main
+# Vercel auto-deploys from main branch
+
+# Manual deploy
+npx vercel --yes --prod
+
+# Check deployment
+curl https://prakme-ethiopia.vercel.app/api/health</code></pre>
+
+<h4>Deployment Configuration</h4>
+<table>
+  <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Platform</td><td>Vercel</td></tr>
+    <tr><td>Framework</td><td>Next.js 16.2.6 (Turbopack)</td></tr>
+    <tr><td>Production URL</td><td><code>https://prakme-ethiopia.vercel.app</code></td></tr>
+    <tr><td>Build Output</td><td>Serverless Functions + Static Assets</td></tr>
+    <tr><td>Git Integration</td><td>Auto-deploy on push to <code>main</code></td></tr>
+    <tr><td>Build Cache</td><td>Enabled (~137 MB cached)</td></tr>
+    <tr><td>Upload Size</td><td>~171 KB (optimized via .vercelignore)</td></tr>
+  </tbody>
+</table>
+
+<h4>.vercelignore</h4>
+<pre><code>temp/
+scripts/
+node_modules/
+.vercel
+.next</code></pre>
+</section>
+
+<section id="env-variables">
+<h3>9.2 Environment Variables (Vercel)</h3>
+<pre><code># Set via Vercel Dashboard &gt; Settings &gt; Environment Variables
+
+DATABASE_URL=postgresql://neondb_owner:xxx@ep-xxx.pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+NEXT_PUBLIC_GRAPHHOPPER_API_KEY=f26ad91b-c670-4996-a647-a5e657810e57
+
+# Production-only: DATABASE_URL (encrypted), NEXT_PUBLIC_GRAPHHOPPER_API_KEY
+# Both available in Production environment</code></pre>
+</section>
+
+<section id="monitoring">
+<h3>9.3 Monitoring</h3>
+<h4>Health Check</h4>
+<pre><code>GET https://prakme-ethiopia.vercel.app/api/health
+# Expected: { "ok": true }
+
+# Vercel Dashboard provides:
+# - Function invocation logs
+# - Error tracking
+# - Performance metrics
+# - Cold start times</code></pre>
+
+<h4>Database Monitoring</h4>
+<ul>
+  <li>Neon Console: connection count, query performance, storage</li>
+  <li>Auto-scaling: serverless compute scales to zero when idle</li>
+  <li>Connection pooling: built-in pooler at port <code>5432</code></li>
+</ul>
+
+<h4>GraphHopper Rate Limit</h4>
+<ul>
+  <li>Free tier: 1,000 requests/day</li>
+  <li>Monitor usage via GraphHopper dashboard</li>
+  <li>429 response indicates rate limit exceeded</li>
+</ul>
+</section>
+
+<section id="faq">
+<h2>10. FAQ</h2>
+
+<div class="card">
+  <h4>Q: How do I reset the demo database?</h4>
+  <p>The database auto-seeds on first access when empty. To reset, delete all rows from the <code>users</code> table (cascading to sessions, bookings, wallet_transactions). On next API call, <code>ensureParkmeSeeded()</code> recreates demo data.</p>
+</div>
+
+<div class="card">
+  <h4>Q: How do I add new parking spaces?</h4>
+  <p>Add entries to <code>src/db/seed.ts</code> in the <code>ensureParkmeSeeded()</code> function, then clear the database to trigger re-seeding. In production, spaces are added via direct database access.</p>
+</div>
+
+<div class="card">
+  <h4>Q: Can I run this without GraphHopper?</h4>
+  <p>The map will load without GraphHopper tiles (using fallback), but directions/routing will fail. Set <code>NEXT_PUBLIC_GRAPHHOPPER_API_KEY</code> to enable full functionality.</p>
+</div>
+
+<div class="card">
+  <h4>Q: How do payments work?</h4>
+  <p>Payments are simulated. The wallet system works in-app (balance deduction), but TeleBirr and CBE integrations are placeholder flows. No real money is transferred.</p>
+</div>
+
+<div class="card">
+  <h4>Q: What are the GeoJSON files for?</h4>
+  <p><code>osm-roads.geojson</code> and <code>osm-buildings.geojson</code> provide detailed OpenStreetMap data for the Addis Ababa area, overlaid on the map for visual context. They are extracted from OSM PBF data using <code>scripts/extract_addis_osm.py</code>.</p>
+</div>
+
+<div class="card">
+  <h4>Q: How do I update the OSM data?</h4>
+  <p>Download the latest <code>ethiopia-latest.osm.pbf</code> from <a href="https://download.geofabrik.de/africa/ethiopia.html">Geofabrik</a>, place in <code>temp/</code>, then run <code>python scripts/extract_addis_osm.py</code>. The updated GeoJSON files will be in <code>public/</code>.</p>
+</div>
+
+<hr>
+<p style="text-align: center; color: var(--faint); font-size: 12px; margin-top: 40px;">
+  Parkme Ethiopia Documentation v1.0 &mdash; Generated July 2026<br>
+  Built with Next.js, MapLibre GL, GraphHopper, Drizzle ORM, and Neon PostgreSQL
+</p>
+
+</main>
+</body>
+</html>
