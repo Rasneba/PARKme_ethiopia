@@ -187,7 +187,7 @@ export default function MapLibreMap(
         return;
       }
 
-      const coords = data.route.points?.coordinates || [];
+      const coords = data.route?.coordinates || data.points?.coordinates || [];
       if (coords.length < 2) return;
 
       clearRoute();

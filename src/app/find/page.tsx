@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { SearchPanel, type ApiSpot } from "@/components/SearchPanel";
 import { Icon } from "@/components/Icon";
 
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function FindPage() {
   const router = useRouter();
   const [spots, setSpots] = useState<ApiSpot[]>([]);
@@ -24,11 +32,33 @@ export default function FindPage() {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (cat && cat !== "all") params.set("category", cat);
+    if (userLocation) { params.set("from_lat", String(userLocation.lat)); params.set("from_lng", String(userLocation.lng)); }
     const qs = params.toString();
-    fetch(`/api/spots${qs ? "?" + qs : ""}`).then((r) => r.ok ? r.json() : { spots: [] }).then((d) => { setSpots(d.spots ?? []); setSpotsLoading(false); }).catch(() => setSpotsLoading(false));
-  }, []);
+    fetch(`/api/spots${qs ? "?" + qs : ""}`).then((r) => r.ok ? r.json() : { spots: [] }).then((d) => {
+      const list: ApiSpot[] = (d.spots ?? []).map((s: ApiSpot) => ({
+        ...s,
+        distanceKm: userLocation ? haversineKm(userLocation.lat, userLocation.lng, s.lat, s.lng) : s.distanceKm,
+      }));
+      list.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
+      setSpots(list);
+      setSpotsLoading(false);
+    }).catch(() => setSpotsLoading(false));
+  }, [userLocation]);
 
   useEffect(() => { fetchSpots("", "all"); }, [fetchSpots]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("parkme_loc");
+      if (raw) { const c = JSON.parse(raw); if (c && typeof c.lat === "number") setUserLocation({ lat: c.lat, lng: c.lng }); }
+    } catch {}
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }; setUserLocation(loc); try { localStorage.setItem("parkme_loc", JSON.stringify({ ...loc, t: Date.now() })); } catch {} },
+      () => {},
+      { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
+    );
+  }, []);
 
   const onSearch = useCallback((q: string) => {
     setSearchQuery(q);
@@ -78,8 +108,8 @@ export default function FindPage() {
               searchQuery={searchQuery}
               onSearch={onSearch}
               onSelectSpot={(s) => setSelectedSpotId(s.id)}
-              onBook={() => router.push("/app")}
-              onDirections={() => router.push("/app")}
+              onBook={(s) => router.push(`/app?spot=${s.id}`)}
+              onDirections={(s) => router.push(`/app?spot=${s.id}&route=1`)}
               totalCount={spots.length}
               selectedSpotId={selectedSpotId}
               hasLocation={!!userLocation}

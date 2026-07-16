@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { MapLibreHandle } from "./MapLibreMap";
 import { Icon, type IconName } from "./Icon";
 import { SearchPanel, type ApiSpot } from "./SearchPanel";
@@ -406,6 +406,7 @@ function ProfileDrawer({ user, onClose, onOwner, onLogout }: { user: User; onClo
 
 export default function ParkmeApp() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [authOpen, setAuthOpen] = useState<false | "driver" | "host">(false);
@@ -455,6 +456,20 @@ export default function ParkmeApp() {
   }, [fetchSpots, searchQuery]);
 
   useEffect(() => { fetchSpots(""); }, [fetchSpots]);
+
+  // Deep-link from /find: ?spot=ID[&route=1]
+  useEffect(() => {
+    const spotParam = searchParams.get("spot");
+    if (!spotParam || spots.length === 0) return;
+    const id = Number(spotParam);
+    const spot = spots.find((s) => s.id === id);
+    if (!spot) return;
+    setSelectedSpotId(id);
+    if (searchParams.get("route") === "1") {
+      handleDirections(spot);
+    }
+    window.history.replaceState({}, "", "/app");
+  }, [spots, searchParams, handleDirections]);
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.ok ? r.json() : { user: null })
