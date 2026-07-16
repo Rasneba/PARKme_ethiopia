@@ -35,9 +35,9 @@ const OSM_FALLBACK_STYLE = {
 
 function gebetaTransformRequest(url: string, resourceType?: string): any {
   if (GEBETA_TOKEN && url.startsWith("https://tiles.gebeta.app")) {
+    const sep = url.includes("?") ? "&" : "?";
     return {
-      url,
-      headers: { Authorization: `Bearer ${GEBETA_TOKEN}` },
+      url: `${url}${sep}apiKey=${GEBETA_TOKEN}`,
     };
   }
   return { url };
