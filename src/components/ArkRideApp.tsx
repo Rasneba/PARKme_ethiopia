@@ -490,8 +490,16 @@ export default function ParkmeApp() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [routeActive, setRouteActive] = useState(false);
   const [routeData, setRouteData] = useState<{ distance: number; time: number; instructions: any[] } | null>(null);
+  const [pendingRouteSpot, setPendingRouteSpot] = useState<ApiSpot | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mapHandleRef = useRef<MapLibreHandle | null>(null);
+  const didLocate = useRef(false);
+
+  useEffect(() => {
+    if (didLocate.current) return;
+    didLocate.current = true;
+    handleLocate();
+  }, [handleLocate]);
 
   const fetchSpots = useCallback((q: string, cat: string = "all") => {
     setSpotsLoading(true);
@@ -588,6 +596,11 @@ export default function ParkmeApp() {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(loc);
         mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
+        if (pendingRouteSpot) {
+          const spot = pendingRouteSpot;
+          setPendingRouteSpot(null);
+          setTimeout(() => handleDirections(spot), 50);
+        }
       },
       () => {},
       { timeout: 5000, enableHighAccuracy: true },
@@ -617,6 +630,11 @@ export default function ParkmeApp() {
   function handleDirections(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
     setRouteActive(true);
+    if (!userLocation) {
+      handleLocate();
+      setPendingRouteSpot(spot);
+      return;
+    }
     (window as any).__parkmeRoute?.(spot.lat, spot.lng);
     if (userLocation) {
       fetch(`/api/directions?from_lat=${userLocation.lat}&from_lng=${userLocation.lng}&to_lat=${spot.lat}&to_lng=${spot.lng}`)
