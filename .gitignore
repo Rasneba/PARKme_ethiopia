@@ -7,3 +7,5 @@ node_modules
 temp/
 public/osm-roads.geojson
 public/osm-buildings.geojson
+*.apk
+figma.jpg
