@@ -263,13 +263,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
   .mobile-search-float .search-float-text { flex: 1; text-align: left; color: #1b1b1b; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mobile-search-float .search-float-avatar { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: #fff; flex-shrink: 0; }
 
-  /* --- Search panel (used on /find, list-only) --- */
-  .search-column { position: relative; z-index: 50; width: 100% !important; max-height: 100vh !important; overflow-y: auto; background: #fff; border-top: none; border-radius: 0; padding-top: calc(72px + var(--sat)); -webkit-overflow-scrolling: touch; }
-  .search-column .welcome-line { display: none; }
-  .search-column .search-box { margin: 0 16px 12px; box-shadow: 0 4px 16px rgba(0,0,0,.08); border-radius: 14px; border: 1px solid #ececec; }
-  .search-column .category-chips { padding: 0 16px; flex-wrap: nowrap; overflow-x: auto; }
-  .search-column .results-heading { padding: 0 16px; margin: 14px 0 8px; }
-  .search-column .place-list { padding: 0 16px 120px; }
+  /* --- Search panel (used on /app content-grid only) --- */
+  .content-grid .search-column { position: relative; z-index: 50; width: 100% !important; max-height: 100vh !important; overflow-y: auto; background: #fff; border-top: none; border-radius: 0; padding-top: calc(72px + var(--sat)); -webkit-overflow-scrolling: touch; }
+  .content-grid .search-column .welcome-line { display: none; }
+  .content-grid .search-column .search-box { margin: 0 16px 12px; box-shadow: 0 4px 16px rgba(0,0,0,.08); border-radius: 14px; border: 1px solid #ececec; }
+  .content-grid .search-column .category-chips { padding: 0 16px; flex-wrap: nowrap; overflow-x: auto; }
+  .content-grid .search-column .results-heading { padding: 0 16px; margin: 14px 0 8px; }
+  .content-grid .search-column .place-list { padding: 0 16px 120px; }
 
   /* --- Uber bottom sheet for spot --- */
   .mobile-action-bar { display: block; position: absolute; z-index: 20; left: 0; right: 0; bottom: 0; max-height: 62vh; background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 34px rgba(0,0,0,.18); overflow: hidden; animation: sheetSlideUp .3s cubic-bezier(.4,0,.2,1); -webkit-overflow-scrolling: touch; }
@@ -320,48 +320,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
   .content-grid.route-active .mobile-action-bar.route-mode { max-height: 50vh; }
 }
 
-/* --- /find list-only page mobile layout --- */
-@media (max-width: 860px) {
-  .find-workspace { overflow-y: auto; }
-  .search-column { padding-top: calc(64px + var(--sat)); overflow-y: auto; }
-  .search-top { padding: 0 12px; }
-  .booking-type-tabs { margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
-  .booking-type-tabs::-webkit-scrollbar { display: none; }
-  .booking-type-tab { font-size: 12px; padding: 10px 10px; flex: 0 0 auto; white-space: nowrap; }
-  .when-row { grid-template-columns: 1fr 1fr; gap: 6px; }
-  .when-field { padding: 8px 9px; }
-  .when-field span { font-size: 10px; }
-  .when-field input { font-size: 12px; }
-  .quick-destinations { padding: 8px 12px 0; gap: 6px; }
-  .quick-dest { padding: 7px 11px; font-size: 11px; }
-  .category-chips { padding: 8px 12px; gap: 5px; }
-  .category-chip { padding: 5px 10px; font-size: 11px; }
-  .results-heading { padding: 10px 12px 6px; }
-  .results-heading h2 { font-size: 17px; }
-  .place-list { padding: 0 12px 100px; gap: 8px; }
-  .place-meta { display: flex; gap: 8px; }
-  .place-price > span { display: none; }
-  .place-card { grid-template-columns: 80px minmax(0, 1fr); gap: 10px; padding: 8px; min-height: auto; }
-  .place-image { height: 72px; border-radius: 8px; }
-  .place-price { grid-column: 2; justify-items: start; display: flex; align-items: center; gap: 6px; }
-  .place-price b { font-size: 14px; }
-  .place-card-actions { margin-top: 0; margin-left: auto; }
-  .place-name-line h3 { font-size: 13px; }
-  .place-info p { font-size: 10px; margin: 4px 0 8px; }
-  .search-box { height: 46px; border-radius: 11px; }
-  .search-box input { font-size: 13px; }
-}
 
-@media (max-width: 560px) {
-  .booking-type-tabs { gap: 3px; }
-  .booking-type-tab { font-size: 11px; padding: 8px 8px; }
-  .when-row { grid-template-columns: 1fr; }
-  .place-card { grid-template-columns: 70px minmax(0, 1fr); gap: 8px; padding: 7px; }
-  .place-image { height: 64px; }
-  .place-name-line h3 { font-size: 12px; }
-  .place-info p { font-size: 9px; }
-  .place-card-actions button { font-size: 9px; padding: 5px 7px; }
-}
 
 /* Parkme vivid color pass */
 :root {
@@ -911,13 +870,147 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 .find-workspace { height: 100%; overflow-y: auto; background: #fffefa; }
 .find-list { max-width: 760px; height: 100%; margin: 0 auto; }
 .find-list .search-column { height: 100%; }
+.find-list .search-top { overflow-y: visible; }
 
+/* --- /find mobile layout --- */
 @media (max-width: 860px) {
-  .find-workspace { padding: 0; }
-  .find-list { max-width: 100%; }
-  .find-list .search-column { padding-top: calc(64px + var(--sat)); }
-  /* Hide desktop sidebar chrome, show mobile menu */
-  .find-list .search-column .welcome-line { display: none; }
+  .find-workspace { height: 100dvh; overflow-y: auto; padding: 0; }
+  .find-list { max-width: 100%; height: auto; min-height: 100dvh; }
+  .find-list .search-column {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: auto;
+    min-height: 100dvh;
+    padding-top: calc(64px + var(--sat));
+    padding-bottom: calc(20px + var(--sab));
+    overflow-y: visible;
+    background: #fff;
+    border-right: none;
+  }
+  .find-list .search-top { padding: 14px 14px 0; }
+  .find-list .welcome-line { display: none; }
+
+  .find-list .booking-type-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #f1f2ec;
+    border-radius: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .find-list .booking-type-tabs::-webkit-scrollbar { display: none; }
+  .find-list .booking-type-tab {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    border-radius: 9px;
+  }
+
+  .find-list .when-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .find-list .when-field { padding: 8px 10px; }
+  .find-list .when-field span { font-size: 10px; }
+  .find-list .when-field input { font-size: 12px; }
+
+  .find-list .search-box {
+    height: 48px;
+    margin: 10px 0 0;
+    padding: 0 10px 0 14px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .find-list .search-box input { font-size: 13px; }
+
+  .find-list .quick-destinations {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .find-list .quick-destinations::-webkit-scrollbar { display: none; }
+  .find-list .quick-dest {
+    flex: 0 0 auto;
+    padding: 7px 12px;
+    font-size: 11px;
+    border-radius: 18px;
+    white-space: nowrap;
+  }
+
+  .find-list .category-chips {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .find-list .category-chips::-webkit-scrollbar { display: none; }
+  .find-list .category-chip {
+    flex: 0 0 auto;
+    padding: 6px 11px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 18px;
+    white-space: nowrap;
+  }
+
+  .find-list .results-heading {
+    padding: 14px 14px 8px;
+    margin: 0;
+  }
+  .find-list .results-heading h2 { font-size: 17px; }
+
+  .find-list .place-list {
+    padding: 0 14px calc(20px + var(--sab));
+    gap: 10px;
+  }
+  .find-list .place-card {
+    grid-template-columns: 82px 1fr;
+    gap: 10px;
+    padding: 10px;
+    min-height: auto;
+  }
+  .find-list .place-image { height: 74px; border-radius: 9px; }
+  .find-list .place-info { min-width: 0; }
+  .find-list .place-name-line h3 { font-size: 13px; }
+  .find-list .place-info p { font-size: 10px; margin: 3px 0 8px; }
+  .find-list .place-meta { display: flex; gap: 8px; }
+  .find-list .place-price {
+    grid-column: 2;
+    justify-items: end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .find-list .place-price b { font-size: 14px; }
+  .find-list .place-price > span { display: none; }
+  .find-list .place-card-actions { margin-top: 0; }
+  .find-list .place-card-actions button { font-size: 10px; padding: 6px 8px; }
+}
+
+@media (max-width: 560px) {
+  .find-list .search-top { padding: 10px 12px 0; }
+  .find-list .booking-type-tab { padding: 8px 10px; font-size: 11px; }
+  .find-list .when-row { gap: 6px; }
+  .find-list .place-card { grid-template-columns: 72px 1fr; gap: 8px; padding: 8px; }
+  .find-list .place-image { height: 64px; }
+  .find-list .place-name-line h3 { font-size: 12px; }
+  .find-list .place-info p { font-size: 9px; }
+  .find-list .place-card-actions button { font-size: 9px; padding: 5px 6px; }
 }
 
 /* --- /host marketplace listing page --- */
