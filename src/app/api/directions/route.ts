@@ -62,37 +62,58 @@ export async function GET(request: NextRequest) {
     const res = await fetch(url);
     const data = await res.json();
 
-    if (data.msg === "error" || data.error || !data.trip || !data.trip.legs || !data.trip.legs.length) {
+    if (data.msg === "error" || data.error) {
       return NextResponse.json({ error: data.error?.message || data.msg || "No route found" }, { status: 404 });
     }
 
-    const leg = data.trip.legs[0];
-    const shape: string = leg.shape || "";
-    const coords = decodePolyline(shape);
+    if (data.trip && data.trip.legs && data.trip.legs.length) {
+      const leg = data.trip.legs[0];
+      const shape: string = leg.shape || "";
+      const coords = decodePolyline(shape);
 
-    const summary = leg.summary || data.trip.summary || {};
-    const distance = (summary.length != null ? summary.length : 0) * 1000;
-    const time = summary.time != null ? summary.time * 1000 : 0;
+      const summary = leg.summary || data.trip.summary || {};
+      const distance = (summary.length != null ? summary.length : 0) * 1000;
+      const time = summary.time != null ? summary.time * 1000 : 0;
 
-    const instructions = (leg.maneuvers || []).map((m: any, i: number) => ({
-      text: m.instruction || m.type?.toString() || "",
-      distance: (m.length || 0) * 1000,
-      time: (m.time || 0) * 1000,
-      sign: VALHALLA_SIGN[m.type] ?? 0,
-      type: m.type,
-      index: i,
-    }));
+      const instructions = (leg.maneuvers || []).map((m: any, i: number) => ({
+        text: m.instruction || m.type?.toString() || "",
+        distance: (m.length || 0) * 1000,
+        time: (m.time || 0) * 1000,
+        sign: VALHALLA_SIGN[m.type] ?? 0,
+        type: m.type,
+        index: i,
+      }));
 
-    return NextResponse.json({
-      route: {
-        type: "LineString",
-        coordinates: coords,
-      },
-      distance,
-      time,
-      instructions,
-      points: { type: "LineString", coordinates: coords },
-    });
+      return NextResponse.json({
+        route: { type: "LineString", coordinates: coords },
+        distance,
+        time,
+        instructions,
+        points: { type: "LineString", coordinates: coords },
+      });
+    }
+
+    if (data.direction && Array.isArray(data.direction)) {
+      const coords: [number, number][] = data.direction.map((c: number[]) => [c[1], c[0]]);
+      const instructions = (data.instruction || []).map((step: any, i: number) => ({
+        text: step.path || "",
+        distance: step.distance || 0,
+        time: 0,
+        sign: step.sign ?? 0,
+        type: step.type,
+        index: i,
+      }));
+
+      return NextResponse.json({
+        route: { type: "LineString", coordinates: coords },
+        distance: data.totalDistance || 0,
+        time: (data.totalTime || 0) * 1000,
+        instructions,
+        points: { type: "LineString", coordinates: coords },
+      });
+    }
+
+    return NextResponse.json({ error: "No route found" }, { status: 404 });
   } catch (e) {
     console.error("Gebeta directions error:", e);
     return NextResponse.json({ error: "Routing service unavailable" }, { status: 502 });

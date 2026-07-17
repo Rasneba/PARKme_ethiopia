@@ -427,6 +427,7 @@ export default function ParkmeApp() {
   const [pendingRouteSpot, setPendingRouteSpot] = useState<ApiSpot | null>(null);
   const pendingRouteSpotRef = useRef<ApiSpot | null>(null);
   const [locationStatus, setLocationStatus] = useState<"loading" | "granted" | "denied" | "unavailable">("loading");
+  const [locationError, setLocationError] = useState<string | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mapHandleRef = useRef<MapLibreHandle | null>(null);
   const didLocate = useRef(false);
@@ -525,13 +526,17 @@ export default function ParkmeApp() {
   }, [spots, userLocation]);
 
   function handleNearMe() {
+    setLocationError(null);
     if (!navigator.geolocation) {
-      alert("Location is not available on this device/browser.");
+      setLocationError("Location is not available on this device.");
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        saveLocation(loc);
+        setLocationStatus("granted");
         const nearest = [...spots].sort((a, b) =>
           haversineKm(pos.coords.latitude, pos.coords.longitude, a.lat, a.lng) -
           haversineKm(pos.coords.latitude, pos.coords.longitude, b.lat, b.lng)
@@ -544,16 +549,18 @@ export default function ParkmeApp() {
       (err) => {
         let msg = "Could not get your location.";
         if (err.code === err.PERMISSION_DENIED) {
-          msg = "Location permission denied. Please enable location access in your browser settings, then tap Near me again.";
+          msg = "Location permission denied. Please enable location in your browser settings.";
+          setLocationStatus("denied");
         } else if (err.code === err.POSITION_UNAVAILABLE) {
-          msg = "Your location is currently unavailable. Showing the closest spot to the city center instead.";
+          msg = "Location unavailable. Showing closest spot to city center.";
         }
         const fallback = [...spots].sort((a, b) =>
           haversineKm(9.0218, 38.7575, a.lat, a.lng) -
           haversineKm(9.0218, 38.7575, b.lat, b.lng)
         );
         if (fallback.length > 0) setSelectedSpotId(fallback[0].id);
-        alert(msg);
+        setLocationError(msg);
+        setTimeout(() => setLocationError(null), 5000);
       },
       { timeout: 8000, enableHighAccuracy: true, maximumAge: 0 },
     );
@@ -564,38 +571,44 @@ export default function ParkmeApp() {
   }
 
   function handleLocate() {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLocation(loc);
-        saveLocation(loc);
-        mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
-        const pending = pendingRouteSpotRef.current;
-        if (pending) {
-          pendingRouteSpotRef.current = null;
-          setPendingRouteSpot(null);
-          setTimeout(() => handleDirections(pending), 50);
-        }
-      },
-      () => {},
-      { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
-    );
+    try {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(loc);
+          saveLocation(loc);
+          setLocationStatus("granted");
+          mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
+          const pending = pendingRouteSpotRef.current;
+          if (pending) {
+            pendingRouteSpotRef.current = null;
+            setPendingRouteSpot(null);
+            setTimeout(() => handleDirections(pending), 50);
+          }
+        },
+        () => {},
+        { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
+      );
+    } catch {}
   }
 
   function handleLocateThenNear() {
-    if (!navigator.geolocation) { handleNearMe(); return; }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLocation(loc);
-        saveLocation(loc);
-        mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
-        setTimeout(() => handleNearMe(), 700);
-      },
-      () => handleNearMe(),
-      { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
-    );
+    try {
+      if (!navigator.geolocation) { handleNearMe(); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(loc);
+          saveLocation(loc);
+          setLocationStatus("granted");
+          mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
+          setTimeout(() => handleNearMe(), 700);
+        },
+        () => handleNearMe(),
+        { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
+      );
+    } catch { handleNearMe(); }
   }
 
   function handleSelectSpot(spot: ApiSpot) {
@@ -677,6 +690,11 @@ export default function ParkmeApp() {
                   );
                 }
               }}><Icon name="locate" size={15} /> Try again</button>
+            </div>
+          )}
+          {locationError && (
+            <div className="location-error-toast" onClick={() => setLocationError(null)}>
+              <Icon name="locate" size={15} /> {locationError}
             </div>
           )}
           {view === "spots" && (
