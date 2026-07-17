@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Icon } from "@/components/Icon";
 
 const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_MAP_TOKEN || process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
@@ -19,6 +20,7 @@ const KINDS = ["Open air", "Garage", "Covered", "Indoor", "Driveway", "Lot"];
 type Status = "idle" | "geocoding" | "submitting" | "done" | "error";
 
 export default function HostPage() {
+  const router = useRouter();
   const [hostName, setHostName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -112,7 +114,10 @@ export default function HostPage() {
       <header className="host-header">
         <Link href="/" className="host-back" aria-label="Back"><Icon name="chevron" size={18} /></Link>
         <div className="host-brand"><span>Park</span><b>me</b><i>host</i></div>
-        <span className="host-header-tag">Marketplace</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span className="host-header-tag">Marketplace</span>
+          <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/app"); }} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", padding: 4 }} aria-label="Sign out"><Icon name="logout" size={18} /></button>
+        </div>
       </header>
 
       <section className="host-hero">

@@ -20,6 +20,7 @@ export const users = pgTable(
     passwordHash: text("password_hash").notNull(),
     phone: text("phone"),
     isHost: boolean("is_host").notNull().default(false),
+    role: text("role").notNull().default("driver"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("users_email_unique").on(table.email)],

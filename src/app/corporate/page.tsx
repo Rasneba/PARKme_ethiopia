@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Icon } from "@/components/Icon";
 import ParkingLotGrid, { KAZANCHIS_LOT, SpotStatus, ParkingSpot } from "@/components/ParkingLotGrid";
 
@@ -37,6 +37,7 @@ const COLORS = {
   card: "#ffffff",
   border: "#e4e6e4",
   muted: "#8a8f8c",
+  redSoft: "#fde8e6",
 };
 
 const NAV_ITEMS: { key: Section; icon: "grid" | "map" | "clock" | "wallet" | "car" | "nav"; label: string }[] = [
@@ -85,6 +86,14 @@ export default function CorporatePage() {
   const [guideSpot, setGuideSpot] = useState<string | undefined>(undefined);
   const [showGuidance, setShowGuidance] = useState(false);
   const [newLocation, setNewLocation] = useState({ name: "", address: "", lat: "", lng: "" });
+  const [apiSpots, setApiSpots] = useState<{ id: number; name: string; address: string; lat: number; lng: number; price: number; availableSpots: number; totalSpots: number }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/spots")
+      .then((r) => r.ok ? r.json() : { spots: [] })
+      .then((d) => setApiSpots(d.spots ?? []))
+      .catch(() => {});
+  }, []);
 
   const lot = KAZANCHIS_LOT;
 
@@ -231,7 +240,11 @@ export default function CorporatePage() {
             ))}
           </nav>
           <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}` }}>
-            <button className="corp-nav-item" style={{ color: COLORS.red }}>
+            <button className="corp-nav-item" style={{ color: COLORS.muted, marginBottom: 4 }} onClick={() => { window.location.href = "/app"; }}>
+              <Icon name="car" size={20} />
+              Driver App
+            </button>
+            <button className="corp-nav-item" style={{ color: COLORS.red }} onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/app"; }}>
               <Icon name="logout" size={20} />
               Sign Out
             </button>
@@ -278,7 +291,25 @@ export default function CorporatePage() {
               </div>
 
               <div className="corp-card">
-                <h3>Active Locations</h3>
+                <h3>Active Locations ({apiSpots.length} spots from map)</h3>
+                {apiSpots.length === 0 && <div style={{ padding: 12, color: COLORS.muted, fontSize: 13 }}>Loading map spots...</div>}
+                {apiSpots.map((spot) => (
+                  <div key={spot.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${COLORS.border}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: spot.availableSpots > 0 ? COLORS.greenSoft : COLORS.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Icon name="car" size={18} stroke={2} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>{spot.name}</div>
+                        <div style={{ fontSize: 11, color: COLORS.muted }}>{spot.address}</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: spot.availableSpots > 0 ? COLORS.greenDark : COLORS.red }}>{spot.availableSpots} / {spot.totalSpots || spot.availableSpots}</div>
+                      <div style={{ fontSize: 10, color: COLORS.muted }}>available</div>
+                    </div>
+                  </div>
+                ))}
                 {locations.map((loc) => (
                   <div key={loc.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${COLORS.border}` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

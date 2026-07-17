@@ -10,7 +10,7 @@ import { formatDistance, formatDuration, greetByHour } from "@/lib/format";
 
 const MapLibreMap = dynamic(() => import("./MapLibreMap"), { ssr: false });
 
-type User = { id: string; email: string; name: string; isHost?: boolean };
+type User = { id: string; email: string; name: string; isHost?: boolean; role?: string };
 type Booking = { id: string; reference: string; status: string; parkingDate: string; startAt: string; endAt: string; durationHours: number; spaceLabel: string; paymentMethod: string; amountEtb: number; gateCode: string; checkInAt: string | null; createdAt: string; spotId: number; spotName: string; spotAddress: string };
 type WalletTx = { id: string; reference: string; type: string; amountEtb: number; provider: string | null; note: string; createdAt: string };
 
@@ -36,8 +36,8 @@ function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
 function FlagRibbon() { return <div className="flag-ribbon" aria-hidden="true"><i /><i /><i /></div>; }
 function StatusDot({ text, color = "green" }: { text: string; color?: "green" | "yellow" }) { return <span className={`status-dot ${color}`}><i />{text}</span>; }
 
-function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () => void; onAuth: (u: User) => void; initialRole?: "driver" | "host" }) {
-  const [role, setRole] = useState<"driver" | "host">(initialRole);
+function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () => void; onAuth: (u: User) => void; initialRole?: "driver" | "host" | "corporate" }) {
+  const [role, setRole] = useState<"driver" | "host" | "corporate">(initialRole === "corporate" ? "host" : initialRole);
   const [mode, setMode] = useState<"choose" | "login" | "signup">("choose");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -45,7 +45,7 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function pickRole(r: "driver" | "host") {
+  function pickRole(r: "driver" | "host" | "corporate") {
     setRole(r);
     setMode("login");
   }
@@ -56,7 +56,7 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
       const url = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
       const body = mode === "login"
         ? { email, password, role }
-        : { name, email, password, role };
+        : { name, email, password, role: role === "corporate" ? "host" : role };
       const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = (await r.json()) as { user?: User; error?: string };
       if (!r.ok || !data.user) throw new Error(data.error ?? "Failed");
@@ -76,16 +76,19 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
           <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">WELCOME TO PARKME</p><h2>How will you use Parkme?</h2></div></div>
           <div className="auth-role-grid">
             <button className="auth-role-card" onClick={() => pickRole("driver")}>
-              <span className="auth-role-emoji">ðŸš—</span>
+              <span className="auth-role-emoji">🚗</span>
               <b>I&apos;m a Driver</b>
               <small>Find &amp; reserve parking spots</small>
             </button>
             <button className="auth-role-card auth-role-gold" onClick={() => pickRole("host")}>
-              <span className="auth-role-emoji">ðŸ </span>
+              <span className="auth-role-emoji">🏠</span>
               <b>I&apos;m a Host</b>
               <small>List your space &amp; earn money</small>
             </button>
           </div>
+          <button className="auth-corporate-btn" onClick={() => pickRole("corporate")}>
+            <Icon name="building" size={18} /> Corporate Login
+          </button>
         </div>
       </div>
     );
@@ -97,9 +100,9 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
         <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button>
         <button className="auth-back" onClick={() => { setMode("choose"); setError(""); }}><Icon name="arrow" size={16} /> Back</button>
         <div className="modal-heading">
-          <span className={`modal-icon ${isDriver ? "" : "modal-icon-gold"}`}><Icon name={isDriver ? "car" : "building"} size={22} /></span>
+          <span className={`modal-icon ${isDriver ? "" : "modal-icon-gold"}`}><Icon name={role === "corporate" ? "building" : isDriver ? "car" : "building"} size={22} /></span>
           <div>
-            <p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"} Â· {isDriver ? "DRIVER" : "HOST"}</p>
+            <p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"} · {role === "corporate" ? "CORPORATE" : isDriver ? "DRIVER" : "HOST"}</p>
             <h2>{mode === "login" ? "Log in to Parkme" : "Sign up for Parkme"}</h2>
           </div>
         </div>
@@ -110,6 +113,34 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
         <button className={`confirm-booking ${isDriver ? "" : "btn-gold"}`} disabled={loading} onClick={() => void submit()}>{loading ? "Please wait..." : mode === "login" ? "Log in" : "Create account"} <Icon name="arrow" size={18} /></button>
         <p className="auth-toggle">{mode === "login" ? "Don't have an account?" : "Already have an account?"} <button onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "Sign up" : "Log in"}</button></p>
       </div>
+    </div>
+  );
+}
+
+function CompassIndicator() {
+  const [heading, setHeading] = useState(0);
+  useEffect(() => {
+    const handler = (e: DeviceOrientationEvent) => {
+      const h = e.alpha != null ? 360 - e.alpha : e.webkitCompassHeading != null ? e.webkitCompassHeading : 0;
+      setHeading(h);
+    };
+    window.addEventListener("deviceorientationabsolute", handler as any, true);
+    window.addEventListener("deviceorientation", handler as any, true);
+    return () => {
+      window.removeEventListener("deviceorientationabsolute", handler as any);
+      window.removeEventListener("deviceorientation", handler as any);
+    };
+  }, []);
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const dir = dirs[Math.round(heading / 45) % 8];
+  return (
+    <div className="compass-indicator">
+      <svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: `rotate(${-heading}deg)` }}>
+        <circle cx="20" cy="20" r="18" fill="none" stroke="#e0e0e0" strokeWidth="1.5" />
+        <polygon points="20,4 24,20 20,22 16,20" fill="#e54d3f" />
+        <polygon points="20,36 16,20 20,18 24,20" fill="#ccc" />
+      </svg>
+      <span>{dir} {Math.round(heading)}°</span>
     </div>
   );
 }
@@ -402,7 +433,7 @@ function ProfileDrawer({ user, onClose, onOwner, onLogout }: { user: User; onClo
         {tab === "wallet" && <div className="drawer-content"><WalletView /></div>}
         {tab === "passes" && <div className="drawer-content"><BookingsView onBook={() => {}} /></div>}
         <div className="drawer-footer">
-          <button onClick={onOwner}><Icon name="building" size={18} /> Host dashboard</button>
+          {(user.role === "host" || user.role === "corporate" || user.isHost) && <button onClick={onOwner}><Icon name="building" size={18} /> Host dashboard</button>}
           <button><Icon name="settings" size={18} /> Settings</button>
           <button><Icon name="help" size={18} /> Help centre</button>
           <button className="sign-out" onClick={() => void handleLogout()}><Icon name="logout" size={18} /> Sign out</button>
@@ -417,7 +448,7 @@ export default function ParkmeApp() {
   const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [authOpen, setAuthOpen] = useState<false | "driver" | "host">(false);
+  const [authOpen, setAuthOpen] = useState<false | "driver" | "host" | "corporate">(false);
   const [view, setView] = useState<"spots" | "bookings" | "wallet" | "history">("spots");
   const [spotView, setSpotView] = useState<"map" | "list">("map");
   const [bookingSpot, setBookingSpot] = useState<ApiSpot | null>(null);
@@ -499,10 +530,16 @@ export default function ParkmeApp() {
       .catch(() => {})
       .finally(() => setAuthChecked(true));
   }, []);
+  useEffect(() => {
+    if (!user) return;
+    const r = user.role ?? (user.isHost ? "host" : "driver");
+    if (r === "corporate") router.push("/corporate");
+    else if (r === "host") router.push("/host");
+  }, [user]);
   useEffect(() => { if (user) fetch("/api/bookings?status=active").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { const b = (d.bookings ?? [])[0]; if (b) setActiveBooking(b); }).catch(() => {}); }, [user]);
 
   useEffect(() => {
-    // Restore last known location from cache so we don't re-prompt every load
+    let watchId: number | null = null;
     try {
       const raw = localStorage.getItem("parkme_loc");
       if (raw) {
@@ -514,7 +551,6 @@ export default function ParkmeApp() {
       }
     } catch {}
     if (!navigator.geolocation) { setLocationStatus("unavailable"); return; }
-    // If user previously accepted, just silently refresh without re-prompting
     const previouslyAccepted = localStorage.getItem("parkme_loc_accepted") === "true";
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -522,6 +558,15 @@ export default function ParkmeApp() {
         setUserLocation(loc);
         saveLocation(loc);
         setLocationStatus("granted");
+        watchId = navigator.geolocation.watchPosition(
+          (wPos) => {
+            const wLoc = { lat: wPos.coords.latitude, lng: wPos.coords.longitude };
+            setUserLocation(wLoc);
+            saveLocation(wLoc);
+          },
+          () => {},
+          { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 },
+        );
       },
       (err) => {
         if (err.code === err.PERMISSION_DENIED) setLocationStatus("denied");
@@ -530,6 +575,7 @@ export default function ParkmeApp() {
       },
       { timeout: 5000, enableHighAccuracy: true, maximumAge: previouslyAccepted ? 300000 : 60000 },
     );
+    return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId); };
   }, []);
 
   const spotsWithDistance = useMemo(() => {
@@ -632,12 +678,26 @@ export default function ParkmeApp() {
     (window as any).__parkmeRoute?.(spot.lat, spot.lng);
   }
 
-  const navItems = [
-    { icon: "grid" as IconName, label: "Find a spot", view: "spots" as const, active: view === "spots" },
-    { icon: "calendar" as IconName, label: "My bookings", view: "bookings" as const, active: view === "bookings" },
-    { icon: "wallet" as IconName, label: "Wallet", view: "wallet" as const, active: view === "wallet" },
-    { icon: "receipt" as IconName, label: "History", view: "history" as const, active: view === "history" },
-  ];
+  const navItems = useMemo(() => {
+    const r = user?.role ?? (user?.isHost ? "host" : "driver");
+    if (r === "corporate") {
+      return [
+        { icon: "building" as IconName, label: "Corporate Dashboard", href: "/corporate" },
+        { icon: "check" as IconName, label: "Attendant Panel", href: "/attendant" },
+      ];
+    }
+    if (r === "host") {
+      return [
+        { icon: "building" as IconName, label: "Manage Listings", href: "/host" },
+      ];
+    }
+    return [
+      { icon: "grid" as IconName, label: "Find a spot", view: "spots" as const, active: view === "spots" },
+      { icon: "calendar" as IconName, label: "My bookings", view: "bookings" as const, active: view === "bookings" },
+      { icon: "wallet" as IconName, label: "Wallet", view: "wallet" as const, active: view === "wallet" },
+      { icon: "receipt" as IconName, label: "History", view: "history" as const, active: view === "history" },
+    ];
+  }, [user?.role, user?.isHost, view]);
 
   const [isMobile, setIsMobile] = useState(true);
   useEffect(() => {
@@ -657,6 +717,27 @@ export default function ParkmeApp() {
           <p>Scan the QR code or tap below to open the app on your mobile device.</p>
           <a href="/" className="btn btn-primary btn-lg">Go to home page</a>
         </div>
+      </main>
+    );
+  }
+
+  if (authChecked && !user) {
+    return (
+      <main className="parkme-shell parkme-mobile">
+        <div className="app-content">
+          <div className="mobile-topbar">
+            <div className="mobile-brand"><span>Park</span><b>me</b></div>
+          </div>
+          <div className="workspace locked-workspace">
+            <div className="locked-screen">
+              <div className="locked-icon"><Icon name="lock" size={48} /></div>
+              <h2>Welcome to Parkme</h2>
+              <p>Sign in to find parking, book spots, and manage your account.</p>
+              <button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Sign in <Icon name="arrow" size={16} /></button>
+            </div>
+          </div>
+        </div>
+        {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onAuth={(u) => setUser(u)} initialRole={authOpen} />}
       </main>
     );
   }
@@ -688,19 +769,16 @@ export default function ParkmeApp() {
           )}
           <nav className="mobile-sidebar-nav">
             {navItems.map((item) => (
-              <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setMenuOpen(false); setView(item.view); if (item.label === "Find a spot") setSpotView("list"); }}>
+              <button key={item.label} className={"active" in item && item.active ? "active" : ""} onClick={() => { setMenuOpen(false); if ("href" in item && item.href) { router.push(item.href); } else if ("view" in item && item.view) { setView(item.view); if (item.label === "Find a spot") setSpotView("list"); } }}>
                 <Icon name={item.icon} size={20} /><span>{item.label}</span>
-                {item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}
+                {"label" in item && item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}
               </button>
             ))}
-            <button onClick={() => { setMenuOpen(false); router.push("/corporate"); }}><Icon name="building" size={20} /><span>Corporate Dashboard</span></button>
-            <button onClick={() => { setMenuOpen(false); router.push("/attendant"); }}><Icon name="check" size={20} /><span>Attendant Panel</span></button>
-            <button onClick={() => { setMenuOpen(false); router.push("/host"); }}><Icon name="building" size={20} /><span>Become a host</span></button>
           </nav>
           {user && (
             <div className="mobile-sidebar-footer">
               <button onClick={() => { setMenuOpen(false); setProfileOpen(true); }}><Icon name="settings" size={18} /><span>Profile & Wallet</span></button>
-              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen(false); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }}><Icon name="logout" size={18} /><span>Sign out</span></button>
+              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen("driver"); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }}><Icon name="logout" size={18} /><span>Sign out</span></button>
             </div>
           )}
         </aside>
@@ -781,7 +859,10 @@ export default function ParkmeApp() {
                         <b>Route to {spot.name}</b>
                         {routeData && <span>{formatDistance(routeData.distance)} &middot; {formatDuration(routeData.time)}</span>}
                       </div>
-                      <button className="route-panel-close" onClick={() => { setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={18} /></button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <CompassIndicator />
+                        <button className="route-panel-close" onClick={() => { setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={18} /></button>
+                      </div>
                     </div>
                     <div className="route-steps">
                       {routeData?.instructions?.filter((ins: any) => ins.distance > 0 || ins.sign === 0).map((ins: any, i: number) => (
@@ -829,7 +910,7 @@ export default function ParkmeApp() {
 
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onAuth={(u) => setUser(u)} initialRole={authOpen} />}
       {bookingSpot && <BookingModal spot={bookingSpot} onClose={() => setBookingSpot(null)} onBooked={() => { fetchSpots(searchQuery); setActiveBooking(null); }} user={user} />}
-      {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setMenuOpen(false); router.push("/host"); }} onLogout={() => { setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen(false); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }} />}
+      {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setMenuOpen(false); router.push("/host"); }} onLogout={() => { setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen("driver"); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }} />}
     </main>
   );
 }

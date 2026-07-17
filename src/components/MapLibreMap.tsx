@@ -14,9 +14,23 @@ export interface MapLibreHandle {
 
 const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_MAP_TOKEN || process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
 
-const GREEN_PIN = `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0fa24b"/><stop offset="100%" stop-color="#086a32"/></linearGradient></defs><path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z" fill="url(#pg)" stroke="white" stroke-width="2.5"/><text x="16" y="20" text-anchor="middle" fill="white" font-size="14" font-weight="900" font-family="Arial">P</text></svg>`;
-const RED_PIN = `<svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pr" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e54d3f"/><stop offset="100%" stop-color="#ac3c31"/></linearGradient></defs><path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 28 20 28s20-13 20-28C40 8.95 31.05 0 20 0z" fill="url(#pr)" stroke="white" stroke-width="3"/><text x="20" y="24" text-anchor="middle" fill="white" font-size="16" font-weight="900" font-family="Arial">P</text></svg>`;
-const BLUE_DOT = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#4098df" stroke="white" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="white"/></svg>`;
+const GREEN_PIN = `<svg width="36" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0fa24b"/><stop offset="100%" stop-color="#086a32"/></linearGradient></defs>
+  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="url(#pg)" stroke="white" stroke-width="2"/>
+  <circle cx="12" cy="9" r="2.5" fill="white"/>
+  <text x="12" y="10" text-anchor="middle" dominant-baseline="middle" fill="#0fa24b" font-size="5" font-weight="900" font-family="Arial">P</text>
+</svg>`;
+const RED_PIN = `<svg width="44" height="52" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="pr" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e54d3f"/><stop offset="100%" stop-color="#ac3c31"/></linearGradient></defs>
+  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="url(#pr)" stroke="white" stroke-width="2.5"/>
+  <circle cx="12" cy="9" r="2.5" fill="white"/>
+  <text x="12" y="10" text-anchor="middle" dominant-baseline="middle" fill="#e54d3f" font-size="5" font-weight="900" font-family="Arial">P</text>
+</svg>`;
+const BLUE_DOT = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="12" r="10" fill="#4098df" stroke="white" stroke-width="3" opacity="0.25"/>
+  <circle cx="12" cy="12" r="7" fill="#4098df" stroke="white" stroke-width="2.5"/>
+  <circle cx="12" cy="12" r="3" fill="white"/>
+</svg>`;
 
 const GEBETA_BASE_STYLE_URL = "https://tiles.gebeta.app/styles/standard/style.json";
 
@@ -63,18 +77,18 @@ function createInfoHTML(spot: any, isNearest?: boolean, userLoc?: { lat: number;
     ? `https://gebeta.app/maps?point=${userLoc.lat},${userLoc.lng}&point=${spot.lat},${spot.lng}`
     : `https://gebeta.app/maps?point=${spot.lat},${spot.lng}`;
   return `<div style="font-family:Arial,sans-serif;min-width:200px;max-width:260px;padding:4px 0;">
-    ${isNearest ? '<div style="display:inline-block;padding:3px 7px;margin-bottom:6px;background:#4098df;color:white;border-radius:5px;font-size:9px;font-weight:800;">NEAREST TO YOU</div>' : ""}
-    <b style="font-size:14px;color:#131614;">${spot.name}</b>
-    <p style="margin:3px 0;color:#6c746e;font-size:11px;">${spot.address}</p>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
-      <span style="font-weight:800;color:#0fa24b;font-size:13px;">${spot.price} ETB/hr</span>
-      <span style="font-size:10px;color:#888;">${dist || spot.availableSpots + " spots"}</span>
+    ${isNearest ? '<div style="display:inline-block;padding:4px 10px;margin-bottom:8px;background:#4098df;color:white;border-radius:6px;font-size:10px;font-weight:800;">NEAREST TO YOU</div>' : ""}
+    <b style="font-size:15px;color:#131614;">${spot.name}</b>
+    <p style="margin:4px 0;color:#6c746e;font-size:12px;">${spot.address}</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+      <span style="font-weight:800;color:#0fa24b;font-size:14px;">${spot.price} ETB/hr</span>
+      <span style="font-size:11px;color:#888;">${dist || spot.availableSpots + " spots"}</span>
     </div>
-    <div style="display:flex;gap:6px;margin-top:8px;">
-      <button onclick="window.__parkmeRoute?.(${spot.lat},${spot.lng})" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;background:#dcf8e4;color:#086a32;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">&#9654; Directions</button>
-      <button onclick="window.__parkmeSelectSpot?.(${spot.id})" style="flex:1;padding:8px;background:linear-gradient(135deg,#111a13,#168b45);color:white;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">Select & Reserve</button>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button onclick="window.__parkmeRoute?.(${spot.lat},${spot.lng})" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:14px;min-height:48px;background:#dcf8e4;color:#086a32;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">&#9654; Directions</button>
+      <button onclick="window.__parkmeSelectSpot?.(${spot.id})" style="flex:1;padding:14px;min-height:48px;background:linear-gradient(135deg,#111a13,#168b45);color:white;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">Select & Reserve</button>
     </div>
-    ${userLoc ? `<a href="${ghLink}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:6px;color:#888;font-size:9px;text-decoration:underline;">Open full route in Gebeta</a>` : ""}
+    ${userLoc ? `<a href="${ghLink}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;color:#888;font-size:10px;text-decoration:underline;">Open full route in Gebeta</a>` : ""}
   </div>`;
 }
 
@@ -105,18 +119,18 @@ function createDirectionsHTML(instructions: any[], distance: number, time: numbe
   }).join("");
 
   return `<div style="font-family:Arial,sans-serif;min-width:260px;width:300px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <b style="font-size:13px;color:#131614;">Route to ${spotName}</b>
-      <button onclick="window.__parkmeClearRoute?.()" style="background:none;border:none;color:#e54d3f;cursor:pointer;font-size:18px;line-height:1;padding:0 4px;">&times;</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <b style="font-size:14px;color:#131614;">Route to ${spotName}</b>
+      <button onclick="window.__parkmeClearRoute?.()" style="background:none;border:none;color:#e54d3f;cursor:pointer;font-size:20px;line-height:1;padding:8px;min-width:44px;min-height:44px;display:grid;place-items:center;">&times;</button>
     </div>
-    <div style="display:flex;gap:16px;margin-bottom:10px;padding:8px 0;background:#f7faf8;border-radius:8px;justify-content:center;">
-      <span style="font-size:12px;color:#131614;font-weight:700;">&#128207; ${formatDistance(distance)}</span>
-      <span style="font-size:12px;color:#131614;font-weight:700;">&#9200; ${formatDuration(time)}</span>
+    <div style="display:flex;gap:16px;margin-bottom:12px;padding:10px 0;background:#f7faf8;border-radius:10px;justify-content:center;">
+      <span style="font-size:13px;color:#131614;font-weight:700;">&#128207; ${formatDistance(distance)}</span>
+      <span style="font-size:13px;color:#131614;font-weight:700;">&#9200; ${formatDuration(time)}</span>
     </div>
     <div style="max-height:360px;overflow-y:auto;scrollbar-width:thin;">
       ${steps}
     </div>
-    <a href="https://gebeta.app/maps?point=${fromLat},${fromLng}&point=${toLat},${toLng}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;padding:8px;background:#0fa24b;color:white;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">Open in Gebeta</a>
+    <a href="https://gebeta.app/maps?point=${fromLat},${fromLng}&point=${toLat},${toLng}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;margin-top:12px;padding:14px;min-height:48px;background:#0fa24b;color:white;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">Open in Gebeta</a>
   </div>`;
 }
 
@@ -282,7 +296,7 @@ export default function MapLibreMap(
       }
     }
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "top-right");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: false }), "top-right");
     map.addControl(new maplibregl.AttributionControl({ customAttribution: '<a style="margin-bottom:5px;" href="https://www.gebeta.app" target="_blank">&copy; Gebeta Maps</a>' }), "bottom-left");
 
     mapRef.current = map;
@@ -456,7 +470,6 @@ export default function MapLibreMap(
     const map = mapRef.current;
     if (!map || !userLocation) return;
 
-    map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 16, duration: 1200 });
     placeUserMarker(map, userLocation.lat, userLocation.lng);
 
     const withDist = spots.map((s) => ({
@@ -467,6 +480,8 @@ export default function MapLibreMap(
     const nearest = withDist[0];
     if (!nearest) return;
 
+    map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 16, duration: 1200 });
+
     const onIdle = () => {
       setTimeout(() => {
         openSpotPopup(map, nearest, [nearest.lng, nearest.lat], true);
@@ -476,6 +491,17 @@ export default function MapLibreMap(
     };
     map.on("idle", onIdle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLocation]);
+
+  // ---- MOVE USER MARKER on location update ----
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !userLocation) return;
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLngLat([userLocation.lng, userLocation.lat]);
+    } else {
+      placeUserMarker(map, userLocation.lat, userLocation.lng);
+    }
   }, [userLocation]);
 
   // ---- SELECTED SPOT ----
@@ -541,10 +567,12 @@ export default function MapLibreMap(
         }
         .maplibregl-popup-tip { display: none !important; }
         .maplibregl-ctrl-bottom-right { bottom: 50px !important; }
+        .maplibregl-map { z-index: 0 !important; }
+        .maplibregl-canvas { z-index: 0 !important; }
       `}</style>
       <div
         ref={containerRef}
-        style={{ width: "100%", height: "100%", minHeight: "300px", borderRadius: "16px" }}
+        style={{ width: "100%", height: "100%", minHeight: "300px", borderRadius: "0" }}
       />
     </>
   );

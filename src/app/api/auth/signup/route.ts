@@ -37,15 +37,15 @@ export async function POST(request: NextRequest) {
     const isHost = role === "host";
     const [user] = await db
       .insert(users)
-      .values({ email, name, passwordHash, isHost })
-      .returning({ id: users.id, email: users.email, name: users.name, isHost: users.isHost });
+      .values({ email, name, passwordHash, isHost, role })
+      .returning({ id: users.id, email: users.email, name: users.name, isHost: users.isHost, role: users.role });
 
     const token = uuid();
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
     await db.insert(sessions).values({ userId: user.id, token, expiresAt });
 
     const cookie = createSessionCookie(token);
-    const response = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, isHost: user.isHost } }, { status: 201 });
+    const response = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, isHost: user.isHost, role: user.role } }, { status: 201 });
     response.cookies.set(cookie.name, cookie.value, cookie.options);
     return response;
   } catch (e) {

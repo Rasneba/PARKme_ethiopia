@@ -120,7 +120,7 @@ export default function AttendantPage() {
       <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", background: GRAY, position: "relative", overflow: "hidden" }}>
         {/* Top bar */}
         <div style={{ position: "sticky", top: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", background: INK, color: WHITE }}>
-          <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", color: WHITE, cursor: "pointer", padding: 4 }} aria-label="Menu">
+          <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", color: WHITE, cursor: "pointer", padding: 12, minWidth: 48, minHeight: 48, display: "grid", placeItems: "center" }} aria-label="Menu">
             <Icon name="menu" size={22} />
           </button>
           <span style={{ fontSize: 13, fontWeight: 600 }}>Parkme Attendant</span>
@@ -167,7 +167,7 @@ export default function AttendantPage() {
                         {b.status.toUpperCase()}
                       </span>
                       {b.spot && b.status === "validated" && (
-                        <button onClick={() => handleGuideDriver(b)} style={{ padding: "3px 8px", borderRadius: 6, background: BLUE, color: WHITE, border: "none", fontSize: 10, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
+                        <button onClick={() => handleGuideDriver(b)} style={{ padding: "8px 14px", borderRadius: 8, background: BLUE, color: WHITE, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0, minHeight: 44 }}>
                           Guide
                         </button>
                       )}
@@ -300,9 +300,9 @@ export default function AttendantPage() {
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: "#e3f2fd", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Icon name="nav" size={20} />
                     </div>
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14, fontWeight: 700 }}>Guide {guidedBooking.customer}</div>
-                      <div style={{ fontSize: 12, color: GRAY_MID }}>{guidedBooking.vehicle} ({guidedBooking.plate}) → Spot {guideSpot}</div>
+                      <div style={{ fontSize: 12, color: GRAY_MID }}>{guidedBooking.vehicle} ({guidedBooking.plate}) &rarr; Spot {guideSpot}</div>
                     </div>
                   </div>
 
@@ -315,30 +315,16 @@ export default function AttendantPage() {
                     readOnly={true}
                   />
 
-                  <div style={{ marginTop: 14, padding: "10px 14px", background: "#e3f2fd", borderRadius: 10 }}>
-                    {[
-                      { step: 1, text: "Direct driver to main entrance", done: true },
-                      { step: 2, text: selectedFloor === "G" ? "Ground floor — no elevator needed" : `Take elevator to Floor ${selectedFloor}`, done: selectedFloor !== "G" },
-                      { step: 3, text: `Navigate to Zone ${selectedZone}`, done: true, active: true },
-                      { step: 4, text: `Park at Spot ${guideSpot}`, done: false },
-                    ].map((s) => (
-                      <div key={s.step} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: s.step < 4 ? `1px solid rgba(0,0,0,0.06)` : "none" }}>
-                        <div style={{ width: 22, height: 22, borderRadius: "50%", background: s.done ? GREEN : s.active ? BLUE : "#ddd", color: WHITE, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{s.step}</div>
-                        <span style={{ fontSize: 13, fontWeight: s.active ? 700 : 500, color: s.active ? BLUE : s.done ? GREEN_DARK : GRAY_MID }}>{s.text}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                    <button onClick={() => { setGuideSpot(undefined); setGuidedBooking(null); setShowGuidance(false); setTab("spots"); }} style={{ flex: 1, padding: "12px", borderRadius: 10, background: GRAY, color: INK, border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Back to Spots</button>
-                    <button style={{ flex: 1, padding: "12px", borderRadius: 10, background: GREEN, color: WHITE, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Mark as Parked</button>
+                  <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                    <button onClick={() => { setGuideSpot(undefined); setGuidedBooking(null); setShowGuidance(false); setTab("spots"); }} style={{ flex: 1, padding: "14px", borderRadius: 12, background: GRAY, color: INK, border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: 50 }}>Back to Spots</button>
+                    <button style={{ flex: 1, padding: "14px", borderRadius: 12, background: GREEN, color: WHITE, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", minHeight: 50 }}>Mark as Parked</button>
                   </div>
                 </div>
               ) : (
                 <div className="att-card" style={{ textAlign: "center", padding: "40px 20px", color: GRAY_MID }}>
                   <Icon name="nav" size={40} />
                   <p style={{ marginTop: 12, fontSize: 13 }}>Scan or validate a booking first, then guide the driver to their spot</p>
-                  <button onClick={() => setTab("validation")} style={{ marginTop: 16, padding: "10px 20px", borderRadius: 10, background: GREEN, color: WHITE, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                  <button onClick={() => setTab("validation")} style={{ marginTop: 16, padding: "14px 24px", borderRadius: 12, background: GREEN, color: WHITE, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", minHeight: 50 }}>
                     Go to Validation
                   </button>
                 </div>
@@ -350,8 +336,8 @@ export default function AttendantPage() {
         {/* Bottom tab bar */}
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: WHITE, borderTop: `1px solid ${GRAY}`, display: "flex", zIndex: 40, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
           {tabs.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "10px 0", background: "none", border: "none", cursor: "pointer", color: tab === t.key ? GREEN : GRAY_MID, fontSize: 10, fontWeight: tab === t.key ? 700 : 500 }}>
-              <Icon name={t.icon} size={20} />
+            <button key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "12px 0", background: "none", border: "none", cursor: "pointer", color: tab === t.key ? GREEN : GRAY_MID, fontSize: 11, fontWeight: tab === t.key ? 700 : 500, minHeight: 56 }}>
+              <Icon name={t.icon} size={22} />
               {t.label}
             </button>
           ))}
@@ -384,9 +370,9 @@ export default function AttendantPage() {
               { icon: "nav" as const, label: "Driver Guide", action: () => setTab("guide") },
               { icon: "settings" as const, label: "Settings", action: () => {} },
               { icon: "help" as const, label: "Help", action: () => {} },
-              { icon: "logout" as const, label: "Logout", action: () => {} },
+              { icon: "logout" as const, label: "Logout", action: () => { fetch("/api/auth/logout", { method: "POST" }).then(() => { window.location.href = "/app"; }).catch(() => { window.location.href = "/app"; }); } },
             ].map((item, i) => (
-              <button key={item.label} onClick={() => { item.action(); setSidebarOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "13px 20px", background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 500, color: INK, textAlign: "left", borderTop: i === 6 ? `1px solid ${GRAY}` : "none" }}>
+              <button key={item.label} onClick={() => { item.action(); setSidebarOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "14px 20px", minHeight: 48, background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 500, color: INK, textAlign: "left", borderTop: i === 6 ? `1px solid ${GRAY}` : "none" }}>
                 <Icon name={item.icon} size={18} />
                 {item.label}
               </button>

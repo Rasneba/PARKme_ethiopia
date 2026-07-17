@@ -30,6 +30,7 @@ export async function getCurrentUser() {
       name: users.name,
       phone: users.phone,
       isHost: users.isHost,
+      role: users.role,
       createdAt: users.createdAt,
     })
     .from(users)
