@@ -55,7 +55,10 @@ export default function FindPage() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => { const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }; setUserLocation(loc); try { localStorage.setItem("parkme_loc", JSON.stringify({ ...loc, t: Date.now() })); } catch {} },
-      () => {},
+      () => {
+        const fallback = { lat: 9.0218, lng: 38.7575 };
+        setUserLocation(fallback);
+      },
       { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
     );
   }, []);

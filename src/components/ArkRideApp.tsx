@@ -425,6 +425,8 @@ export default function ParkmeApp() {
   const [routeActive, setRouteActive] = useState(false);
   const [routeData, setRouteData] = useState<{ distance: number; time: number; instructions: any[] } | null>(null);
   const [pendingRouteSpot, setPendingRouteSpot] = useState<ApiSpot | null>(null);
+  const pendingRouteSpotRef = useRef<ApiSpot | null>(null);
+  const [locationStatus, setLocationStatus] = useState<"loading" | "granted" | "denied" | "unavailable">("loading");
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mapHandleRef = useRef<MapLibreHandle | null>(null);
   const didLocate = useRef(false);
@@ -492,17 +494,23 @@ export default function ParkmeApp() {
         const cached = JSON.parse(raw);
         if (cached && typeof cached.lat === "number" && typeof cached.lng === "number") {
           setUserLocation({ lat: cached.lat, lng: cached.lng });
+          setLocationStatus("granted");
         }
       }
     } catch {}
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) { setLocationStatus("unavailable"); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(loc);
         saveLocation(loc);
+        setLocationStatus("granted");
       },
-      () => {},
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) setLocationStatus("denied");
+        else if (err.code === err.POSITION_UNAVAILABLE) setLocationStatus("unavailable");
+        else setLocationStatus("denied");
+      },
       { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
     );
   }, []);
@@ -563,10 +571,11 @@ export default function ParkmeApp() {
         setUserLocation(loc);
         saveLocation(loc);
         mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
-        if (pendingRouteSpot) {
-          const spot = pendingRouteSpot;
+        const pending = pendingRouteSpotRef.current;
+        if (pending) {
+          pendingRouteSpotRef.current = null;
           setPendingRouteSpot(null);
-          setTimeout(() => handleDirections(spot), 50);
+          setTimeout(() => handleDirections(pending), 50);
         }
       },
       () => {},
@@ -599,15 +608,16 @@ export default function ParkmeApp() {
     setSelectedSpotId(spot.id);
     setRouteActive(true);
     if (!userLocation) {
-      handleLocate();
+      pendingRouteSpotRef.current = spot;
       setPendingRouteSpot(spot);
+      handleLocate();
       return;
     }
     (window as any).__parkmeRoute?.(spot.lat, spot.lng);
     if (userLocation) {
       fetch(`/api/directions?from_lat=${userLocation.lat}&from_lng=${userLocation.lng}&to_lat=${spot.lat}&to_lng=${spot.lng}`)
         .then((r) => r.ok ? r.json() : null)
-        .then((d) => { if (d) setRouteData({ distance: d.distance, time: d.time, instructions: d.instructions || [] }); })
+        .then((d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time / 1000, instructions: d.instructions || [] }); })
         .catch(() => {});
     }
   }
@@ -654,6 +664,21 @@ export default function ParkmeApp() {
         </header>
 
         <div className="workspace">
+          {locationStatus === "denied" && (
+            <div className="location-banner" role="alert">
+              <Icon name="locate" size={18} />
+              <div><b>Location access needed</b><p>Enable location in your browser settings to find the nearest parking spots.</p></div>
+              <button className="location-banner-btn" onClick={() => {
+                if ("geolocation" in navigator) {
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => { const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }; setUserLocation(loc); saveLocation(loc); setLocationStatus("granted"); },
+                    () => {},
+                    { timeout: 5000, enableHighAccuracy: true, maximumAge: 0 },
+                  );
+                }
+              }}><Icon name="locate" size={15} /> Try again</button>
+            </div>
+          )}
           {view === "spots" && (
             <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
               <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId}         onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
@@ -685,7 +710,7 @@ export default function ParkmeApp() {
                           {routeData?.instructions?.filter((ins: any) => ins.distance > 0 || ins.sign === 0).map((ins: any, i: number) => (
                             <div className="route-step" key={i}>
                               <span className="route-step-icon">{ins.sign === 0 ? "\u2192" : ins.sign < 0 ? "\u21BA" : "\u21BB"}</span>
-                              <div><span>{ins.text}</span><small>{formatDistance(ins.distance || 0)}</small></div>
+                              <div><span>{ins.text}</span><small>{formatDistance((ins.distance || 0) / 1000)}</small></div>
                             </div>
                           ))}
                           {!routeData && <div className="route-loading">Calculating route...</div>}

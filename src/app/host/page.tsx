@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
 
-const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_TOKEN || process.env.NEXT_PUBLIC_GEBETA_MAP_TOKEN || "";
+const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_MAP_TOKEN || process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
 
 const CATEGORIES = [
   { key: "standard", label: "Standard", icon: "car" as const },
