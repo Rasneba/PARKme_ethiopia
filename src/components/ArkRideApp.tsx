@@ -76,12 +76,12 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
           <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">WELCOME TO PARKME</p><h2>How will you use Parkme?</h2></div></div>
           <div className="auth-role-grid">
             <button className="auth-role-card" onClick={() => pickRole("driver")}>
-              <span className="auth-role-emoji">🚗</span>
+              <span className="auth-role-emoji" style={{ color: "#0fa24b" }}><Icon name="car" size={32} /></span>
               <b>I&apos;m a Driver</b>
               <small>Find &amp; reserve parking spots</small>
             </button>
             <button className="auth-role-card auth-role-gold" onClick={() => pickRole("host")}>
-              <span className="auth-role-emoji">🏠</span>
+              <span className="auth-role-emoji" style={{ color: "#f7c531" }}><Icon name="building" size={32} /></span>
               <b>I&apos;m a Host</b>
               <small>List your space &amp; earn money</small>
             </button>

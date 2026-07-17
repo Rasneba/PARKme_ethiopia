@@ -434,8 +434,8 @@ export default function ParkingLotGrid({
 
       {showGuidance && assignedSpot && (
         <div className="plg-guidance-banner">
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: "#2196f3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontSize: 18, animation: "driveBounce 0.6s infinite" }}>{"\uD83D\uDE97"}</span>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "#2196f3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, animation: "driveBounce 0.6s infinite" }}>
+            <Icon name="car" size={18} stroke={2} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0d47a1" }}>
