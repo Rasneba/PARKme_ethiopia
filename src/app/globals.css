@@ -33,6 +33,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
+  color-scheme: light;
 }
 
 /* Desktop redirect for /app — mobile-only app */
@@ -49,7 +50,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 
 /* ── /app mobile-only layout ── */
 .parkme-mobile { height: 100dvh; background: var(--canvas); overflow: hidden; overscroll-behavior: none; }
-.parkme-mobile .app-content { position: relative; height: 100dvh; overflow: hidden; }
+.parkme-mobile .app-content { position: relative; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
 
 .mobile-topbar { position: relative; z-index: 100; display: flex; align-items: center; gap: 10px; padding: calc(10px + var(--sat)) 14px 10px; background: linear-gradient(180deg, rgba(255,255,252,.97) 50%, rgba(255,255,252,0)); }
 .mobile-profile { margin-left: auto; padding: 2px; background: transparent; }
@@ -64,18 +65,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 .mobile-sidebar-user b { font-size: 13px; }
 .mobile-sidebar-user small { color: var(--muted); font-size: 11px; }
 .mobile-sidebar-login { width: 100%; padding: 14px; background: var(--green); color: #fff; border-radius: 12px; font-size: 14px; font-weight: 700; margin-bottom: 16px; }
-.mobile-sidebar-nav { display: grid; gap: 4px; flex: 1; }
-.mobile-sidebar-nav button { display: flex; align-items: center; gap: 12px; padding: 13px 12px; border-radius: 10px; color: #565e58; background: transparent; text-align: left; font-size: 14px; font-weight: 650; transition: .15s; }
+.mobile-sidebar-nav { display: grid; gap: 2px; flex: 1; }
+.mobile-sidebar-nav button { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: #565e58; background: transparent; text-align: left; font-size: 13px; font-weight: 650; transition: .15s; }
 .mobile-sidebar-nav button:hover { background: var(--cream); }
 .mobile-sidebar-nav button.active { background: var(--green-soft); color: var(--green-dark); }
-.mobile-sidebar-footer { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 4px; }
-.mobile-sidebar-footer button { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 10px; color: #565e58; background: transparent; text-align: left; font-size: 13px; font-weight: 650; }
+.mobile-sidebar-footer { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 2px; }
+.mobile-sidebar-footer button { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 10px; color: #565e58; background: transparent; text-align: left; font-size: 12px; font-weight: 650; }
 .mobile-sidebar-footer button:hover { background: var(--cream); }
 .avatar { display: grid; flex: 0 0 auto; place-items: center; border: 2px solid #fff; box-shadow: 0 0 0 1px #cbd3cb; background: linear-gradient(145deg, #f0ba40, #cb6338 55%, #714f32); color: white; border-radius: 50%; font-weight: 800; letter-spacing: -.03em; }
 .avatar-sm { width: 30px; height: 30px; font-size: 10px; }
 .avatar-md { width: 49px; height: 49px; font-size: 14px; }
 .nav-count { width: 20px; height: 20px; margin-left: auto; display: grid; place-items: center; background: var(--yellow); color: #4e3c00; border-radius: 50%; font-size: 11px; font-style: normal; font-weight: 800; }
-.workspace { flex: 1; width: 100%; padding: 0; overflow: hidden; height: calc(100dvh - 60px); overscroll-behavior: none; }
+.workspace { flex: 1; width: 100%; padding: 0; overflow: hidden; min-height: 0; overscroll-behavior: none; }
 .content-grid { display: block; position: relative; width: 100%; height: 100%; overflow: hidden; background: #e8eef0; }
 .search-column { min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--line); background: var(--paper); }
 .search-top { padding: 20px 18px 0; flex-shrink: 0; }
@@ -474,6 +475,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 .confirm-booking:disabled, .deposit-sheet button:disabled { cursor: wait; opacity: .68; transform: none; }
 
 .auth-modal { max-width: 420px; }
+.auth-overlay { background: linear-gradient(160deg, rgba(10, 25, 14, .72), rgba(8, 18, 10, .82)), url('https://images.pexels.com/photos/35368884/pexels-photo-35368884.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=900&w=1600') center/cover no-repeat; backdrop-filter: blur(8px); }
 .auth-field { margin: 16px 0 0; }
 .auth-field label { display: block; margin-bottom: 5px; color: #59615b; font-size: 11px; font-weight: 750; }
 .auth-field input { width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 9px; font-size: 13px; background: #fff; color: var(--ink); }

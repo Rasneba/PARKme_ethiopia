@@ -70,7 +70,7 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
 
   if (mode === "choose") {
     return (
-      <div className="overlay" role="dialog" aria-modal="true">
+      <div className="overlay auth-overlay" role="dialog" aria-modal="true">
         <div className="booking-modal auth-modal">
           <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button>
           <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">WELCOME TO PARKME</p><h2>How will you use Parkme?</h2></div></div>
@@ -92,7 +92,7 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
   }
 
   return (
-    <div className="overlay" role="dialog" aria-modal="true">
+    <div className="overlay auth-overlay" role="dialog" aria-modal="true">
       <div className="booking-modal auth-modal">
         <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button>
         <button className="auth-back" onClick={() => { setMode("choose"); setError(""); }}><Icon name="arrow" size={16} /> Back</button>
@@ -494,6 +494,7 @@ export default function ParkmeApp() {
         const params = new URLSearchParams(window.location.search);
         const r = params.get("role");
         if (r === "driver" || r === "host") { setAuthOpen(r); window.history.replaceState({}, "", "/app"); }
+        else { setAuthOpen("driver"); }
       })
       .catch(() => {})
       .finally(() => setAuthChecked(true));
@@ -513,6 +514,8 @@ export default function ParkmeApp() {
       }
     } catch {}
     if (!navigator.geolocation) { setLocationStatus("unavailable"); return; }
+    // If user previously accepted, just silently refresh without re-prompting
+    const previouslyAccepted = localStorage.getItem("parkme_loc_accepted") === "true";
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -523,9 +526,9 @@ export default function ParkmeApp() {
       (err) => {
         if (err.code === err.PERMISSION_DENIED) setLocationStatus("denied");
         else if (err.code === err.POSITION_UNAVAILABLE) setLocationStatus("unavailable");
-        else setLocationStatus("denied");
+        else if (!previouslyAccepted) setLocationStatus("denied");
       },
-      { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
+      { timeout: 5000, enableHighAccuracy: true, maximumAge: previouslyAccepted ? 300000 : 60000 },
     );
   }, []);
 
@@ -580,7 +583,10 @@ export default function ParkmeApp() {
   }
 
   function saveLocation(loc: { lat: number; lng: number }) {
-    try { localStorage.setItem("parkme_loc", JSON.stringify({ ...loc, t: Date.now() })); } catch {}
+    try {
+      localStorage.setItem("parkme_loc", JSON.stringify({ ...loc, t: Date.now() }));
+      localStorage.setItem("parkme_loc_accepted", "true");
+    } catch {}
   }
 
   function handleLocate() {
@@ -694,7 +700,7 @@ export default function ParkmeApp() {
           {user && (
             <div className="mobile-sidebar-footer">
               <button onClick={() => { setMenuOpen(false); setProfileOpen(true); }}><Icon name="settings" size={18} /><span>Profile & Wallet</span></button>
-              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); setMenuOpen(false); }}><Icon name="logout" size={18} /><span>Sign out</span></button>
+              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen(false); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }}><Icon name="logout" size={18} /><span>Sign out</span></button>
             </div>
           )}
         </aside>
@@ -823,7 +829,7 @@ export default function ParkmeApp() {
 
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onAuth={(u) => setUser(u)} initialRole={authOpen} />}
       {bookingSpot && <BookingModal spot={bookingSpot} onClose={() => setBookingSpot(null)} onBooked={() => { fetchSpots(searchQuery); setActiveBooking(null); }} user={user} />}
-      {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setMenuOpen(false); router.push("/host"); }} onLogout={() => setUser(null)} />}
+      {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setMenuOpen(false); router.push("/host"); }} onLogout={() => { setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen(false); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }} />}
     </main>
   );
 }
