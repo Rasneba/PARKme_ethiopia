@@ -642,39 +642,69 @@ export default function ParkmeApp() {
     { icon: "receipt" as IconName, label: "History", view: "history" as const, active: view === "history" },
   ];
 
+  const [isMobile, setIsMobile] = useState(true);
+  useEffect(() => {
+    function check() { setIsMobile(window.innerWidth <= 860); }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  if (!isMobile) {
+    return (
+      <main className="parkme-desktop-redirect">
+        <div className="desktop-redirect-card">
+          <div className="desktop-redirect-flag"><i /><i /><i /></div>
+          <div className="desktop-redirect-logo"><span className="logo-mark">P</span><div className="logo-text"><b>Park</b><span>me</span></div></div>
+          <h2>Parkme works best on your phone</h2>
+          <p>Scan the QR code or tap below to open the app on your mobile device.</p>
+          <a href="/" className="btn btn-primary btn-lg">Go to home page</a>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="parkme-shell">
-      <aside className={`sidebar ${menuOpen ? "mobile-visible" : ""}`}>
-        <a href="/" className="brand" style={{ textDecoration: "none" }}><div className="brand-mark"><span>Park</span><b>me</b></div><em>ethiopia</em></a>
-        <button className="sidebar-close" onClick={() => setMenuOpen(false)}><Icon name="close" size={20} /></button>
-        <nav>{navItems.map((item) => <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setMenuOpen(false); if (item.label === "Find a spot") { router.push("/find"); return; } setView(item.view); }}><Icon name={item.icon} size={20} /><span>{item.label}</span>{item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}</button>)}</nav>
-        <div className="sidebar-bottom">
+    <main className="parkme-shell parkme-mobile">
+      <div className="app-content">
+        <div className="mobile-topbar">
+          <button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Menu"><Icon name="menu" size={22} /></button>
+          <div className="mobile-brand"><span>Park</span><b>me</b></div>
+          <div style={{ flex: 1 }} />
           {user ? (
-            <>
-              <button className="host-callout" onClick={() => { setMenuOpen(false); router.push("/host"); }}><span><Icon name="building" size={20} /></span><div><b>List your space</b><small>Earn with Parkme</small></div><Icon name="chevron" size={16} /></button>
-              <div className="side-user"><Avatar name={user.name} size="sm" /><div><b>{user.name}</b><small>{user.email}</small></div><button onClick={() => setProfileOpen(true)} aria-label="Open profile"><Icon name="chevron" size={16} /></button></div>
-            </>
+            <button className="mobile-profile" onClick={() => setProfileOpen(true)}><Avatar name={user.name} size="sm" /></button>
           ) : (
-            <button className="host-callout" onClick={() => setAuthOpen("driver")}><span><Icon name="shield" size={20} /></span><div><b>Log in / Sign up</b><small>Access your account</small></div><Icon name="chevron" size={16} /></button>
+            <button className="mobile-profile" onClick={() => setAuthOpen("driver")}>Log in</button>
           )}
         </div>
-      </aside>
 
-      <div className="app-content">
-        <header className="topbar">
-          <button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Icon name="menu" size={22} /></button>
-          <div className="mobile-brand"><span>Park</span><b>me</b></div>
-          <div className="top-location"><Icon name="pin" size={18} /><span>Addis Ababa</span></div>
-          <div className="top-actions">
-            {user ? (
-              <>
-                <button className="top-profile" onClick={() => setProfileOpen(true)}><Avatar name={user.name} size="sm" /><span>{user.name.split(" ")[0]}</span><Icon name="chevron" size={15} /></button>
-              </>
-            ) : (
-              <button className="top-profile" onClick={() => setAuthOpen("driver")}>Log in</button>
-            )}
+        <div className="mobile-sidebar-overlay" style={{ display: menuOpen ? "block" : "none" }} onClick={() => setMenuOpen(false)} />
+        <aside className={`mobile-sidebar ${menuOpen ? "open" : ""}`}>
+          <div className="mobile-sidebar-head">
+            <div className="mobile-brand"><span>Park</span><b>me</b></div>
+            <button onClick={() => setMenuOpen(false)} aria-label="Close"><Icon name="close" size={20} /></button>
           </div>
-        </header>
+          {user ? (
+            <div className="mobile-sidebar-user"><Avatar name={user.name} size="sm" /><div><b>{user.name}</b><small>{user.email}</small></div></div>
+          ) : (
+            <button className="mobile-sidebar-login" onClick={() => { setMenuOpen(false); setAuthOpen("driver"); }}>Log in / Sign up</button>
+          )}
+          <nav className="mobile-sidebar-nav">
+            {navItems.map((item) => (
+              <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setMenuOpen(false); if (item.label === "Find a spot") { router.push("/find"); return; } setView(item.view); }}>
+                <Icon name={item.icon} size={20} /><span>{item.label}</span>
+                {item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}
+              </button>
+            ))}
+            <button onClick={() => { setMenuOpen(false); router.push("/host"); }}><Icon name="building" size={20} /><span>Become a host</span></button>
+          </nav>
+          {user && (
+            <div className="mobile-sidebar-footer">
+              <button onClick={() => { setMenuOpen(false); setProfileOpen(true); }}><Icon name="settings" size={18} /><span>Profile & Wallet</span></button>
+              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); setMenuOpen(false); }}><Icon name="logout" size={18} /><span>Sign out</span></button>
+            </div>
+          )}
+        </aside>
 
         <div className="workspace">
           {locationStatus === "denied" && (
@@ -699,16 +729,14 @@ export default function ParkmeApp() {
           )}
           {view === "spots" && (
             <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId}         onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
 
-              {/* Uber-style floating "Where to?" pill → center on me + Near Me */}
               <button className="mobile-search-float" onClick={() => handleLocateThenNear()}>
                 <span className="search-float-pin"><Icon name="pin" size={18} /></span>
                 <span className="search-float-text">{userLocation ? "Near me" : "Where are you parking today?"}</span>
                 <span className="search-float-avatar"><Icon name="crosshair" size={15} /></span>
               </button>
 
-              {/* Uber-style bottom sheet for selected spot */}
               {selectedSpotId && (() => {
                 const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);
                 if (!spot) return null;
@@ -755,7 +783,6 @@ export default function ParkmeApp() {
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}
           {view === "wallet" && (user ? <WalletView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to access your wallet.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>)}
           {view === "history" && (user ? <HistoryView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to view history.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>)}
-
           {view === "spots" && activeBooking && user && <BookingTimerCard booking={activeBooking} onOpen={() => setBookingSpot(spots[0] ?? null)} />}
         </div>
       </div>
