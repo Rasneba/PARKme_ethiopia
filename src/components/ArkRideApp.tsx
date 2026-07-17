@@ -37,7 +37,7 @@ function FlagRibbon() { return <div className="flag-ribbon" aria-hidden="true"><
 function StatusDot({ text, color = "green" }: { text: string; color?: "green" | "yellow" }) { return <span className={`status-dot ${color}`}><i />{text}</span>; }
 
 function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () => void; onAuth: (u: User) => void; initialRole?: "driver" | "host" | "corporate" }) {
-  const [role, setRole] = useState<"driver" | "host" | "corporate">(initialRole === "corporate" ? "host" : initialRole);
+  const [role, setRole] = useState<"driver" | "host" | "corporate">(initialRole);
   const [mode, setMode] = useState<"choose" | "login" | "signup">("choose");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

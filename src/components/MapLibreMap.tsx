@@ -281,7 +281,9 @@ export default function MapLibreMap(
         container: containerRef.current,
         style: GEBETA_BASE_STYLE_URL,
         center: [38.7575, 9.0218],
-        zoom: 13,
+        zoom: 16,
+        minZoom: 14,
+        maxZoom: 19,
       });
     } catch {
       try {
@@ -289,7 +291,9 @@ export default function MapLibreMap(
           container: containerRef.current,
           style: GEBETA_RASTER_STYLE,
           center: [38.7575, 9.0218],
-          zoom: 13,
+          zoom: 16,
+          minZoom: 14,
+          maxZoom: 19,
         });
       } catch {
         return;
