@@ -2,12 +2,17 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.aksum.parkme',
-  appName: 'prakme-ethiopia',
+  appName: 'Parkme Ethiopia',
   webDir: 'out',
   server: {
     url: 'https://parkmeethiopia.vercel.app',
-    cleartext: false
-  }
+    cleartext: true,
+    androidScheme: 'https'
+  },
+  android: {
+    allowMixedContent: true,
+    backgroundColor: '#0fa24b',
+  },
 };
 
 export default config;

@@ -439,6 +439,10 @@ export default function ParkmeApp() {
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mapHandleRef = useRef<MapLibreHandle | null>(null);
   const didLocate = useRef(false);
+  const [spotListOpen, setSpotListOpen] = useState(false);
+  const [bookingType, setBookingType] = useState<"hourly" | "monthly" | "airport">("hourly");
+  const [parkFrom, setParkFrom] = useState(() => { const d = new Date(); d.setMinutes(0, 0, 0); return d.toISOString().slice(0, 16); });
+  const [parkUntil, setParkUntil] = useState(() => { const d = new Date(); d.setHours(d.getHours() + 2, 0, 0, 0); return d.toISOString().slice(0, 16); });
 
   useEffect(() => {
     if (didLocate.current) return;
@@ -717,47 +721,84 @@ export default function ParkmeApp() {
             <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
               <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onGps={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} onRouteData={(d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time, instructions: d.instructions }); else { setRouteData(null); setRouteActive(false); } }} />
 
-              {selectedSpotId && (() => {
+              {routeActive && selectedSpotId && (() => {
                 const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);
                 if (!spot) return null;
                 return (
-                  <div className={`mobile-action-bar ${routeActive ? "route-mode" : ""}`}>
-                    <div className="sheet-handle" />
-                    {routeActive ? (
-                      <div className="mobile-route-panel">
-                        <div className="route-panel-header">
-                          <div className="route-panel-info">
-                            <b>Route to {spot.name}</b>
-                            {routeData && <span>{formatDistance(routeData.distance)} &middot; {formatDuration(routeData.time)}</span>}
-                          </div>
-                          <button className="route-panel-close" onClick={() => { setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={18} /></button>
-                        </div>
-                        <div className="route-steps">
-                          {routeData?.instructions?.filter((ins: any) => ins.distance > 0 || ins.sign === 0).map((ins: any, i: number) => (
-                            <div className="route-step" key={i}>
-                              <span className="route-step-icon">{ins.sign === 0 ? "\u2192" : ins.sign < 0 ? "\u21BA" : "\u21BB"}</span>
-                              <div><span>{ins.text}</span><small>{formatDistance((ins.distance || 0) / 1000)}</small></div>
-                            </div>
-                          ))}
-                          {!routeData && <div className="route-loading">Calculating route...</div>}
-                        </div>
+                  <div className="route-top-card">
+                    <div className="route-panel-header">
+                      <div className="route-panel-info">
+                        <b>Route to {spot.name}</b>
+                        {routeData && <span>{formatDistance(routeData.distance)} &middot; {formatDuration(routeData.time)}</span>}
                       </div>
-                    ) : (
-                      <div className="mobile-spot-bar">
-                        <div className="mobile-spot-info">
-                          <b>{spot.name}</b>
-                          <span>{spot.price} ETB/hr &middot; {spot.distanceKm != null ? formatDistance(spot.distanceKm) : `${spot.availableSpots} spots`}</span>
+                      <button className="route-panel-close" onClick={() => { setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={18} /></button>
+                    </div>
+                    <div className="route-steps">
+                      {routeData?.instructions?.filter((ins: any) => ins.distance > 0 || ins.sign === 0).map((ins: any, i: number) => (
+                        <div className="route-step" key={i}>
+                          <span className="route-step-icon">{ins.sign === 0 ? "\u2192" : ins.sign < 0 ? "\u21BA" : "\u21BB"}</span>
+                          <div><span>{ins.text}</span><small>{formatDistance((ins.distance || 0) / 1000)}</small></div>
                         </div>
-                        <div className="mobile-spot-actions">
-                          <button className="mobile-btn directions" onClick={() => handleDirections(spot)}><Icon name="nav" size={16} /> Directions</button>
-                          <button className="mobile-btn reserve" onClick={() => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(spot); }}><Icon name="car" size={16} /> Reserve</button>
-                        </div>
-                        <button className="mobile-back-btn" onClick={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={16} /> Back to map</button>
-                      </div>
-                    )}
+                      ))}
+                      {!routeData && <div className="route-loading">Calculating route...</div>}
+                    </div>
                   </div>
                 );
               })()}
+
+              {!routeActive && selectedSpotId && (() => {
+                const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);
+                if (!spot) return null;
+                return (
+                  <div className="mobile-action-bar">
+                    <div className="sheet-handle" />
+                    <div className="mobile-spot-bar">
+                      <div className="mobile-spot-info">
+                        <b>{spot.name}</b>
+                        <span>{spot.price} ETB/hr &middot; {spot.distanceKm != null ? formatDistance(spot.distanceKm) : `${spot.availableSpots} spots`}</span>
+                      </div>
+                      <div className="mobile-spot-actions">
+                        <button className="mobile-btn directions" onClick={() => handleDirections(spot)}><Icon name="nav" size={16} /> Directions</button>
+                        <button className="mobile-btn reserve" onClick={() => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(spot); }}><Icon name="car" size={16} /> Reserve</button>
+                      </div>
+                      <button className="mobile-back-btn" onClick={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={16} /> Back to map</button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <button className="spot-list-toggle" onClick={() => { setSpotListOpen(!spotListOpen); setSelectedSpotId(null); }}><Icon name="grid" size={18} /> {spotListOpen ? "Map" : `${spotsWithDistance.length} spots`}</button>
+
+              {spotListOpen && (
+                <div className="spot-list-sheet">
+                  <div className="spot-list-sheet-head">
+                    <b>Nearby parking</b>
+                    <button onClick={() => setSpotListOpen(false)}><Icon name="close" size={18} /></button>
+                  </div>
+                  <div className="spot-list-sheet-scroll">
+                    {spotsLoading ? <div className="loading-state">Searching...</div> : (
+                      spotsWithDistance.map((spot) => (
+                        <article key={spot.id} className="spot-list-card" onClick={() => { setSelectedSpotId(spot.id); setSpotListOpen(false); mapHandleRef.current?.flyToNearest(spot.lat, spot.lng); }}>
+                          <div className={`place-image ${spot.tone}`}>
+                            <span className="place-kind">{spot.label}</span>
+                            <div className="car-shape"><Icon name="car" size={24} /></div>
+                          </div>
+                          <div className="spot-list-card-info">
+                            <h4>{spot.name}</h4>
+                            <p>{spot.address}</p>
+                            <div className="spot-list-card-meta">
+                              <span>{spot.price} ETB/hr</span>
+                              {spot.distanceKm != null && <span><Icon name="locate" size={12} /> {formatDistance(spot.distanceKm)}</span>}
+                              <span><Icon name="check" size={12} /> {spot.availableSpots} spots</span>
+                            </div>
+                          </div>
+                        </article>
+                      ))
+                    )}
+                    {spotsWithDistance.length === 0 && <p className="empty-state">No parking spots found.</p>}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}
