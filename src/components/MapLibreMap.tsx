@@ -12,30 +12,36 @@ export interface MapLibreHandle {
   flyToNearest: (lat: number, lng: number) => void;
 }
 
-const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
+const GEBETA_TOKEN = process.env.NEXT_PUBLIC_GEBETA_MAP_TOKEN || process.env.NEXT_PUBLIC_GEBETA_TOKEN || "";
 
 const GREEN_PIN = `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0fa24b"/><stop offset="100%" stop-color="#086a32"/></linearGradient></defs><path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z" fill="url(#pg)" stroke="white" stroke-width="2.5"/><text x="16" y="20" text-anchor="middle" fill="white" font-size="14" font-weight="900" font-family="Arial">P</text></svg>`;
 const RED_PIN = `<svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pr" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e54d3f"/><stop offset="100%" stop-color="#ac3c31"/></linearGradient></defs><path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 28 20 28s20-13 20-28C40 8.95 31.05 0 20 0z" fill="url(#pr)" stroke="white" stroke-width="3"/><text x="20" y="24" text-anchor="middle" fill="white" font-size="16" font-weight="900" font-family="Arial">P</text></svg>`;
 const BLUE_DOT = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#4098df" stroke="white" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="white"/></svg>`;
 
-const OSM_BASE_STYLE = {
+const GEBETA_BASE_STYLE = {
   version: 8,
   sources: {
-    osm: {
+    gebeta: {
       type: "raster",
-      tiles: ["https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png", "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tiles: [`https://tiles.gebeta.app/tiles/{z}/{x}/{y}.png?api_key=${GEBETA_TOKEN}`],
       tileSize: 256,
-      attribution: "&copy; OpenStreetMap contributors",
+      attribution: '&copy; <a href="https://www.gebeta.app" target="_blank">Gebeta Maps</a>',
     },
   },
-  layers: [{ id: "osm-base", type: "raster", source: "osm", minzoom: 0, maxzoom: 19 }],
+  layers: [{ id: "gebeta-base", type: "raster", source: "gebeta", minzoom: 0, maxzoom: 19 }],
 } as any;
 
-const BASE_STYLE = OSM_BASE_STYLE;
+const BASE_STYLE = GEBETA_BASE_STYLE;
 
 const SATELLITE_STYLE = {
   version: 8,
   sources: {
+    gebeta: {
+      type: "raster",
+      tiles: [`https://tiles.gebeta.app/tiles/{z}/{x}/{y}.png?api_key=${GEBETA_TOKEN}`],
+      tileSize: 256,
+      attribution: '&copy; <a href="https://www.gebeta.app" target="_blank">Gebeta Maps</a>',
+    },
     esri: {
       type: "raster",
       tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
@@ -43,7 +49,10 @@ const SATELLITE_STYLE = {
       attribution: "&copy; Esri, Maxar, Earthstar",
     },
   },
-  layers: [{ id: "esri", type: "raster", source: "esri", minzoom: 0, maxzoom: 19 }],
+  layers: [
+    { id: "esri", type: "raster", source: "esri", minzoom: 0, maxzoom: 19 },
+    { id: "gebeta-overlay", type: "raster", source: "gebeta", minzoom: 0, maxzoom: 19, paint: { "raster-opacity": 0.3 } },
+  ],
 } as any;
 
 function createInfoHTML(spot: any, isNearest?: boolean, userLoc?: { lat: number; lng: number } | null): string {
@@ -259,6 +268,7 @@ export default function MapLibreMap(
     }
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "top-right");
+    map.addControl(new maplibregl.AttributionControl({ customAttribution: '<a style="margin-bottom:5px;" href="https://www.gebeta.app" target="_blank">&copy; Gebeta Maps</a>' }), "bottom-left");
 
     mapRef.current = map;
 
@@ -421,7 +431,7 @@ export default function MapLibreMap(
       if (satellite && !isSatellite) {
         map.setStyle(SATELLITE_STYLE);
       } else if (!satellite && isSatellite) {
-        map.setStyle(OSM_BASE_STYLE);
+        map.setStyle(GEBETA_BASE_STYLE);
       }
     } catch {}
   }, [satellite]);
