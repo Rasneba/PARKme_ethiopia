@@ -154,22 +154,26 @@ function CityMap({
   onBook,
   selectedSpotId,
   onNearMe,
+  onGps,
   satellite,
   onToggleSatellite,
   userLocation,
   mapRef,
   onCancel,
+  onRouteData,
 }: {
   spots: ApiSpot[];
   onSelectSpot: (s: ApiSpot) => void;
   onBook: (s: ApiSpot) => void;
   selectedSpotId: number | null;
   onNearMe: () => void;
+  onGps: () => void;
   satellite: boolean;
   onToggleSatellite: () => void;
   userLocation?: { lat: number; lng: number } | null;
   mapRef: React.MutableRefObject<MapLibreHandle | null>;
   onCancel: () => void;
+  onRouteData?: (data: { distance: number; time: number; instructions: any[] } | null) => void;
 }) {
   const selected = spots.find((s) => s.id === selectedSpotId);
   return (
@@ -178,8 +182,11 @@ function CityMap({
         <span className="map-toolbar-count"><Icon name="map" size={15} /> {spots.length} spot{spots.length !== 1 ? "s" : ""}</span>
       </div>
       <div className="map-float-controls">
+        <button className="map-float-btn gps" title="My location" onClick={onGps}>
+          <Icon name="locate" size={16} /> GPS
+        </button>
         <button className="map-float-btn near" title="Find nearest spot" onClick={onNearMe}>
-          <Icon name="locate" size={16} /> Near me
+          <Icon name="pin" size={16} /> Near me
         </button>
         <button className={`map-float-btn sat ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
           <Icon name={satellite ? "map" : "home"} size={16} /> {satellite ? "Map" : "Satellite"}
@@ -193,6 +200,7 @@ function CityMap({
         satellite={satellite}
         userLocation={userLocation}
         mapRef={mapRef}
+        onRouteData={onRouteData}
       />
       {selected && (
         <div className="map-spot-sheet">
@@ -593,23 +601,6 @@ export default function ParkmeApp() {
     } catch {}
   }
 
-  function handleLocateThenNear() {
-    try {
-      if (!navigator.geolocation) { handleNearMe(); return; }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          setUserLocation(loc);
-          saveLocation(loc);
-          setLocationStatus("granted");
-          mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
-          setTimeout(() => handleNearMe(), 700);
-        },
-        () => handleNearMe(),
-        { timeout: 5000, enableHighAccuracy: true, maximumAge: 60000 },
-      );
-    } catch { handleNearMe(); }
-  }
 
   function handleSelectSpot(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
@@ -620,6 +611,7 @@ export default function ParkmeApp() {
   function handleDirections(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
     setRouteActive(true);
+    setRouteData(null);
     if (!userLocation) {
       pendingRouteSpotRef.current = spot;
       setPendingRouteSpot(spot);
@@ -627,12 +619,6 @@ export default function ParkmeApp() {
       return;
     }
     (window as any).__parkmeRoute?.(spot.lat, spot.lng);
-    if (userLocation) {
-      fetch(`/api/directions?from_lat=${userLocation.lat}&from_lng=${userLocation.lng}&to_lat=${spot.lat}&to_lng=${spot.lng}`)
-        .then((r) => r.ok ? r.json() : null)
-        .then((d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time || 0, instructions: d.instructions || [] }); })
-        .catch(() => {});
-    }
   }
 
   const navItems = [
@@ -691,7 +677,7 @@ export default function ParkmeApp() {
           )}
           <nav className="mobile-sidebar-nav">
             {navItems.map((item) => (
-              <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setMenuOpen(false); if (item.label === "Find a spot") { router.push("/find"); return; } setView(item.view); }}>
+              <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setMenuOpen(false); setView(item.view); }}>
                 <Icon name={item.icon} size={20} /><span>{item.label}</span>
                 {item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}
               </button>
@@ -729,13 +715,7 @@ export default function ParkmeApp() {
           )}
           {view === "spots" && (
             <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} />
-
-              <button className="mobile-search-float" onClick={() => handleLocateThenNear()}>
-                <span className="search-float-pin"><Icon name="pin" size={18} /></span>
-                <span className="search-float-text">{userLocation ? "Near me" : "Where are you parking today?"}</span>
-                <span className="search-float-avatar"><Icon name="crosshair" size={15} /></span>
-              </button>
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onGps={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} onRouteData={(d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time, instructions: d.instructions }); else { setRouteData(null); setRouteActive(false); } }} />
 
               {selectedSpotId && (() => {
                 const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);

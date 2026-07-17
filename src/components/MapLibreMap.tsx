@@ -129,6 +129,7 @@ export default function MapLibreMap(
     satellite,
     userLocation,
     mapRef: externalMapRef,
+    onRouteData,
   }: {
     spots: any[];
     onSelectSpot: (spot: any) => void;
@@ -137,6 +138,7 @@ export default function MapLibreMap(
     satellite: boolean;
     userLocation?: { lat: number; lng: number } | null;
     mapRef?: React.MutableRefObject<MapLibreHandle | null>;
+    onRouteData?: (data: { distance: number; time: number; instructions: any[] } | null) => void;
   },
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -154,6 +156,8 @@ export default function MapLibreMap(
   const onSelectSpotRef = useRef(onSelectSpot);
   useEffect(() => { onSelectSpotRef.current = onSelectSpot; }, [onSelectSpot]);
   useEffect(() => { userLocRef.current = userLocation || null; }, [userLocation]);
+  const onRouteDataRef = useRef(onRouteData);
+  useEffect(() => { onRouteDataRef.current = onRouteData; }, [onRouteData]);
 
   const clearRoute = useCallback(() => {
     const map = mapRef.current;
@@ -163,6 +167,7 @@ export default function MapLibreMap(
       if (map.getLayer("route-line-bg")) map.removeLayer("route-line-bg");
       if (map.getSource("route")) map.removeSource("route");
     } catch {}
+    onRouteDataRef.current?.(null);
     popupRef.current?.remove();
   }, []);
 
@@ -220,6 +225,7 @@ export default function MapLibreMap(
       const destSpot = spotsRef.current.find((s: any) => s.lat === destLat && s.lng === destLng);
       const spotName = destSpot?.name || "destination";
       const dirHTML = createDirectionsHTML(data.instructions, data.distance || 0, data.time || 0, spotName, userLoc.lat, userLoc.lng, destLat, destLng);
+      onRouteDataRef.current?.({ distance: data.distance || 0, time: data.time || 0, instructions: data.instructions || [] });
       popupRef.current?.remove();
       popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: false, maxWidth: "340px" })
         .setLngLat([destLng, destLat])
