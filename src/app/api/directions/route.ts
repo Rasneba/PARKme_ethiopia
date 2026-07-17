@@ -19,42 +19,51 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Gebeta API token not configured" }, { status: 500 });
   }
 
-  const url = `https://mapapi.gebeta.app/api/route/direction/?origin={${fromLat},${fromLng}}&destination={${toLat},${toLng}}&apiKey=${GEBETA_TOKEN}`;
+  const url = `https://mapapi.gebeta.app/api/route/direction/?origin=${fromLat},${fromLng}&destination=${toLat},${toLng}&instruction=1&apiKey=${GEBETA_TOKEN}`;
 
   try {
     const res = await fetch(url);
     const data = await res.json();
 
-    if (!res.ok || data.msg === "error" || data.msg === "NoRoute") {
-      return NextResponse.json({ error: data.error?.message || data.msg || "No route found" }, { status: 404 });
+    if (!res.ok || !data.data || data.msg === "NoRoute" || data.msg === "error") {
+      return NextResponse.json({ error: data.message || data.msg || "No route found" }, { status: 404 });
     }
 
-    if (data.msg === "Ok" && data.direction && Array.isArray(data.direction)) {
-      const coords: [number, number][] = data.direction.map((c: number[]) => [c[1], c[0]]);
+    const routeData = data.data;
 
-      const distanceMeters = (data.totalDistance || 0) * 1000;
-      const timeSeconds = data.timetaken || 0;
-      const timeMs = timeSeconds * 1000;
-
-      const instructions = (data.instruction || []).map((step: any, i: number) => ({
-        text: step.path || step.text || "",
-        distance: step.distance || 0,
-        time: 0,
-        sign: step.sign ?? 0,
-        type: step.type,
-        index: i,
-      }));
-
-      return NextResponse.json({
-        route: { type: "LineString", coordinates: coords },
-        distance: distanceMeters,
-        time: timeMs,
-        instructions,
-        points: { type: "LineString", coordinates: coords },
+    const coords: [number, number][] = [];
+    if (routeData.direction) {
+      routeData.direction.forEach((step: any) => {
+        if (step.point) {
+          coords.push([step.point[1], step.point[0]]);
+        }
       });
     }
 
-    return NextResponse.json({ error: "No route found" }, { status: 404 });
+    if (coords.length < 2) {
+      return NextResponse.json({ error: "No route found" }, { status: 404 });
+    }
+
+    const instructions = (routeData.direction || []).map((step: any, i: number) => ({
+      text: step.instruction || step.name || "Continue",
+      distance: step.distance || 0,
+      time: step.time || 0,
+      sign: step.type === "depart" || step.type === "start" ? 0
+        : step.modifier?.includes("left") ? -1
+        : step.modifier?.includes("right") ? 1
+        : step.type === "arrive" || step.type === "end" ? 5
+        : 0,
+      type: step.type || "turn",
+      modifier: step.modifier,
+      index: i,
+    }));
+
+    return NextResponse.json({
+      route: { type: "LineString", coordinates: coords },
+      distance: routeData.totalDistance || 0,
+      time: routeData.totalTime || 0,
+      instructions,
+    });
   } catch (e) {
     console.error("Gebeta directions error:", e);
     return NextResponse.json({ error: "Routing service unavailable" }, { status: 502 });

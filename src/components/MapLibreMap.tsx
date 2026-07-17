@@ -97,7 +97,7 @@ function createDirectionsHTML(instructions: any[], distance: number, time: numbe
   const steps = filtered.map((ins: any, i: number) => {
     const icon = ins.sign === 0 ? "&#8594;" : ins.sign === -1 ? "&#8619;" : ins.sign === 1 ? "&#8618;" : ins.sign === -2 ? "&#8634;" : ins.sign === 2 ? "&#8635;" : ins.sign === -3 ? "&#8634;" : ins.sign === 3 ? "&#8635;" : "&#9654;";
     const text = ins.text || "";
-    const d = formatDistance(ins.distance || 0);
+    const d = formatDistance((ins.distance || 0) / 1000);
     return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;">
       <span style="font-size:16px;min-width:22px;text-align:center;color:#0fa24b;font-weight:700;">${icon}</span>
       <div style="flex:1;"><span style="font-size:12px;color:#131614;font-weight:500;">${text}</span><br/><span style="font-size:10px;color:#888;">${d}</span></div>
@@ -219,7 +219,7 @@ export default function MapLibreMap(
 
       const destSpot = spotsRef.current.find((s: any) => s.lat === destLat && s.lng === destLng);
       const spotName = destSpot?.name || "destination";
-      const dirHTML = createDirectionsHTML(data.instructions, data.distance, data.time, spotName, userLoc.lat, userLoc.lng, destLat, destLng);
+      const dirHTML = createDirectionsHTML(data.instructions, (data.distance || 0) / 1000, data.time || 0, spotName, userLoc.lat, userLoc.lng, destLat, destLng);
       popupRef.current?.remove();
       popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: false, maxWidth: "340px" })
         .setLngLat([destLng, destLat])

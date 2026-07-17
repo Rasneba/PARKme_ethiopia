@@ -630,7 +630,7 @@ export default function ParkmeApp() {
     if (userLocation) {
       fetch(`/api/directions?from_lat=${userLocation.lat}&from_lng=${userLocation.lng}&to_lat=${spot.lat}&to_lng=${spot.lng}`)
         .then((r) => r.ok ? r.json() : null)
-        .then((d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time / 1000, instructions: d.instructions || [] }); })
+        .then((d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time || 0, instructions: d.instructions || [] }); })
         .catch(() => {});
     }
   }
