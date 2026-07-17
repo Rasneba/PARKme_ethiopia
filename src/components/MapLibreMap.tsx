@@ -18,7 +18,9 @@ const GREEN_PIN = `<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http:/
 const RED_PIN = `<svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="pr" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e54d3f"/><stop offset="100%" stop-color="#ac3c31"/></linearGradient></defs><path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 28 20 28s20-13 20-28C40 8.95 31.05 0 20 0z" fill="url(#pr)" stroke="white" stroke-width="3"/><text x="20" y="24" text-anchor="middle" fill="white" font-size="16" font-weight="900" font-family="Arial">P</text></svg>`;
 const BLUE_DOT = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#4098df" stroke="white" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="white"/></svg>`;
 
-const GEBETA_BASE_STYLE = {
+const GEBETA_BASE_STYLE_URL = "https://tiles.gebeta.app/styles/standard/style.json";
+
+const GEBETA_RASTER_STYLE = {
   version: 8,
   sources: {
     gebeta: {
@@ -30,8 +32,6 @@ const GEBETA_BASE_STYLE = {
   },
   layers: [{ id: "gebeta-base", type: "raster", source: "gebeta", minzoom: 0, maxzoom: 19 }],
 } as any;
-
-const BASE_STYLE = GEBETA_BASE_STYLE;
 
 const SATELLITE_STYLE = {
   version: 8,
@@ -97,7 +97,7 @@ function createDirectionsHTML(instructions: any[], distance: number, time: numbe
   const steps = filtered.map((ins: any, i: number) => {
     const icon = ins.sign === 0 ? "&#8594;" : ins.sign === -1 ? "&#8619;" : ins.sign === 1 ? "&#8618;" : ins.sign === -2 ? "&#8634;" : ins.sign === 2 ? "&#8635;" : ins.sign === -3 ? "&#8634;" : ins.sign === 3 ? "&#8635;" : "&#9654;";
     const text = ins.text || "";
-    const d = formatDistance((ins.distance || 0) / 1000);
+    const d = formatDistance(ins.distance || 0);
     return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;">
       <span style="font-size:16px;min-width:22px;text-align:center;color:#0fa24b;font-weight:700;">${icon}</span>
       <div style="flex:1;"><span style="font-size:12px;color:#131614;font-weight:500;">${text}</span><br/><span style="font-size:10px;color:#888;">${d}</span></div>
@@ -219,7 +219,7 @@ export default function MapLibreMap(
 
       const destSpot = spotsRef.current.find((s: any) => s.lat === destLat && s.lng === destLng);
       const spotName = destSpot?.name || "destination";
-      const dirHTML = createDirectionsHTML(data.instructions, (data.distance || 0) / 1000, data.time || 0, spotName, userLoc.lat, userLoc.lng, destLat, destLng);
+      const dirHTML = createDirectionsHTML(data.instructions, data.distance || 0, data.time || 0, spotName, userLoc.lat, userLoc.lng, destLat, destLng);
       popupRef.current?.remove();
       popupRef.current = new maplibregl.Popup({ offset: 25, closeButton: false, maxWidth: "340px" })
         .setLngLat([destLng, destLat])
@@ -259,12 +259,21 @@ export default function MapLibreMap(
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: BASE_STYLE,
+        style: GEBETA_BASE_STYLE_URL,
         center: [38.7575, 9.0218],
         zoom: 13,
       });
     } catch {
-      return;
+      try {
+        map = new maplibregl.Map({
+          container: containerRef.current,
+          style: GEBETA_RASTER_STYLE,
+          center: [38.7575, 9.0218],
+          zoom: 13,
+        });
+      } catch {
+        return;
+      }
     }
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "top-right");
@@ -431,7 +440,7 @@ export default function MapLibreMap(
       if (satellite && !isSatellite) {
         map.setStyle(SATELLITE_STYLE);
       } else if (!satellite && isSatellite) {
-        map.setStyle(GEBETA_BASE_STYLE);
+        map.setStyle(GEBETA_BASE_STYLE_URL);
       }
     } catch {}
   }, [satellite]);

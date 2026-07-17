@@ -19,49 +19,34 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Gebeta API token not configured" }, { status: 500 });
   }
 
-  const url = `https://mapapi.gebeta.app/api/route/direction/?origin=${fromLat},${fromLng}&destination=${toLat},${toLng}&instruction=1&apiKey=${GEBETA_TOKEN}`;
+  const url = `https://mapapi.gebeta.app/api/route/direction/?origin=${fromLat},${fromLng}&destination=${toLat},${toLng}&apiKey=${GEBETA_TOKEN}`;
 
   try {
     const res = await fetch(url);
     const data = await res.json();
 
-    if (!res.ok || !data.data || data.msg === "NoRoute" || data.msg === "error") {
+    if (!res.ok || !data.direction || data.msg === "NoRoute" || data.msg === "error") {
       return NextResponse.json({ error: data.message || data.msg || "No route found" }, { status: 404 });
     }
 
-    const routeData = data.data;
-
-    const coords: [number, number][] = [];
-    if (routeData.direction) {
-      routeData.direction.forEach((step: any) => {
-        if (step.point) {
-          coords.push([step.point[1], step.point[0]]);
-        }
-      });
-    }
+    const coords: [number, number][] = (data.direction || []).map((c: number[]) => [c[1], c[0]]);
 
     if (coords.length < 2) {
       return NextResponse.json({ error: "No route found" }, { status: 404 });
     }
 
-    const instructions = (routeData.direction || []).map((step: any, i: number) => ({
-      text: step.instruction || step.name || "Continue",
+    const instructions = (data.instruction || []).map((step: any) => ({
+      text: step.path || step.name || "Continue",
       distance: step.distance || 0,
-      time: step.time || 0,
-      sign: step.type === "depart" || step.type === "start" ? 0
-        : step.modifier?.includes("left") ? -1
-        : step.modifier?.includes("right") ? 1
-        : step.type === "arrive" || step.type === "end" ? 5
-        : 0,
-      type: step.type || "turn",
-      modifier: step.modifier,
-      index: i,
+      sign: step.sign ?? 0,
+      coord: [step.turning_longitude, step.turning_latitude],
+      type: step.type,
     }));
 
     return NextResponse.json({
       route: { type: "LineString", coordinates: coords },
-      distance: routeData.totalDistance || 0,
-      time: routeData.totalTime || 0,
+      distance: data.totalDistance || 0,
+      time: data.timetaken || 0,
       instructions,
     });
   } catch (e) {
