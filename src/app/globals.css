@@ -227,19 +227,27 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 
 @media (max-width: 1120px) { .place-card { grid-template-columns: 86px minmax(0,1fr); }.place-image { height: 83px; }.place-price { grid-column: 2; justify-items: start; display: flex; align-items: center; gap: 5px; }.place-price button { margin: 0 0 0 auto; }.owner-metrics { grid-template-columns: repeat(2,1fr); }.owner-portal { height: min(900px, calc(100vh - 44px)); } }
 /* Mobile: bottom-sheet and action bar hidden by default, shown on mobile */
-.mobile-action-bar { display: block; position: absolute; z-index: 20; left: 0; right: 0; bottom: 0; max-height: 62vh; background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 34px rgba(0,0,0,.18); overflow: hidden; animation: sheetSlideUp .3s cubic-bezier(.4,0,.2,1); -webkit-overflow-scrolling: touch; }
+.mobile-action-bar { display: block; position: absolute; z-index: 20; left: 0; right: 0; bottom: 0; max-height: 62vh; background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 34px rgba(0,0,0,.18); overflow: hidden; animation: sheetSlideUp .3s cubic-bezier(.4,0,.2,1); -webkit-overflow-scrolling: touch; padding-bottom: var(--sab); }
 .sheet-handle { width: 40px; height: 4px; margin: 10px auto 6px; background: #d9d9d9; border-radius: 2px; }
 
 /* Route card at TOP of page */
 .route-top-card { position: absolute; z-index: 20; top: calc(10px + var(--sat)); left: 10px; right: 10px; max-height: 40vh; background: #fff; border-radius: 18px; box-shadow: 0 8px 34px rgba(0,0,0,.18); overflow: hidden; animation: sheetSlideDown .3s cubic-bezier(.4,0,.2,1); padding: 14px 18px; }
 @keyframes sheetSlideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
 
+/* Full spot list view (Find a spot) */
+.spot-list-full { display: flex; flex-direction: column; height: 100%; background: #fffefa; overflow: hidden; }
+.spot-list-full-head { display: flex; align-items: center; gap: 12px; padding: calc(14px + var(--sat)) 14px 10px; background: #fff; border-bottom: 1px solid #f0f0f0; }
+.spot-list-full-head b { font-size: 18px; font-weight: 800; }
+.spot-list-back { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: var(--green); color: #fff; border: none; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.spot-list-back:active { transform: scale(.97); }
+.spot-list-full-scroll { flex: 1; overflow-y: auto; padding: 0 14px calc(20px + var(--sab)); -webkit-overflow-scrolling: touch; }
+
 /* Spot list toggle button */
-.spot-list-toggle { position: absolute; z-index: 15; bottom: 22px; right: 14px; display: flex; gap: 6px; align-items: center; padding: 11px 18px; background: var(--green); color: #fff; border: none; border-radius: 28px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+.spot-list-toggle { position: absolute; z-index: 15; bottom: calc(22px + var(--sab)); right: 14px; display: flex; gap: 6px; align-items: center; padding: 11px 18px; background: var(--green); color: #fff; border: none; border-radius: 28px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
 .spot-list-toggle:active { transform: scale(.96); }
 
 /* Spot list bottom sheet */
-.spot-list-sheet { position: absolute; z-index: 21; left: 0; right: 0; bottom: 0; max-height: 55vh; background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 34px rgba(0,0,0,.2); display: flex; flex-direction: column; animation: sheetSlideUp .3s cubic-bezier(.4,0,.2,1); }
+.spot-list-sheet { position: absolute; z-index: 21; left: 0; right: 0; bottom: 0; max-height: 55vh; background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 34px rgba(0,0,0,.2); display: flex; flex-direction: column; animation: sheetSlideUp .3s cubic-bezier(.4,0,.2,1); padding-bottom: var(--sab); }
 .spot-list-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 10px; border-bottom: 1px solid #f0f0f0; }
 .spot-list-sheet-head b { font-size: 16px; font-weight: 800; }
 .spot-list-sheet-head button { width: 32px; height: 32px; display: grid; place-items: center; border: none; background: #f0f0f0; border-radius: 50%; cursor: pointer; }
@@ -255,7 +263,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(22, 150, 74,
 .spot-list-card-meta span { display: flex; align-items: center; gap: 3px; }
 
 /* --- Floating controls (GPS + Near Me + Satellite) --- */
-.map-float-controls { display: flex; position: absolute; z-index: 14; bottom: 22px; left: 14px; flex-direction: column; gap: 10px; }
+.map-float-controls { display: flex; position: absolute; z-index: 14; bottom: calc(22px + var(--sab)); left: 14px; flex-direction: column; gap: 10px; }
 .map-float-btn { display: flex; gap: 7px; align-items: center; padding: 12px 16px; background: #fff; border: none; border-radius: 28px; color: #121212; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.16); }
 .map-float-btn:active { transform: scale(.97); }
 .map-float-btn.near { background: var(--green); color: #fff; }

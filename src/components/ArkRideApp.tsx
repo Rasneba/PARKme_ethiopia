@@ -419,6 +419,7 @@ export default function ParkmeApp() {
   const [authChecked, setAuthChecked] = useState(false);
   const [authOpen, setAuthOpen] = useState<false | "driver" | "host">(false);
   const [view, setView] = useState<"spots" | "bookings" | "wallet" | "history">("spots");
+  const [spotView, setSpotView] = useState<"map" | "list">("map");
   const [bookingSpot, setBookingSpot] = useState<ApiSpot | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -681,11 +682,13 @@ export default function ParkmeApp() {
           )}
           <nav className="mobile-sidebar-nav">
             {navItems.map((item) => (
-              <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setMenuOpen(false); setView(item.view); }}>
+              <button key={item.label} className={item.active ? "active" : ""} onClick={() => { setMenuOpen(false); setView(item.view); if (item.label === "Find a spot") setSpotView("list"); }}>
                 <Icon name={item.icon} size={20} /><span>{item.label}</span>
                 {item.label === "My bookings" && activeBooking && <i className="nav-count">1</i>}
               </button>
             ))}
+            <button onClick={() => { setMenuOpen(false); router.push("/corporate"); }}><Icon name="building" size={20} /><span>Corporate Dashboard</span></button>
+            <button onClick={() => { setMenuOpen(false); router.push("/attendant"); }}><Icon name="check" size={20} /><span>Attendant Panel</span></button>
             <button onClick={() => { setMenuOpen(false); router.push("/host"); }}><Icon name="building" size={20} /><span>Become a host</span></button>
           </nav>
           {user && (
@@ -717,7 +720,48 @@ export default function ParkmeApp() {
               <Icon name="locate" size={15} /> {locationError}
             </div>
           )}
-          {view === "spots" && (
+          {view === "spots" && spotView === "list" && (
+            <div className="spot-list-full">
+              <div className="spot-list-full-head">
+                <button className="spot-list-back" onClick={() => setSpotView("map")}><Icon name="locate" size={18} /> Open map</button>
+                <b>Find a spot</b>
+              </div>
+              <div className="search-box" style={{ margin: "12px 14px" }}>
+                <Icon name="search" size={20} />
+                <input value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); clearTimeout(searchTimer.current); searchTimer.current = setTimeout(() => fetchSpots(e.target.value, activeCategory), 300); }} placeholder="Search by name, area..." aria-label="Search parking" />
+              </div>
+              <div className="category-chips" style={{ padding: "0 14px 10px", display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                {[{ key: "all", label: "All" }, { key: "ev_charging", label: "EV" }, { key: "cctv", label: "CCTV" }, { key: "24hr", label: "24/7" }, { key: "wheelchair", label: "Accessible" }, { key: "standard", label: "Standard" }].map((cat) => (
+                  <button key={cat.key} className={`category-chip ${activeCategory === cat.key ? "active" : ""}`} onClick={() => { setActiveCategory(cat.key); fetchSpots(searchQuery, cat.key); }} style={{ flexShrink: 0 }}>
+                    <span>{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="spot-list-full-scroll">
+                {spotsLoading ? <div className="loading-state" style={{ padding: 20, textAlign: "center", color: "#888" }}>Searching...</div> : (
+                  spotsWithDistance.map((spot) => (
+                    <article key={spot.id} className="spot-list-card" onClick={() => { setSelectedSpotId(spot.id); setSpotView("map"); }}>
+                      <div className={`place-image ${spot.tone}`}>
+                        <span className="place-kind">{spot.label}</span>
+                        <div className="car-shape"><Icon name="car" size={24} /></div>
+                      </div>
+                      <div className="spot-list-card-info">
+                        <h4>{spot.name}</h4>
+                        <p>{spot.address}</p>
+                        <div className="spot-list-card-meta">
+                          <span>{spot.price} ETB/hr</span>
+                          {spot.distanceKm != null && <span><Icon name="locate" size={12} /> {formatDistance(spot.distanceKm)}</span>}
+                          <span><Icon name="check" size={12} /> {spot.availableSpots} spots</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                )}
+                {spotsWithDistance.length === 0 && <p className="empty-state" style={{ padding: 20, textAlign: "center", color: "#888" }}>No parking spots found.</p>}
+              </div>
+            </div>
+          )}
+          {view === "spots" && spotView === "map" && (
             <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
               <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onGps={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} onRouteData={(d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time, instructions: d.instructions }); else { setRouteData(null); setRouteActive(false); } }} />
 
@@ -767,38 +811,7 @@ export default function ParkmeApp() {
                 );
               })()}
 
-              <button className="spot-list-toggle" onClick={() => { setSpotListOpen(!spotListOpen); setSelectedSpotId(null); }}><Icon name="grid" size={18} /> {spotListOpen ? "Map" : `${spotsWithDistance.length} spots`}</button>
-
-              {spotListOpen && (
-                <div className="spot-list-sheet">
-                  <div className="spot-list-sheet-head">
-                    <b>Nearby parking</b>
-                    <button onClick={() => setSpotListOpen(false)}><Icon name="close" size={18} /></button>
-                  </div>
-                  <div className="spot-list-sheet-scroll">
-                    {spotsLoading ? <div className="loading-state">Searching...</div> : (
-                      spotsWithDistance.map((spot) => (
-                        <article key={spot.id} className="spot-list-card" onClick={() => { setSelectedSpotId(spot.id); setSpotListOpen(false); mapHandleRef.current?.flyToNearest(spot.lat, spot.lng); }}>
-                          <div className={`place-image ${spot.tone}`}>
-                            <span className="place-kind">{spot.label}</span>
-                            <div className="car-shape"><Icon name="car" size={24} /></div>
-                          </div>
-                          <div className="spot-list-card-info">
-                            <h4>{spot.name}</h4>
-                            <p>{spot.address}</p>
-                            <div className="spot-list-card-meta">
-                              <span>{spot.price} ETB/hr</span>
-                              {spot.distanceKm != null && <span><Icon name="locate" size={12} /> {formatDistance(spot.distanceKm)}</span>}
-                              <span><Icon name="check" size={12} /> {spot.availableSpots} spots</span>
-                            </div>
-                          </div>
-                        </article>
-                      ))
-                    )}
-                    {spotsWithDistance.length === 0 && <p className="empty-state">No parking spots found.</p>}
-                  </div>
-                </div>
-              )}
+              <button className="spot-list-toggle" onClick={() => setSpotView("list")}><Icon name="grid" size={18} /> {spotsWithDistance.length} spots</button>
             </div>
           )}
           {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}
