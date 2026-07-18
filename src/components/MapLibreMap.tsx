@@ -470,8 +470,7 @@ export default function MapLibreMap(
       const currentStyle = map.getStyle();
       const isSatellite = currentStyle.sources.esri != null;
       const shouldSatellite = satellite;
-      const isCurrentlySatellite = isSatellite;
-      if (shouldSatellite === isCurrentlySatellite) return;
+      if (shouldSatellite === isSatellite) return;
 
       const savedRoute = (map.getSource("route") as any)?.serializedData?.data?.geometry?.coordinates
         || (map.getSource("route") as any)?._data?.geometry?.coordinates

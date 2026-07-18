@@ -92,7 +92,7 @@ export default function CorporatePage() {
   const [showGuidance, setShowGuidance] = useState(false);
   const [indoorFloor, setIndoorFloor] = useState("1st Floor");
   const [indoorSpot, setIndoorSpot] = useState("");
-  const [showIndoor, setShowIndoor] = useState(false);
+  const [showIndoor, setShowIndoor] = useState(true);
   const [newLocation, setNewLocation] = useState({ name: "", address: "", lat: "", lng: "" });
   const [apiSpots, setApiSpots] = useState<{ id: number; name: string; address: string; lat: number; lng: number; price: number; availableSpots: number; totalSpots: number }[]>([]);
   const [corporateSpaces, setCorporateSpaces] = useState<{ id: number; name: string; address: string; layout: SpotLayout | null }[]>([]);
