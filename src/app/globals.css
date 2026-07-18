@@ -293,7 +293,11 @@ input, select, textarea { min-height: 44px; }
 /* Full spot list view (Find a spot) */
 .spot-list-full { display: flex; flex-direction: column; height: 100%; background: #fffefa; overflow: hidden; }
 .spot-list-full-head { display: flex; align-items: center; gap: 12px; padding: calc(14px + var(--sat)) 14px 10px; background: #fff; border-bottom: 1px solid #f0f0f0; }
-.spot-list-full-head b { font-size: 18px; font-weight: 800; }
+.spot-list-full-head b { font-size: 18px; font-weight: 800; flex: 1; }
+.spot-list-near { display: flex; align-items: center; gap: 5px; padding: 8px 14px; background: #fde8e6; color: #e54d3f; border: 1px solid #e54d3f; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.spot-list-near:active { transform: scale(.97); }
+.spot-list-book { margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 10px; background: var(--green); color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.spot-list-book:active { transform: scale(.98); }
 .spot-list-back { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: var(--green); color: #fff; border: none; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .spot-list-back:active { transform: scale(.97); }
 .spot-list-full-scroll { flex: 1; overflow-y: auto; padding: 0 14px calc(20px + var(--sab)); -webkit-overflow-scrolling: touch; }

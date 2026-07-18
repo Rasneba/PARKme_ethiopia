@@ -484,24 +484,7 @@ export default function MapLibreMap(
 
     placeUserMarker(map, userLocation.lat, userLocation.lng);
 
-    const withDist = spots.map((s) => ({
-      ...s,
-      dist: haversineKm(userLocation.lat, userLocation.lng, s.lat, s.lng),
-    }));
-    withDist.sort((a, b) => a.dist - b.dist);
-    const nearest = withDist[0];
-    if (!nearest) return;
-
     map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 16, duration: 1200 });
-
-    const onIdle = () => {
-      setTimeout(() => {
-        openSpotPopup(map, nearest, [nearest.lng, nearest.lat], true);
-        map.panTo([nearest.lng, nearest.lat]);
-      }, 500);
-      map.off("idle", onIdle);
-    };
-    map.on("idle", onIdle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLocation]);
 

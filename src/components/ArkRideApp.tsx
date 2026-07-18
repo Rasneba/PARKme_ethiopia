@@ -326,9 +326,6 @@ function CityMap({
         <button className="map-float-btn gps" title="My location" aria-label="My location" onClick={onGps}>
           <Icon name="locate" size={18} />
         </button>
-        <button className="map-float-btn near" title="Find nearest spot" aria-label="Find nearest spot" onClick={onNearMe}>
-          <Icon name="pin" size={18} />
-        </button>
         <button className={`map-float-btn sat ${satellite ? "active" : ""}`} title="Toggle satellite view" aria-label="Toggle satellite view" onClick={onToggleSatellite}>
           <Icon name={satellite ? "map" : "home"} size={18} />
         </button>
@@ -863,13 +860,6 @@ export default function ParkmeApp() {
         setUserLocation(loc);
         saveLocation(loc);
         setLocationStatus("granted");
-        const nearest = [...spots].sort((a, b) =>
-          haversineKm(pos.coords.latitude, pos.coords.longitude, a.lat, a.lng) -
-          haversineKm(pos.coords.latitude, pos.coords.longitude, b.lat, b.lng)
-        );
-        if (nearest.length > 0) {
-          setSelectedSpotId(nearest[0].id);
-        }
       },
       (err) => {
         let msg = "Could not get your location.";
@@ -1118,6 +1108,7 @@ export default function ParkmeApp() {
               <div className="spot-list-full-head">
                 <button className="spot-list-back" onClick={() => setSpotView("map")}><Icon name="locate" size={18} /> Open map</button>
                 <b>Find a spot</b>
+                <button className="spot-list-near" onClick={() => handleNearMe()}><Icon name="pin" size={15} /> Near me</button>
               </div>
               <div className="search-box" style={{ margin: "12px 14px" }}>
                 <Icon name="search" size={20} />
@@ -1154,6 +1145,7 @@ export default function ParkmeApp() {
                           {spot.distanceKm != null && <span><Icon name="locate" size={12} /> {formatDistance(spot.distanceKm)}</span>}
                           <span><Icon name="check" size={12} /> {spot.availableSpots} spots</span>
                         </div>
+                        <button className="spot-list-book" onClick={(e) => { e.stopPropagation(); if (!user) { setAuthOpen("driver"); return; } setBookingSpot(spot); }}><Icon name="car" size={15} /> Book</button>
                       </div>
                     </article>
                   ))
