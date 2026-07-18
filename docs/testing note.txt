@@ -1,0 +1,6 @@
+ note testing 
+1 .  when frist time starting   show only sign up and login only 
+2  always show app between phone navigation and time wifi icon in no overlap on the phon comenents
+3  compact the sidebar there are many space between side bars
+4 when signout completly signot 
+5  in apk loging icons arent visble 

@@ -26,10 +26,13 @@ const RED_PIN = `<svg width="44" height="52" viewBox="0 0 24 24" fill="none" xml
   <circle cx="12" cy="9" r="2.5" fill="white"/>
   <text x="12" y="10" text-anchor="middle" dominant-baseline="middle" fill="#e54d3f" font-size="5" font-weight="900" font-family="Arial">P</text>
 </svg>`;
-const BLUE_DOT = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="12" cy="12" r="10" fill="#4098df" stroke="white" stroke-width="3" opacity="0.25"/>
-  <circle cx="12" cy="12" r="7" fill="#4098df" stroke="white" stroke-width="2.5"/>
-  <circle cx="12" cy="12" r="3" fill="white"/>
+const BLUE_DOT = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="16" cy="16" r="14" fill="#4098df" opacity="0.12">
+    <animate attributeName="r" values="10;16;10" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="16" cy="16" r="9" fill="#4098df" stroke="white" stroke-width="2.5"/>
+  <circle cx="16" cy="16" r="4" fill="white"/>
 </svg>`;
 
 const GEBETA_BASE_STYLE_URL = "https://tiles.gebeta.app/styles/standard/style.json";
@@ -417,7 +420,7 @@ export default function MapLibreMap(
       const pos = userMarkerRef.current.getLngLat();
       const el = document.createElement("div");
       el.innerHTML = BLUE_DOT;
-      el.style.cssText = "width:24px;height:24px;animation:userPulse 2s infinite;filter:drop-shadow(0 2px 6px rgba(64,152,223,.5));";
+      el.style.cssText = "width:32px;height:32px;filter:drop-shadow(0 2px 8px rgba(64,152,223,.5));";
       userMarkerRef.current = new maplibregl.Marker({ element: el })
         .setLngLat(pos)
         .addTo(map);
@@ -427,7 +430,7 @@ export default function MapLibreMap(
   function placeUserMarker(map: maplibregl.Map, lat: number, lng: number) {
     const el = document.createElement("div");
     el.innerHTML = BLUE_DOT;
-    el.style.cssText = "width:24px;height:24px;animation:userPulse 2s infinite;filter:drop-shadow(0 2px 6px rgba(64,152,223,.5));";
+    el.style.cssText = "width:32px;height:32px;filter:drop-shadow(0 2px 8px rgba(64,152,223,.5));";
 
     if (userMarkerRef.current) {
       userMarkerRef.current.setLngLat([lng, lat]);
@@ -557,11 +560,6 @@ export default function MapLibreMap(
   return (
     <>
       <style>{`
-        @keyframes userPulse {
-          0% { transform: scale(1); opacity: .7; }
-          50% { transform: scale(2.2); opacity: 0; }
-          100% { transform: scale(1); opacity: 0; }
-        }
         .maplibregl-popup-content {
           border-radius: 12px !important;
           padding: 12px 14px !important;

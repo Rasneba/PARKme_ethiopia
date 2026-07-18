@@ -468,7 +468,10 @@ export default function ParkingLotGrid({
           )}
         </div>
 
-        {showGuidance && svgPoints && (
+        {showGuidance && svgPoints && (() => {
+          const pts = svgPoints.split(" ").map(p => p.split(",").map(Number));
+          const pathD = pts.length > 0 ? `M${pts[0][0]},${pts[0][1]} ` + pts.slice(1).map(p => `L${p[0]},${p[1]}`).join(" ") : "";
+          return (
           <svg className="plg-route-svg" viewBox={`0 0 ${gridRef.current?.offsetWidth || 300} ${gridRef.current?.offsetHeight || 200}`}>
             <polyline
               className="plg-route-line-bg"
@@ -493,8 +496,23 @@ export default function ParkingLotGrid({
                 </circle>
               );
             })()}
+            {pathD && (
+              <g>
+                <circle r="7" fill="#2196f3" opacity="0.2">
+                  <animateMotion dur="3s" repeatCount="indefinite" path={pathD} rotate="auto" />
+                </circle>
+                <circle r="5" fill="#2196f3" stroke="white" strokeWidth="1.5">
+                  <animateMotion dur="3s" repeatCount="indefinite" path={pathD} rotate="auto" />
+                </circle>
+                <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize="6" fontWeight="bold" fontFamily="sans-serif">
+                  <animateMotion dur="3s" repeatCount="indefinite" path={pathD} rotate="auto" />
+                  C
+                </text>
+              </g>
+            )}
           </svg>
-        )}
+          );
+        })()}
       </div>
 
       {showGuidance && assignedSpot && (

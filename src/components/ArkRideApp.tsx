@@ -155,15 +155,32 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
   const s = String(elapsed % 60).padStart(2, "0");
   const time = `${h}:${m}:${s}`;
   const active = booking.status === "active" || booking.status === "confirmed";
+  const totalSeconds = booking.durationHours * 3600;
+  const progress = Math.min(elapsed / totalSeconds, 1);
+  const circumference = 2 * Math.PI * 22;
+  const dashOffset = circumference * (1 - progress);
 
   return (
     <section className="active-pass-card">
       <FlagRibbon />
       <span className="ticket-notch notch-left" /><span className="ticket-notch notch-right" />
       <div className="pass-kicker"><span className="pulse" /> {active ? "ACTIVE PARKING" : "BOOKING"}</div>
-      <div className="pass-title-row">
-        <div><h2>{booking.spotName}</h2><p>{booking.spaceLabel}</p></div>
-        <div className="parking-mark">P</div>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <div className="pass-title-row" style={{ marginTop: 0 }}>
+            <div><h2>{booking.spotName}</h2><p>{booking.spaceLabel}</p></div>
+            <div className="parking-mark">P</div>
+          </div>
+        </div>
+        <div style={{ position: "relative", width: 64, height: 64, flexShrink: 0 }}>
+          <svg width="64" height="64" viewBox="0 0 48 48" style={{ transform: "rotate(-90deg)" }}>
+            <circle cx="24" cy="24" r="22" fill="none" stroke="#e8e8e8" strokeWidth="3" />
+            <circle cx="24" cy="24" r="22" fill="none" stroke={progress > 0.8 ? "#e54d3f" : progress > 0.5 ? "#f7c531" : "#0fa24b"} strokeWidth="3" strokeDasharray={circumference} strokeDashoffset={dashOffset} strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s" }} />
+          </svg>
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: progress > 0.8 ? "#e54d3f" : "#131614" }}>
+            {Math.round((1 - progress) * booking.durationHours * 100) / 100 > 0 ? `${Math.round((1 - progress) * booking.durationHours * 10) / 10}h` : "0h"}
+          </div>
+        </div>
       </div>
       <div className="timer-display"><span>{time}</span><small>elapsed</small></div>
       <div className="pass-divider" />
@@ -358,8 +375,11 @@ function HistoryView() {
 }
 
 function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClose: () => void; onBooked: () => void; user: User | null }) {
+  const [tier, setTier] = useState<"hourly" | "daily" | "event">("hourly");
   const [duration, setDuration] = useState(2);
   const [payment, setPayment] = useState("wallet");
+  const [vehicleName, setVehicleName] = useState("");
+  const [plateNumber, setPlateNumber] = useState("");
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [complete, setComplete] = useState(false);
@@ -368,7 +388,9 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
   const [bookingGateCode, setBookingGateCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const total = duration * spot.price - (couponApplied ? 20 : 0);
+  const priceMultiplier = tier === "daily" ? 6.5 : tier === "event" ? 8 : 1;
+  const tierHours = tier === "daily" ? 24 : tier === "event" ? 4 : duration;
+  const total = Math.round(tierHours * spot.price * priceMultiplier - (couponApplied ? 20 : 0));
 
   async function confirmBooking() {
     if (!user) { setError("Please log in to book."); return; }
@@ -397,8 +419,33 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
         {!complete ? <>
           <div className="modal-heading"><span className="modal-icon"><Icon name="car" size={22} /></span><div><p className="eyebrow">RESERVE A SPACE</p><h2>Book your parking</h2></div></div>
           <div className="booking-place"><div className="booking-map-mini"><Icon name="pin" size={20} /><i /></div><div><h3>{spot.name}</h3><p>{spot.address}</p><StatusDot text={`${spot.availableSpots} spaces available`} /></div><b>{spot.price}<small> ETB/hr</small></b></div>
-          <section className="booking-section"><div className="section-title"><span><Icon name="clock" size={18} /> How long?</span><b>{duration} {duration === 1 ? "hour" : "hours"}</b></div><input className="duration-range" type="range" min="1" max="8" value={duration} onChange={(e) => setDuration(Number(e.target.value))} style={{ "--range-progress": `${((duration - 1) / 7) * 100}%` } as React.CSSProperties} /><div className="range-labels"><span>1 hr</span><span>4 hrs</span><span>8 hrs</span></div><div className="duration-presets">{[1, 2, 3, 4].map((h) => <button key={h} className={duration === h ? "active" : ""} onClick={() => setDuration(h)}>{h}h</button>)}</div></section>
+          <section className="booking-section"><div className="section-title"><span><Icon name="clock" size={18} /> Choose your plan</span></div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              {([ { id: "hourly" as const, label: "Hourly", sub: `${spot.price} ETB/hr`, icon: "clock" as const }, { id: "daily" as const, label: "Daily Pass", sub: `${Math.round(spot.price * 6.5)} ETB/day`, icon: "calendar" as const }, { id: "event" as const, label: "Event", sub: `${Math.round(spot.price * 8)} ETB/4h`, icon: "sparkle" as const } ]).map((t) => (
+                <button key={t.id} onClick={() => setTier(t.id)} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, border: tier === t.id ? "2px solid #0fa24b" : "1.5px solid #e0e0e0", background: tier === t.id ? "#edfcf3" : "#fff", cursor: "pointer", textAlign: "center", transition: "all .15s" }}>
+                  <Icon name={t.icon} size={18} />
+                  <div style={{ fontSize: 12, fontWeight: 700, color: tier === t.id ? "#0fa24b" : "#131614", marginTop: 4 }}>{t.label}</div>
+                  <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{t.sub}</div>
+                </button>
+              ))}
+            </div>
+            {tier === "hourly" && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, padding: "8px 0" }}>
+                <button onClick={() => setDuration(Math.max(1, duration - 1))} style={{ width: 40, height: 40, borderRadius: 20, border: "1.5px solid #e0e0e0", background: "#fff", fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#131614" }}>&#8722;</button>
+                <div style={{ textAlign: "center" }}><div style={{ fontSize: 28, fontWeight: 800, color: "#131614" }}>{duration}</div><div style={{ fontSize: 11, color: "#6b7280" }}>{duration === 1 ? "hour" : "hours"}</div></div>
+                <button onClick={() => setDuration(Math.min(24, duration + 1))} style={{ width: 40, height: 40, borderRadius: 20, border: "1.5px solid #e0e0e0", background: "#fff", fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#131614" }}>+</button>
+              </div>
+            )}
+            {tier === "daily" && <p style={{ fontSize: 12, color: "#6b7280", textAlign: "center", padding: "6px 0" }}>Full-day pass — park anywhere for 24 hours</p>}
+            {tier === "event" && <p style={{ fontSize: 12, color: "#6b7280", textAlign: "center", padding: "6px 0" }}>4-hour event pass with priority entry</p>}
+          </section>
           <section className="booking-section"><div className="section-title"><span><Icon name="wallet" size={18} /> Payment</span></div><div className="payment-options"><button className={payment === "wallet" ? "selected" : ""} onClick={() => setPayment("wallet")}><span className="payment-symbol wallet-symbol"><Icon name="wallet" size={17} /></span><span>ParkmeWallet</span><i className="radio" /></button><button className={payment === "telebirr" ? "selected" : ""} onClick={() => setPayment("telebirr")}><span className="payment-symbol telebirr-symbol">t</span><span>telebirr</span><i className="radio" /></button></div></section>
+          <section className="booking-section"><div className="section-title"><span><Icon name="car" size={18} /> Vehicle info</span><small style={{ fontSize: 10, color: "#9ca3af" }}>Optional</small></div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={vehicleName} onChange={(e) => setVehicleName(e.target.value)} placeholder="e.g. Toyota Corolla" style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 13, background: "#fafbfa", outline: "none" }} />
+              <input value={plateNumber} onChange={(e) => setPlateNumber(e.target.value.toUpperCase())} placeholder="AA-1234" style={{ width: 100, padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 13, fontWeight: 700, letterSpacing: 1, background: "#fafbfa", outline: "none", textTransform: "uppercase" }} />
+            </div>
+          </section>
           <section className="coupon-row"><Icon name="sparkle" size={17} /><input value={coupon} onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); }} placeholder="Promo code (try PARKME20)" /><button onClick={() => coupon.trim().toUpperCase() === "PARKME20" && setCouponApplied(true)}>{couponApplied ? "Applied!" : "Apply"}</button></section>
           {couponApplied && <p className="coupon-success"><Icon name="check" size={15} /> PARKME20 saved you 20 ETB</p>}
           <div className="booking-total"><span>Total due</span><b>{total} <small>ETB</small></b></div>
@@ -407,7 +454,7 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
           <p className="secure-note"><Icon name="shield" size={15} /> Secured by Parkme payments</p>
         </> : <>
           <div className="ticket-celebration"><span><Icon name="sparkle" size={20} /></span><div><p>YOU&apos;RE ALL SET!</p><h2>Parking confirmed</h2></div></div>
-          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PARKME PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{spot.name}</h3><p>{spot.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>{formatTime(new Date())}</b><span>{formatDate(new Date())}</span></div><div><small>DURATION</small><b>{duration} hours</b></div><div><small>SPACE</small><b>{bookingGateCode ? `${bookingGateCode.slice(0, 2)} Â· ${bookingGateCode.slice(2)}` : "B Â· 27"}</b></div></div><div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Check in"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Checked in!" : "CHECK IN AT GATE"}</p><b>{scanned ? `Welcome! Code: ${bookingGateCode}` : "Scan your ticket"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Done" : "Open scanner"}</button></div></div></div>
+          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PARKME PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{spot.name}</h3><p>{spot.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>{formatTime(new Date())}</b><span>{formatDate(new Date())}</span></div><div><small>DURATION</small><b>{tier === "daily" ? "24 hours" : tier === "event" ? "4 hours" : `${duration} ${duration === 1 ? "hour" : "hours"}`}</b><span style={{ fontSize: 10, color: "#6b7280" }}>{tier === "daily" ? "Daily Pass" : tier === "event" ? "Event Pass" : "Hourly"}</span></div><div><small>SPACE</small><b>{bookingGateCode ? `${bookingGateCode.slice(0, 2)} · ${bookingGateCode.slice(2)}` : "B · 27"}</b></div></div>{(vehicleName || plateNumber) && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#f5f6f5", borderRadius: 8, marginTop: 10 }}><Icon name="car" size={16} /><span style={{ fontSize: 12, fontWeight: 600, color: "#131614" }}>{vehicleName || "Vehicle"}</span>{plateNumber && <span style={{ fontSize: 11, fontWeight: 700, color: "#0fa24b", letterSpacing: 1, background: "#edfcf3", padding: "2px 8px", borderRadius: 4 }}>{plateNumber}</span>}</div>}<div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Check in"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Checked in!" : "CHECK IN AT GATE"}</p><b>{scanned ? `Welcome! Code: ${bookingGateCode}` : "Scan your ticket"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Done" : "Open scanner"}</button></div></div></div>
           <button className="confirm-booking" onClick={() => { onBooked(); onClose(); }}>Done <Icon name="arrow" size={18} /></button>
         </>}
       </div>
@@ -901,9 +948,9 @@ export default function ParkmeApp() {
               <button className="spot-list-toggle" onClick={() => setSpotView("list")}><Icon name="grid" size={18} /> {spotsWithDistance.length} spots</button>
             </div>
           )}
-          {view === "bookings" && <BookingsView onBook={() => setView("spots")} />}
-          {view === "wallet" && (user ? <WalletView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to access your wallet.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>)}
-          {view === "history" && (user ? <HistoryView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to view history.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>)}
+          {view === "bookings" && <div className="view-fade" key="bookings"><BookingsView onBook={() => setView("spots")} /></div>}
+          {view === "wallet" && <div className="view-fade" key="wallet">{user ? <WalletView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to access your wallet.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>}</div>}
+          {view === "history" && <div className="view-fade" key="history">{user ? <HistoryView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to view history.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>}</div>}
           {view === "spots" && activeBooking && user && <BookingTimerCard booking={activeBooking} onOpen={() => setBookingSpot(spots[0] ?? null)} />}
         </div>
       </div>
