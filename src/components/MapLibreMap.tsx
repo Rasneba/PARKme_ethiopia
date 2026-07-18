@@ -308,7 +308,7 @@ export default function MapLibreMap(
       }
     }
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: false }), "top-right");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), "top-right");
     map.addControl(new maplibregl.AttributionControl({ customAttribution: '<a style="margin-bottom:5px;" href="https://www.gebeta.app" target="_blank">&copy; Gebeta Maps</a>' }), "bottom-left");
 
     mapRef.current = map;

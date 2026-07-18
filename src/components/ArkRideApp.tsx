@@ -312,6 +312,7 @@ function CityMap({
   onRouteData?: (data: { distance: number; time: number; instructions: any[] } | null) => void;
   gpsLocked?: boolean;
   onGpsUnlock?: () => void;
+  controlsHidden?: boolean;
 }) {
   const selected = spots.find((s) => s.id === selectedSpotId);
   return (
@@ -319,7 +320,7 @@ function CityMap({
       <div className="map-toolbar">
         <span className="map-toolbar-count"><Icon name="map" size={15} /> {spots.length} spot{spots.length !== 1 ? "s" : ""}</span>
       </div>
-      <div className="map-float-controls">
+      <div className={`map-float-controls ${controlsHidden ? "hidden" : ""}`}>
         <button className="map-float-btn gps" title="My location" onClick={onGps}>
           <Icon name="locate" size={16} /> GPS
         </button>
@@ -1124,7 +1125,7 @@ export default function ParkmeApp() {
           )}
           {view === "spots" && spotView === "map" && (
             <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onGps={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} onRouteData={(d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time, instructions: d.instructions }); else { setRouteData(null); setRouteActive(false); } }} gpsLocked={gpsLocked} onGpsUnlock={() => setGpsLocked(false)} />
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onGps={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} onRouteData={(d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time, instructions: d.instructions }); else { setRouteData(null); setRouteActive(false); } }} gpsLocked={gpsLocked} onGpsUnlock={() => setGpsLocked(false)} controlsHidden={routeActive || selectedSpotId != null} />
 
               {routeActive && selectedSpotId && (() => {
                 const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);

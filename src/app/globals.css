@@ -208,9 +208,9 @@ input, select, textarea { min-height: 44px; }
 .load-more { margin: 16px auto 0; display: flex; align-items: center; gap: 5px; color: var(--green-dark); background: transparent; font-size: 11px; font-weight: 800; }
 .load-more svg { transform: rotate(90deg); }
 
-.map-column { position: absolute; z-index: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; min-height: 0; flex: none; border-radius: 0; border: none; }
-.map-column:before { content: ""; position: absolute; inset: 0; opacity: .48; background: linear-gradient(90deg, transparent 31%, #b9cfc0 31.2%, transparent 31.8%), linear-gradient(24deg, transparent 54%, #bdcfc2 54.2%, transparent 55.2%), linear-gradient(-57deg, transparent 59%, #b7ccbb 59.3%, transparent 60.3%); }
-.map-toolbar { position: absolute; z-index: 3; top: 17px; left: 17px; right: 17px; display: flex; align-items: center; justify-content: space-between; }
+.map-column { position: absolute; z-index: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; min-height: 0; flex: none; border-radius: 0; border: none; background: #eef1ee; }
+.map-column:before { content: ""; position: absolute; inset: 0; opacity: .48; z-index: 1; pointer-events: none; background: linear-gradient(90deg, transparent 31%, #b9cfc0 31.2%, transparent 31.8%), linear-gradient(24deg, transparent 54%, #bdcfc2 54.2%, transparent 55.2%), linear-gradient(-57deg, transparent 59%, #b7ccbb 59.3%, transparent 60.3%); }
+.map-toolbar { position: absolute; z-index: 3; top: calc(17px + var(--sat)); left: 17px; right: 17px; display: flex; align-items: center; justify-content: space-between; }
 .map-toolbar-count { padding: 8px 11px; display: flex; gap: 5px; align-items: center; background: rgba(255,255,252,.92); border-radius: 8px; box-shadow: 0 4px 12px rgba(31,63,32,.12); color: #374137; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,.6); }
 .map-toolbar span { color: #374137; }
 .map-toolbar span svg { color: var(--green); }.map-toolbar button, .map-controls button { display: grid; place-items: center; background: rgba(255,255,252,.92); color: #465148; border-radius: 8px; box-shadow: 0 4px 12px rgba(31,63,32,.12); }
@@ -358,6 +358,11 @@ input, select, textarea { min-height: 44px; }
 
 /* --- Maplibre fills content-grid --- */
 .content-grid .map-column .maplibregl-map { border-radius: 0 !important; }
+.map-float-controls.hidden { display: none; }
+/* Keep MapLibre zoom control clear of the phone status bar (clock/network) */
+.maplibregl-ctrl-top-right { top: calc(12px + var(--sat)) !important; right: 12px !important; }
+.maplibregl-ctrl-group { border-radius: 12px !important; box-shadow: 0 4px 14px rgba(31,63,32,.12) !important; }
+.maplibregl-ctrl-group button { width: 38px !important; height: 38px !important; }
 
 /* --- Small phones --- */
 @media (max-width: 560px) {
