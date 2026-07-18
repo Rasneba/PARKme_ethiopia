@@ -47,6 +47,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               navigator.serviceWorker.register('/sw.js').catch(function() {});
             });
           }
+          window.addEventListener('error', function(e) {
+            try {
+              var m = (e && (e.message || (e.error && e.error.message))) || 'Unknown error';
+              console.error('CLIENT_ERROR:', m);
+            } catch (_) {}
+          });
+          window.addEventListener('unhandledrejection', function(e) {
+            try {
+              var r = e && e.reason;
+              console.error('CLIENT_REJECTION:', r && (r.message || r));
+            } catch (_) {}
+          });
         `}} />
         {children}
       </body>

@@ -8,6 +8,7 @@ import { Icon, type IconName } from "./Icon";
 import { SearchPanel, type ApiSpot } from "./SearchPanel";
 import { formatDistance, formatDuration, greetByHour } from "@/lib/format";
 import IndoorLotGuide from "./IndoorLotGuide";
+import MapErrorBoundary from "./MapErrorBoundary";
 
 const MapLibreMap = dynamic(() => import("./MapLibreMap"), { ssr: false });
 
@@ -336,18 +337,20 @@ function CityMap({
           </button>
         )}
       </div>
-      <MapLibreMap
-        spots={spots}
-        onSelectSpot={onSelectSpot}
-        onBookSpot={onBook}
-        selectedSpotId={selectedSpotId}
-        satellite={satellite}
-        userLocation={userLocation}
-        mapRef={mapRef}
-        onRouteData={onRouteData}
-        gpsLocked={gpsLocked}
-        onGpsUnlock={onGpsUnlock}
-      />
+      <MapErrorBoundary>
+        <MapLibreMap
+          spots={spots}
+          onSelectSpot={onSelectSpot}
+          onBookSpot={onBook}
+          selectedSpotId={selectedSpotId}
+          satellite={satellite}
+          userLocation={userLocation}
+          mapRef={mapRef}
+          onRouteData={onRouteData}
+          gpsLocked={gpsLocked}
+          onGpsUnlock={onGpsUnlock}
+        />
+      </MapErrorBoundary>
       {selected && (
         <div className="map-spot-sheet">
           <div className="map-sheet-kicker">
