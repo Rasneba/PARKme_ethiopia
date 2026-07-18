@@ -326,15 +326,15 @@ function CityMap({
         <button className="map-float-btn gps" title="My location" aria-label="My location" onClick={onGps}>
           <Icon name="locate" size={18} />
         </button>
-        <button className={`map-float-btn sat ${satellite ? "active" : ""}`} title="Toggle satellite view" aria-label="Toggle satellite view" onClick={onToggleSatellite}>
-          <Icon name={satellite ? "map" : "home"} size={18} />
-        </button>
         {gpsLocked && (
           <button className="map-float-btn gps" title="GPS locked — click to unlock" aria-label="GPS locked — unlock" onClick={onGpsUnlock} style={{ background: "#0fa24b", color: "#fff", boxShadow: "0 2px 12px rgba(15,162,75,.4)" }}>
             <Icon name="locate" size={18} />
           </button>
         )}
       </div>
+      <button className={`map-float-btn sat sat-always ${satellite ? "active" : ""}`} title="Toggle satellite view" aria-label="Toggle satellite view" onClick={onToggleSatellite}>
+        <Icon name={satellite ? "map" : "home"} size={18} />
+      </button>
       <MapErrorBoundary>
         <MapLibreMap
           spots={spots}

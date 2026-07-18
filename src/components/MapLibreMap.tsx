@@ -238,10 +238,10 @@ export default function MapLibreMap(
         });
       }
       if (!map.getLayer("route-line-bg")) {
-        map.addLayer({ id: "route-line-bg", type: "line", source: "route", paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.8 } });
+        map.addLayer({ id: "route-line-bg", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#ffffff", "line-width": 12, "line-opacity": 0.95 } });
       }
       if (!map.getLayer("route-line")) {
-        map.addLayer({ id: "route-line", type: "line", source: "route", paint: { "line-color": "#0fa24b", "line-width": 5, "line-opacity": 0.9 } });
+        map.addLayer({ id: "route-line", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1a73e8", "line-width": 7, "line-opacity": 1, "line-blur": 0 } });
       }
 
       const destSpot = spotsRef.current.find((s: any) => s.lat === destLat && s.lng === destLng);
@@ -469,11 +469,30 @@ export default function MapLibreMap(
     try {
       const currentStyle = map.getStyle();
       const isSatellite = currentStyle.sources.esri != null;
-      if (satellite && !isSatellite) {
-        map.setStyle(SATELLITE_STYLE);
-      } else if (!satellite && isSatellite) {
-        map.setStyle(GEBETA_BASE_STYLE_URL);
-      }
+      const shouldSatellite = satellite;
+      const isCurrentlySatellite = isSatellite;
+      if (shouldSatellite === isCurrentlySatellite) return;
+
+      const savedRoute = (map.getSource("route") as any)?.serializedData?.data?.geometry?.coordinates
+        || (map.getSource("route") as any)?._data?.geometry?.coordinates
+        || null;
+
+      map.setStyle(shouldSatellite ? SATELLITE_STYLE : GEBETA_BASE_STYLE_URL);
+
+      map.once("styledata", () => {
+        renderClusteredMarkers(map);
+        if (savedRoute && savedRoute.length >= 2) {
+          if (!map.getSource("route")) {
+            map.addSource("route", { type: "geojson", data: { type: "Feature", geometry: { type: "LineString", coordinates: savedRoute }, properties: {} } });
+          }
+          if (!map.getLayer("route-line-bg")) {
+            map.addLayer({ id: "route-line-bg", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#ffffff", "line-width": 12, "line-opacity": 0.95 } });
+          }
+          if (!map.getLayer("route-line")) {
+            map.addLayer({ id: "route-line", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1a73e8", "line-width": 7, "line-opacity": 1 } });
+          }
+        }
+      });
     } catch {}
   }, [satellite]);
 
