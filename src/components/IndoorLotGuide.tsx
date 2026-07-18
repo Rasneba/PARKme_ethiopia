@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import { ArrowLeft, Check, HelpCircle } from "lucide-react";
 
+// Deterministic mock layout state for each floor to keep it consistent
 interface LotSpot {
-  code: string;
+  code: string; // e.g. "A-1"
   status: "occupied" | "available" | "selected";
 }
 
@@ -24,30 +25,44 @@ export default function IndoorLotGuide({
 }: IndoorLotGuideProps) {
   const floors = ["1st Floor", "2nd Floor", "3rd Floor", "4th Floor"];
 
+  // Statically seed spots for each floor so they remain consistent when switching floors
   const getSpotsForFloor = (floor: string): { zoneA: LotSpot[]; zoneB: LotSpot[] } => {
+    // Generate deterministic states based on floor name hash
     const hash = floor.charCodeAt(0) + floor.charCodeAt(floor.length - 1);
+
     const zoneA: LotSpot[] = [];
     const zoneB: LotSpot[] = [];
 
+    // 8 spots for Zone A (4 rows, 2 columns)
     for (let i = 1; i <= 8; i++) {
       const code = `A-${i}`;
+      // Some simple formula to distribute occupied slots deterministically
       const isOccupied = ((hash + i) % 3 === 0) || ((hash * i) % 5 === 2);
+
       zoneA.push({
         code,
-        status: code === selectedSpotCode && selectedFloor === floor
-          ? "selected"
-          : isOccupied ? "occupied" : "available",
+        status:
+          code === selectedSpotCode && selectedFloor === floor
+            ? "selected"
+            : isOccupied
+              ? "occupied"
+              : "available",
       });
     }
 
+    // 8 spots for Zone B (4 rows, 2 columns)
     for (let i = 1; i <= 8; i++) {
       const code = `B-${i}`;
       const isOccupied = ((hash + i + 2) % 3 === 0) || ((hash * (i + 1)) % 7 === 1);
+
       zoneB.push({
         code,
-        status: code === selectedSpotCode && selectedFloor === floor
-          ? "selected"
-          : isOccupied ? "occupied" : "available",
+        status:
+          code === selectedSpotCode && selectedFloor === floor
+            ? "selected"
+            : isOccupied
+              ? "occupied"
+              : "available",
       });
     }
 
@@ -57,452 +72,224 @@ export default function IndoorLotGuide({
   const { zoneA, zoneB } = getSpotsForFloor(selectedFloor);
 
   const handleSpotClick = (spot: LotSpot) => {
-    if (!interactive || spot.status === "occupied") return;
+    if (!interactive) return;
+    if (spot.status === "occupied") return;
     setSelectedSpotCode(spot.code);
   };
 
+  // Render a clean modern top-down vector car
   const renderTopDownCar = () => (
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor" style={{ color: "#3c4f43", userSelect: "none", pointerEvents: "none" }}>
-      <rect x="3.5" y="3.5" width="2" height="4" rx="1" fill="#101411" />
-      <rect x="18.5" y="3.5" width="2" height="4" rx="1" fill="#101411" />
-      <rect x="3.5" y="15.5" width="2" height="4" rx="1" fill="#101411" />
-      <rect x="18.5" y="15.5" width="2" height="4" rx="1" fill="#101411" />
-      <rect x="3" y="8" width="1.5" height="2" rx="0.5" fill="#2d3b32" />
-      <rect x="19.5" y="8" width="1.5" height="2" rx="0.5" fill="#2d3b32" />
+    <svg className="w-9 h-9 text-zinc-700 select-none pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
+      {/* Wheels */}
+      <rect x="3.5" y="3.5" width="2" height="4" rx="1" fill="#18181b" />
+      <rect x="18.5" y="3.5" width="2" height="4" rx="1" fill="#18181b" />
+      <rect x="3.5" y="15.5" width="2" height="4" rx="1" fill="#18181b" />
+      <rect x="18.5" y="15.5" width="2" height="4" rx="1" fill="#18181b" />
+      {/* Mirrors */}
+      <rect x="3" y="8" width="1.5" height="2" rx="0.5" fill="#3f3f46" />
+      <rect x="19.5" y="8" width="1.5" height="2" rx="0.5" fill="#3f3f46" />
+      {/* Car body */}
       <rect x="5" y="1.5" width="14" height="20" rx="3.5" fill="currentColor" />
-      <path d="M 8 5 Q 12 3 16 5" stroke="#2d3b32" strokeWidth="0.5" fill="none" />
+      {/* Hood crease */}
+      <path d="M 8 5 Q 12 3 16 5" stroke="#3f3f46" strokeWidth="0.5" fill="none" />
+      {/* Front windshield */}
       <rect x="7" y="5.5" width="10" height="3.5" rx="1" fill="#ffffff" fillOpacity="0.25" />
+      {/* Roof glass or body highlights */}
       <rect x="7" y="10" width="10" height="4" rx="0.5" fill="#ffffff" fillOpacity="0.1" />
+      {/* Rear windshield */}
       <rect x="7" y="15" width="10" height="2.5" rx="1" fill="#ffffff" fillOpacity="0.25" />
+      {/* Headlights */}
       <rect x="6.5" y="1.5" width="2" height="1" rx="0.5" fill="#facc15" />
       <rect x="15.5" y="1.5" width="2" height="1" rx="0.5" fill="#facc15" />
-      <rect x="6.5" y="21" width="2.5" height="0.8" rx="0.3" fill="#e54d3f" />
-      <rect x="15" y="21" width="2.5" height="0.8" rx="0.3" fill="#e54d3f" />
+      {/* Taillights */}
+      <rect x="6.5" y="21" width="2.5" height="0.8" rx="0.3" fill="#ef4444" />
+      <rect x="15" y="21" width="2.5" height="0.8" rx="0.3" fill="#ef4444" />
     </svg>
   );
 
-  const s = {
-    container: {
-      background: "#fff",
-      borderRadius: 20,
-      border: "1px solid #eef3f0",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-      overflow: "hidden",
-      maxWidth: 380,
-      margin: "0 auto",
-      fontFamily: "'Inter', sans-serif",
-    } as React.CSSProperties,
-    header: {
-      padding: "16px 20px",
-      borderBottom: "1px solid #eef3f0",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      background: "#fafafa",
-    } as React.CSSProperties,
-    headerLeft: {
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-    } as React.CSSProperties,
-    headerIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: "50%",
-      background: "#eef3f0",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: 14,
-    } as React.CSSProperties,
-    liveBadge: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-      background: "rgba(18,138,66,0.08)",
-      padding: "4px 10px",
-      borderRadius: 20,
-      border: "1px solid rgba(18,138,66,0.12)",
-    } as React.CSSProperties,
-    liveDot: {
-      width: 6,
-      height: 6,
-      borderRadius: "50%",
-      background: "#128a42",
-      animation: "pulse 1.5s infinite",
-    } as React.CSSProperties,
-    floorTabs: {
-      padding: "12px 16px",
-      background: "#fff",
-      borderBottom: "1px solid #eef3f0",
-    } as React.CSSProperties,
-    floorGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(4, 1fr)",
-      gap: 6,
-    } as React.CSSProperties,
-    floorTab: (active: boolean) => ({
-      padding: "8px 4px",
-      borderRadius: 12,
-      fontSize: 11,
-      fontWeight: 700 as const,
-      border: active ? "2px solid #128a42" : "1.5px solid #eef3f0",
-      background: active ? "#128a42" : "#fff",
-      color: active ? "#fff" : "#88a693",
-      cursor: "pointer" as const,
-      transition: "all 0.15s",
-      textAlign: "center" as const,
-      boxShadow: active ? "0 2px 8px rgba(18,138,66,0.2)" : "none",
-    }),
-    mapArea: {
-      padding: 20,
-      background: "#fafafa",
-      display: "flex",
-      flexDirection: "column" as const,
-      alignItems: "center",
-      minHeight: 360,
-    } as React.CSSProperties,
-    gridContainer: {
-      display: "grid",
-      gridTemplateColumns: "4fr 3fr 4fr",
-      gap: 0,
-      width: "100%",
-      maxWidth: 320,
-    } as React.CSSProperties,
-    zoneHeader: {
-      textAlign: "center" as const,
-      fontFamily: "'Space Grotesk', sans-serif",
-      fontWeight: 800 as const,
-      fontSize: 11,
-      color: "#b0c7ba",
-      marginBottom: 12,
-      textTransform: "uppercase" as const,
-      letterSpacing: 2,
-    } as React.CSSProperties,
-    spotsGrid: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: "6px 8px",
-    } as React.CSSProperties,
-    spotButton: (status: string) => ({
-      aspectRatio: "1",
-      width: 42,
-      height: 46,
-      borderRadius: 12,
-      border: status === "selected"
-        ? "2px solid #128a42"
-        : status === "occupied"
-          ? "1.5px solid #eef3f0"
-          : "1.5px dashed #d6e3db",
-      background: status === "selected"
-        ? "rgba(18,138,66,0.06)"
-        : status === "occupied"
-          ? "#f4f4f5"
-          : "#fff",
-      display: "flex",
-      flexDirection: "column" as const,
-      alignItems: "center",
-      justifyContent: "center",
-      position: "relative" as const,
-      cursor: status === "occupied" || !interactive ? "default" : "pointer",
-      transition: "all 0.15s",
-      boxShadow: status === "selected" ? "0 0 0 3px rgba(18,138,66,0.12)" : "none",
-      opacity: status === "occupied" ? 0.7 : 1,
-    }),
-    spotCode: {
-      position: "absolute" as const,
-      top: 2,
-      fontSize: 8,
-      fontFamily: "'JetBrains Mono', monospace",
-      fontWeight: 700 as const,
-      color: "#b0c7ba",
-      letterSpacing: -0.5,
-    } as React.CSSProperties,
-    checkCircle: {
-      width: 20,
-      height: 20,
-      borderRadius: "50%",
-      background: "#128a42",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 6,
-    } as React.CSSProperties,
-    aisle: {
-      display: "flex",
-      flexDirection: "column" as const,
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "8px 0",
-      position: "relative" as const,
-      minHeight: 300,
-    } as React.CSSProperties,
-    entryCircle: {
-      width: 20,
-      height: 20,
-      borderRadius: "50%",
-      background: "#4098df",
-      color: "#fff",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: 10,
-      fontWeight: 800 as const,
-      border: "2px solid #fff",
-      boxShadow: "0 2px 8px rgba(64,152,223,0.3)",
-      animation: "pulse 2s infinite",
-    } as React.CSSProperties,
-    entryLabel: {
-      fontSize: 8,
-      fontFamily: "'JetBrains Mono', monospace",
-      fontWeight: 800 as const,
-      color: "#4098df",
-      background: "#e3f2fd",
-      border: "1px solid #bbdefb",
-      padding: "2px 6px",
-      borderRadius: 4,
-      textTransform: "uppercase" as const,
-      letterSpacing: 1,
-      marginTop: 4,
-    } as React.CSSProperties,
-    roadLine: {
-      position: "absolute" as const,
-      top: 44,
-      bottom: 44,
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: 2,
-      borderLeft: "2px dashed #d6e3db",
-      display: "flex",
-      flexDirection: "column" as const,
-      alignItems: "center",
-      justifyContent: "space-around",
-      pointerEvents: "none",
-    } as React.CSSProperties,
-    exitLabel: {
-      fontSize: 8,
-      fontFamily: "'JetBrains Mono', monospace",
-      fontWeight: 800 as const,
-      color: "#e54d3f",
-      background: "#fde8e6",
-      border: "1px solid #f8c4c0",
-      padding: "2px 6px",
-      borderRadius: 4,
-      textTransform: "uppercase" as const,
-      letterSpacing: 1,
-      marginBottom: 4,
-    } as React.CSSProperties,
-    exitCircle: {
-      width: 20,
-      height: 20,
-      borderRadius: "50%",
-      background: "#e54d3f",
-      color: "#fff",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: 10,
-      fontWeight: 800 as const,
-      border: "2px solid #fff",
-      boxShadow: "0 2px 8px rgba(229,77,63,0.3)",
-    } as React.CSSProperties,
-    footer: {
-      padding: "14px 20px",
-      borderTop: "1px solid #eef3f0",
-      background: "#fafafa",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      fontSize: 11,
-      color: "#88a693",
-      fontFamily: "'JetBrains Mono', monospace",
-      fontWeight: 700 as const,
-    } as React.CSSProperties,
-    legendItem: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-    } as React.CSSProperties,
-    legendSwatch: (type: string) => ({
-      width: 14,
-      height: 14,
-      borderRadius: 4,
-      border: type === "occupied"
-        ? "1px solid #eef3f0"
-        : type === "available"
-          ? "1.5px dashed #d6e3db"
-          : "1.5px solid #128a42",
-      background: type === "occupied" ? "#f4f4f5" : type === "available" ? "#fff" : "rgba(18,138,66,0.05)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }) as React.CSSProperties,
-    selectedDot: {
-      width: 6,
-      height: 6,
-      borderRadius: "50%",
-      background: "#128a42",
-    } as React.CSSProperties,
-  };
-
   return (
-    <div style={s.container}>
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        .indoor-spot-btn:hover:not(:disabled) {
-          transform: scale(1.08);
-          border-color: #128a42 !important;
-          background: rgba(18,138,66,0.03) !important;
-        }
-      `}</style>
-
+    <div className="bg-white rounded-3xl border border-zinc-200 shadow-xl overflow-hidden max-w-sm mx-auto flex flex-col font-sans text-zinc-900" id="indoor-lot-guide">
       {/* Header */}
-      <div style={s.header}>
-        <div style={s.headerLeft}>
-          <div style={s.headerIcon}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#88a693" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
+      <div className="px-5 py-4 border-b border-zinc-150 flex items-center justify-between bg-zinc-50/50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500">
+            📍
           </div>
           <div>
-            <h4 style={{ fontSize: 13, fontWeight: 800, color: "#0a0d0a", textTransform: "uppercase", letterSpacing: -0.3, margin: 0 }}>Choose Space</h4>
-            <p style={{ fontSize: 9, color: "#88a693", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "'JetBrains Mono', monospace", margin: 0 }}>Inside Smart Lot</p>
+            <h4 className="text-sm font-black text-zinc-950 uppercase tracking-tight">Choose Space</h4>
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider font-mono">Inside Smart Lot</p>
           </div>
         </div>
-        <div style={s.liveBadge}>
-          <span style={s.liveDot} />
-          <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono', monospace", color: "#128a42", fontWeight: 800, textTransform: "uppercase" }}>Live Sensors</span>
+        <div className="flex items-center gap-1.5 bg-ethio-green/10 px-2.5 py-1 rounded-full border border-ethio-green/15">
+          <span className="w-1.5 h-1.5 rounded-full bg-ethio-green animate-pulse" />
+          <span className="text-[9px] font-mono text-ethio-green font-extrabold uppercase">Live Sensors</span>
         </div>
       </div>
 
-      {/* Floor Tabs */}
-      <div style={s.floorTabs}>
-        <div style={s.floorGrid}>
-          {floors.map((floor) => (
-            <button key={floor} onClick={() => setSelectedFloor(floor)} style={s.floorTab(floor === selectedFloor)}>
-              {floor}
-            </button>
-          ))}
+      {/* Floor selector tabs */}
+      <div className="px-4 py-3 bg-white border-b border-zinc-100">
+        <div className="grid grid-cols-4 gap-1.5" id="floor-tabs-container">
+          {floors.map((floor) => {
+            const isActive = floor === selectedFloor;
+            return (
+              <button
+                key={floor}
+                id={`floor-tab-${floor.replace(" ", "-")}`}
+                onClick={() => setSelectedFloor(floor)}
+                className={`py-2 rounded-xl text-[11px] font-black tracking-tight transition-all border ${
+                  isActive
+                    ? "bg-ethio-green border-ethio-green text-white shadow-md shadow-green-500/10"
+                    : "bg-white border-zinc-200 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50"
+                }`}
+              >
+                {floor === "1st Floor" ? "1st Floor" : floor === "2nd Floor" ? "2nd Floor" : floor === "3rd Floor" ? "3rd Floor" : "4th Floor"}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Map Area */}
-      <div style={s.mapArea}>
-        <div style={s.gridContainer}>
-          {/* Zone A */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "20px 0" }}>
-            <div style={s.zoneHeader}>Zone A</div>
-            <div style={s.spotsGrid}>
-              {zoneA.map((spot) => (
-                <button
-                  key={spot.code}
-                  disabled={!interactive || spot.status === "occupied"}
-                  onClick={() => handleSpotClick(spot)}
-                  className="indoor-spot-btn"
-                  style={s.spotButton(spot.status)}
-                >
-                  {spot.status === "occupied" ? (
-                    renderTopDownCar()
-                  ) : (
-                    <>
-                      <span style={s.spotCode}>{spot.code}</span>
-                      {spot.status === "selected" && (
-                        <div style={s.checkCircle}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </button>
-              ))}
+      {/* Main Interactive Map Layout */}
+      <div className="p-6 bg-zinc-50/40 relative flex-1 flex flex-col justify-center min-h-[380px]">
+        {/* Grid and lane visualizer */}
+        <div className="relative mx-auto w-full max-w-[280px] grid grid-cols-11 gap-0">
+          {/* ZONE A (Spots column 1 and column 2) - takes 4 columns */}
+          <div className="col-span-4 flex flex-col justify-between h-full py-6">
+            <div className="text-center font-display font-black text-xs text-zinc-400 mb-3 uppercase tracking-widest font-mono">
+              Zone A
+            </div>
+
+            {/* Spots grid (2 cols x 4 rows) */}
+            <div className="grid grid-cols-2 gap-x-2.5 gap-y-3.5" id="zone-a-spots">
+              {zoneA.map((spot) => {
+                const isSelected = spot.code === selectedSpotCode && selectedFloor === selectedFloor;
+                return (
+                  <button
+                    key={spot.code}
+                    id={`lot-spot-btn-${spot.code}`}
+                    disabled={!interactive || spot.status === "occupied"}
+                    onClick={() => handleSpotClick(spot)}
+                    className={`aspect-square w-10 h-11 rounded-xl border flex flex-col items-center justify-center relative transition-all ${
+                      spot.status === "selected"
+                        ? "bg-green-550/15 border-ethio-green shadow-sm ring-2 ring-ethio-green/20"
+                        : spot.status === "occupied"
+                          ? "bg-zinc-100 border-zinc-200 text-zinc-400"
+                          : "bg-white border-dashed border-zinc-300 hover:border-ethio-green hover:bg-green-50/10 hover:scale-105 cursor-pointer"
+                    }`}
+                  >
+                    {spot.status === "occupied" ? (
+                      renderTopDownCar()
+                    ) : (
+                      <>
+                        <span className="text-[8px] font-mono font-bold text-zinc-400 tracking-tighter absolute top-1">
+                          {spot.code}
+                        </span>
+                        {spot.status === "selected" && (
+                          <div className="w-5 h-5 rounded-full bg-ethio-green flex items-center justify-center text-white scale-90 mt-2">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Central Aisle */}
-          <div style={s.aisle}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 10, marginTop: -4 }}>
-              <div style={s.entryCircle}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+          {/* CENTRAL AISLE (takes 3 columns) */}
+          <div className="col-span-3 flex flex-col items-center justify-between py-2 relative h-full min-h-[300px]">
+            {/* ENTRY GATE SIGN */}
+            <div className="flex flex-col items-center relative z-10 -mt-1" id="entry-gate-sign">
+              <div className="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center font-mono text-[9px] font-black border-2 border-white shadow-md animate-pulse">
+                ↓
               </div>
-              <span style={s.entryLabel}>Entry</span>
-            </div>
-
-            <div style={s.roadLine}>
-              <span style={{ color: "#d6e3db", fontSize: 10, fontWeight: 700 }}>
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#d6e3db" strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-              </span>
-              <span style={{ color: "#d6e3db", fontSize: 10, fontWeight: 700 }}>
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#d6e3db" strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-              </span>
-              <span style={{ color: "#d6e3db", fontSize: 10, fontWeight: 700 }}>
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#d6e3db" strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+              <span className="text-[8px] font-mono font-black text-sky-600 bg-sky-50 border border-sky-100 px-1.5 py-0.5 rounded uppercase mt-1 tracking-wider scale-90">
+                Entry
               </span>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 10, marginBottom: -4 }}>
-              <span style={s.exitLabel}>Exit</span>
-              <div style={s.exitCircle}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            {/* DOTTED ROAD PATH WITH DOWN ARROWS */}
+            <div className="absolute inset-y-12 left-1/2 -translate-x-1/2 w-[2px] border-l-2 border-dashed border-zinc-300 flex flex-col items-center justify-around h-[calc(100%-6rem)] pointer-events-none select-none">
+              <span className="text-zinc-300 text-[10px] font-bold">↓</span>
+              <span className="text-zinc-300 text-[10px] font-bold">↓</span>
+              <span className="text-zinc-300 text-[10px] font-bold">↓</span>
+            </div>
+
+            {/* EXIT GATE SIGN */}
+            <div className="flex flex-col items-center relative z-10 -mb-1 mt-auto" id="exit-gate-sign">
+              <span className="text-[8px] font-mono font-black text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded uppercase mb-1 tracking-wider scale-90">
+                Exit
+              </span>
+              <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center font-mono text-[9px] font-black border-2 border-white shadow-md">
+                →
               </div>
             </div>
           </div>
 
-          {/* Zone B */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "20px 0" }}>
-            <div style={s.zoneHeader}>Zone B</div>
-            <div style={s.spotsGrid}>
-              {zoneB.map((spot) => (
-                <button
-                  key={spot.code}
-                  disabled={!interactive || spot.status === "occupied"}
-                  onClick={() => handleSpotClick(spot)}
-                  className="indoor-spot-btn"
-                  style={s.spotButton(spot.status)}
-                >
-                  {spot.status === "occupied" ? (
-                    renderTopDownCar()
-                  ) : (
-                    <>
-                      <span style={s.spotCode}>{spot.code}</span>
-                      {spot.status === "selected" && (
-                        <div style={s.checkCircle}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </button>
-              ))}
+          {/* ZONE B (Spots column 1 and column 2) - takes 4 columns */}
+          <div className="col-span-4 flex flex-col justify-between h-full py-6">
+            <div className="text-center font-display font-black text-xs text-zinc-400 mb-3 uppercase tracking-widest font-mono">
+              Zone B
+            </div>
+
+            {/* Spots grid (2 cols x 4 rows) */}
+            <div className="grid grid-cols-2 gap-x-2.5 gap-y-3.5" id="zone-b-spots">
+              {zoneB.map((spot) => {
+                const isSelected = spot.code === selectedSpotCode && selectedFloor === selectedFloor;
+                return (
+                  <button
+                    key={spot.code}
+                    id={`lot-spot-btn-${spot.code}`}
+                    disabled={!interactive || spot.status === "occupied"}
+                    onClick={() => handleSpotClick(spot)}
+                    className={`aspect-square w-10 h-11 rounded-xl border flex flex-col items-center justify-center relative transition-all ${
+                      spot.status === "selected"
+                        ? "bg-green-550/15 border-ethio-green shadow-sm ring-2 ring-ethio-green/20"
+                        : spot.status === "occupied"
+                          ? "bg-zinc-100 border-zinc-200 text-zinc-400"
+                          : "bg-white border-dashed border-zinc-300 hover:border-ethio-green hover:bg-green-50/10 hover:scale-105 cursor-pointer"
+                    }`}
+                  >
+                    {spot.status === "occupied" ? (
+                      renderTopDownCar()
+                    ) : (
+                      <>
+                        <span className="text-[8px] font-mono font-bold text-zinc-400 tracking-tighter absolute top-1">
+                          {spot.code}
+                        </span>
+                        {spot.status === "selected" && (
+                          <div className="w-5 h-5 rounded-full bg-ethio-green flex items-center justify-center text-white scale-90 mt-2">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Legend */}
-      <div style={s.footer}>
-        <div style={s.legendItem}>
-          <div style={s.legendSwatch("occupied")}>
-            <svg width="8" height="8" viewBox="0 0 24 24" fill="#88a693"><rect x="5" y="1.5" width="14" height="20" rx="3.5" /></svg>
+      {/* Legend / Info Footer */}
+      <div className="px-5 py-4 border-t border-zinc-150 bg-zinc-50/50 flex items-center justify-between text-[11px] text-zinc-500 font-mono font-bold">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded bg-zinc-100 border border-zinc-300 flex items-center justify-center text-[7px] text-zinc-400">
+            🚗
           </div>
           <span>Occupied</span>
         </div>
-        <div style={s.legendItem}>
-          <div style={s.legendSwatch("available")} />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded border border-dashed border-zinc-300 bg-white" />
           <span>Available</span>
         </div>
-        <div style={s.legendItem}>
-          <div style={s.legendSwatch("selected")}>
-            <div style={s.selectedDot} />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded border border-ethio-green bg-green-50/50 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 rounded-full bg-ethio-green" />
           </div>
-          <span style={{ color: "#128a42" }}>Your Choice</span>
+          <span className="text-ethio-green">Your Choice</span>
         </div>
       </div>
     </div>

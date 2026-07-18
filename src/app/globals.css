@@ -1,5 +1,39 @@
 @import "tailwindcss";
 @import "maplibre-gl/dist/maplibre-gl.css";
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", var(--font-sans);
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Custom Basalt and Charcoal palette infused with Ethiopian soil/volcanic notes */
+  --color-zinc-950: #0a0d0a;
+  --color-zinc-900: #101411;
+  --color-zinc-850: #161c18;
+  --color-zinc-800: #1f2722;
+  --color-zinc-700: #2d3b32;
+  --color-zinc-600: #3c4f43;
+  --color-zinc-500: #88a693;
+  --color-zinc-400: #b0c7ba;
+  --color-zinc-300: #d6e3db;
+  --color-zinc-200: #eef3f0;
+  --color-zinc-150: #f2f5f3;
+
+  /* Ethiopian Pride Brand Tri-Colors */
+  --color-ethio-green: #128a42;
+  --color-ethio-yellow: #facc15;
+  --color-ethio-red: #d92323;
+
+  /* Retain and redirect emerald to represent our Ethiopian Royal Green */
+  --color-emerald-500: #128a42;
+  --color-emerald-400: #10b981;
+  --color-emerald-600: #047857;
+  --color-emerald-300: #6ee7b7;
+
+  /* soft green shades used by the indoor guide */
+  --color-green-550: #15a850;
+}
 
 :root {
   --ink: #131614;
