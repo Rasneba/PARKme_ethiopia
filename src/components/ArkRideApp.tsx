@@ -298,6 +298,7 @@ function CityMap({
   onRouteData,
   gpsLocked,
   onGpsUnlock,
+  controlsHidden,
 }: {
   spots: ApiSpot[];
   onSelectSpot: (s: ApiSpot) => void;
