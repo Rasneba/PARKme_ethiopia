@@ -21,7 +21,23 @@ export type ApiSpot = {
   hostName: string;
   lat: number;
   lng: number;
+  corporate?: boolean;
+  layout?: any;
   distanceKm?: number;
+};
+
+export type SpotLayout = {
+  floors: {
+    id: string;
+    name: string;
+    spots: {
+      id: string;
+      label: string;
+      x: number;
+      y: number;
+      state: "available" | "occupied" | "maintenance" | "reserved";
+    }[];
+  }[];
 };
 
 const categories = [

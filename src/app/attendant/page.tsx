@@ -387,9 +387,9 @@ export default function AttendantPage() {
                     <button className="att-btn att-btn-ghost" style={{ flex: 1, padding: 14 }} onClick={() => { setGuideSpot(undefined); setGuidedBooking(null); setShowGuidance(false); setSection("spots"); }}>
                       Back to Spots
                     </button>
-                    <button className="att-btn att-btn-primary" style={{ flex: 1, padding: 14 }}>
-                      Mark as Parked
-                    </button>
+                    <a className="att-btn att-btn-primary" style={{ flex: 1, padding: 14, textAlign: "center", textDecoration: "none" }} href="/guide">
+                      Open Full Guide
+                    </a>
                   </div>
                 </div>
               ) : (

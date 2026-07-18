@@ -215,8 +215,8 @@ input, select, textarea { min-height: 44px; }
 .map-toolbar span { color: #374137; }
 .map-toolbar span svg { color: var(--green); }.map-toolbar button, .map-controls button { display: grid; place-items: center; background: rgba(255,255,252,.92); color: #465148; border-radius: 8px; box-shadow: 0 4px 12px rgba(31,63,32,.12); }
 .map-toolbar-btns { display: flex; gap: 8px; }
-.map-float-controls { position: absolute; z-index: 3; bottom: 17px; left: 17px; display: flex; gap: 8px; }
-.map-float-btn { display: flex; gap: 8px; align-items: center; padding: 14px 18px; background: rgba(255,255,252,.96); border: 1.5px solid var(--line); border-radius: 14px; color: #374137; font-size: 14px; font-weight: 800; cursor: pointer; transition: all .2s ease; white-space: nowrap; box-shadow: 0 4px 14px rgba(31,63,32,.1); backdrop-filter: blur(8px); min-height: 48px; }
+.map-float-controls { position: absolute; z-index: 3; bottom: calc(17px + var(--sab)); left: calc(17px + var(--sal)); display: flex; gap: 8px; }
+.map-float-btn { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; background: rgba(255,255,252,.96); border: 1.5px solid var(--line); border-radius: 14px; color: #374137; font-size: 14px; font-weight: 800; cursor: pointer; transition: all .2s ease; white-space: nowrap; box-shadow: 0 4px 14px rgba(31,63,32,.1); backdrop-filter: blur(8px); min-height: 48px; }
 .map-float-btn:hover { background: #fff; border-color: var(--green); color: var(--green-dark); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(31,63,32,.14); }
 .map-float-btn:active { transform: scale(.97); }
 .map-float-btn.near { border-color: #b8d8bd; background: linear-gradient(135deg, rgba(220,248,228,.96), rgba(255,255,252,.96)); }
@@ -319,8 +319,8 @@ input, select, textarea { min-height: 44px; }
 .spot-list-card-meta span { display: flex; align-items: center; gap: 3px; }
 
 /* --- Floating controls (GPS + Near Me + Satellite) --- */
-.map-float-controls { display: flex; position: absolute; z-index: 14; bottom: calc(22px + var(--sab)); left: 14px; flex-direction: column; gap: 12px; }
-.map-float-btn { display: flex; gap: 8px; align-items: center; padding: 14px 20px; min-height: 50px; background: #fff; border: none; border-radius: 28px; color: #121212; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.16); }
+.map-float-controls { display: flex; position: absolute; z-index: 14; bottom: calc(22px + var(--sab)); left: calc(14px + var(--sal)); flex-direction: column; gap: 12px; }
+.map-float-btn { display: grid; place-items: center; width: 50px; height: 50px; padding: 0; background: #fff; border: none; border-radius: 50%; color: #121212; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.16); }
 .map-float-btn:active { transform: scale(.97); }
 .map-float-btn.near { background: var(--green); color: #fff; }
 .map-float-btn.sat { background: #fff; color: #121212; }
@@ -366,7 +366,7 @@ input, select, textarea { min-height: 44px; }
 
 /* --- Small phones --- */
 @media (max-width: 560px) {
-  .map-float-controls { bottom: 16px; left: 12px; }
+  .map-float-controls { bottom: calc(16px + var(--sab)); left: calc(12px + var(--sal)); }
   .mobile-action-bar { max-height: 56vh; }
   .mobile-spot-info b { font-size: 17px; }
   .mobile-btn { height: 50px; font-size: 15px; }

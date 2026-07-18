@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
   const durationHours = Number(body?.durationHours);
   const paymentMethod = body?.paymentMethod;
   const couponCode = typeof body?.couponCode === "string" ? body.couponCode.trim().toUpperCase() : "";
+  const requestedSpaceLabel = typeof body?.spaceLabel === "string" ? body.spaceLabel : undefined;
 
   if (!Number.isInteger(parkingSpaceId) || parkingSpaceId < 1) return error("Choose a valid parking space.");
   if (!Number.isInteger(durationHours) || durationHours < 1 || durationHours > 12) return error("Parking duration must be between 1 and 12 hours.");
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       const endAt = new Date(startAt.getTime() + durationHours * 60 * 60 * 1000);
       const reference = `PR-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
       const gateCode = String(Math.floor(1000 + Math.random() * 9000));
-      const spaceLabel = `B · ${Math.floor(10 + Math.random() * 30)}`;
+      const spaceLabel = requestedSpaceLabel || `B · ${Math.floor(10 + Math.random() * 30)}`;
 
       const [booking] = await tx
         .insert(bookings)

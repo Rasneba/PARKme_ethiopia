@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q")?.trim();
   const onlyAvailable = request.nextUrl.searchParams.get("available") !== "false";
   const category = request.nextUrl.searchParams.get("category")?.trim();
+  const type = request.nextUrl.searchParams.get("type")?.trim();
 
   const conditions = [eq(parkingSpaces.isActive, true)];
 
@@ -43,6 +44,12 @@ export async function GET(request: NextRequest) {
 
   if (category && category !== "all") {
     conditions.push(eq(parkingSpaces.category, category));
+  }
+
+  if (type === "corporate") {
+    conditions.push(eq(parkingSpaces.corporate, true));
+  } else if (type === "normal") {
+    conditions.push(eq(parkingSpaces.corporate, false));
   }
 
   const rows = await db
@@ -70,6 +77,8 @@ export async function GET(request: NextRequest) {
       hostName: spot.hostName,
       lat: spot.lat,
       lng: spot.lng,
+      corporate: spot.corporate,
+      layout: spot.layout ?? null,
     }));
 
   return NextResponse.json({ spots, count: spots.length });

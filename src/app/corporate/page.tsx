@@ -4,8 +4,10 @@ import { useState, useMemo, useEffect } from "react";
 import { Icon } from "@/components/Icon";
 import ParkingLotGrid, { KAZANCHIS_LOT, SpotStatus, ParkingSpot } from "@/components/ParkingLotGrid";
 import IndoorLotGuide from "@/components/IndoorLotGuide";
+import LayoutEditor from "@/components/LayoutEditor";
+import type { SpotLayout } from "@/components/SearchPanel";
 
-type Section = "dashboard" | "locations" | "analytics" | "revenue" | "spots" | "guide" | "attendance";
+type Section = "dashboard" | "locations" | "analytics" | "revenue" | "spots" | "guide" | "attendance" | "design";
 
 interface ParkingLocation {
   id: string;
@@ -48,6 +50,7 @@ const NAV_ITEMS: { key: Section; icon: "grid" | "map" | "clock" | "wallet" | "ca
   { key: "analytics", icon: "clock", label: "Analytics" },
   { key: "revenue", icon: "wallet", label: "Revenue" },
   { key: "attendance", icon: "check", label: "Attendance" },
+  { key: "design", icon: "grid", label: "Design Lot" },
   { key: "guide", icon: "nav", label: "Driver Guide" },
 ];
 
@@ -92,6 +95,8 @@ export default function CorporatePage() {
   const [showIndoor, setShowIndoor] = useState(false);
   const [newLocation, setNewLocation] = useState({ name: "", address: "", lat: "", lng: "" });
   const [apiSpots, setApiSpots] = useState<{ id: number; name: string; address: string; lat: number; lng: number; price: number; availableSpots: number; totalSpots: number }[]>([]);
+  const [corporateSpaces, setCorporateSpaces] = useState<{ id: number; name: string; address: string; layout: SpotLayout | null }[]>([]);
+  const [designSpaceId, setDesignSpaceId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/spots")
@@ -99,6 +104,18 @@ export default function CorporatePage() {
       .then((d) => setApiSpots(d.spots ?? []))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (section !== "design") return;
+    fetch("/api/spots?type=corporate")
+      .then((r) => r.ok ? r.json() : { spots: [] })
+      .then((d) => {
+        const spaces = (d.spots ?? []).map((s: any) => ({ id: s.id, name: s.name, address: s.address, layout: s.layout ?? null }));
+        setCorporateSpaces(spaces);
+        if (spaces.length > 0 && designSpaceId == null) setDesignSpaceId(spaces[0].id);
+      })
+      .catch(() => {});
+  }, [section, designSpaceId]);
 
   const lot = KAZANCHIS_LOT;
 
@@ -454,6 +471,35 @@ export default function CorporatePage() {
                   );
                 })}
               </div>
+            </>
+          )}
+
+          {/* ─── Design Lot (visual layout editor) ─── */}
+          {section === "design" && (
+            <>
+              <div className="corp-section-title">Design Your Lot</div>
+              <p style={{ fontSize: 13, color: COLORS.muted, marginBottom: 16 }}>Arrange spots, add floors, and set each spot's state. Drivers see your live layout in their spot guide after booking.</p>
+              <div className="corp-card" style={{ marginBottom: 12 }}>
+                <h3>Select a location</h3>
+                {corporateSpaces.length === 0 && <div style={{ padding: 12, color: COLORS.muted, fontSize: 13 }}>No corporate listings yet. Add one from Locations to design its layout.</div>}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                  {corporateSpaces.map((s) => (
+                    <button key={s.id} onClick={() => setDesignSpaceId(s.id)} style={{ padding: "10px 16px", borderRadius: 10, fontSize: 13, fontWeight: 700, border: designSpaceId === s.id ? "2px solid #0fa24b" : "1.5px solid #e0e0e0", background: designSpaceId === s.id ? "#edfcf3" : "#fff", cursor: "pointer" }}>
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {corporateSpaces.filter((s) => s.id === designSpaceId).map((s) => (
+                <div className="corp-card" key={s.id}>
+                  <h3>{s.name} — layout editor</h3>
+                  <LayoutEditor
+                    spaceId={s.id}
+                    initialLayout={s.layout}
+                    onSaved={(layout) => setCorporateSpaces((prev) => prev.map((p) => (p.id === s.id ? { ...p, layout } : p)))}
+                  />
+                </div>
+              ))}
             </>
           )}
 

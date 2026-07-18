@@ -516,12 +516,17 @@ export default function MapLibreMap(
     }
   }, [userLocation]);
 
-  // ---- GPS LOCK: re-center on user location updates when locked ----
+  // ---- GPS LOCK: center ONCE when lock is enabled (explicit tap), then follow quietly ----
+  const wasLockedRef = useRef(false);
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !gpsLocked || !userLocation) return;
-    map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: Math.max(map.getZoom(), 15), duration: 800 });
+    if (!wasLockedRef.current) {
+      wasLockedRef.current = true;
+      map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: Math.max(map.getZoom(), 15), duration: 800 });
+    }
   }, [userLocation, gpsLocked]); // eslint-disable-line
+  useEffect(() => { if (!gpsLocked) wasLockedRef.current = false; }, [gpsLocked]); // eslint-disable-line
 
   // ---- GPS LOCK: unlock on user zoom/pan ----
   useEffect(() => {

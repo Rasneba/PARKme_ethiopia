@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { MapLibreHandle } from "./MapLibreMap";
 import { Icon, type IconName } from "./Icon";
-import { SearchPanel, type ApiSpot } from "./SearchPanel";
+import { SearchPanel, type ApiSpot, type SpotLayout } from "./SearchPanel";
 import { formatDistance, formatDuration, greetByHour } from "@/lib/format";
 import IndoorLotGuide from "./IndoorLotGuide";
 import MapErrorBoundary from "./MapErrorBoundary";
@@ -323,18 +323,18 @@ function CityMap({
         <span className="map-toolbar-count"><Icon name="map" size={15} /> {spots.length} spot{spots.length !== 1 ? "s" : ""}</span>
       </div>
       <div className={`map-float-controls ${controlsHidden ? "hidden" : ""}`}>
-        <button className="map-float-btn gps" title="My location" onClick={onGps}>
-          <Icon name="locate" size={16} /> GPS
+        <button className="map-float-btn gps" title="My location" aria-label="My location" onClick={onGps}>
+          <Icon name="locate" size={18} />
         </button>
-        <button className="map-float-btn near" title="Find nearest spot" onClick={onNearMe}>
-          <Icon name="pin" size={16} /> Near me
+        <button className="map-float-btn near" title="Find nearest spot" aria-label="Find nearest spot" onClick={onNearMe}>
+          <Icon name="pin" size={18} />
         </button>
-        <button className={`map-float-btn sat ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
-          <Icon name={satellite ? "map" : "home"} size={16} /> {satellite ? "Map" : "Satellite"}
+        <button className={`map-float-btn sat ${satellite ? "active" : ""}`} title="Toggle satellite view" aria-label="Toggle satellite view" onClick={onToggleSatellite}>
+          <Icon name={satellite ? "map" : "home"} size={18} />
         </button>
         {gpsLocked && (
-          <button className="map-float-btn gps" title="GPS locked — click to unlock" onClick={onGpsUnlock} style={{ background: "#0fa24b", color: "#fff", boxShadow: "0 2px 12px rgba(15,162,75,.4)" }}>
-            <Icon name="locate" size={16} /> Locked
+          <button className="map-float-btn gps" title="GPS locked — click to unlock" aria-label="GPS locked — unlock" onClick={onGpsUnlock} style={{ background: "#0fa24b", color: "#fff", boxShadow: "0 2px 12px rgba(15,162,75,.4)" }}>
+            <Icon name="locate" size={18} />
           </button>
         )}
       </div>
@@ -364,21 +364,18 @@ function CityMap({
             <div className="map-sheet-info">
               <b>{selected.name}</b>
               <p>{selected.address}</p>
+              <span>{selected.rating} &#9733; &middot; {selected.distanceKm != null ? `${formatDistance(selected.distanceKm)} away` : `${selected.availableSpots} spots`}</span>
             </div>
             <div className="map-sheet-price">
               <b>{selected.price} <small>ETB/hr</small></b>
-              <span>{selected.distanceKm != null ? `${formatDistance(selected.distanceKm)} away` : `${selected.availableSpots} spots`}</span>
+              <span>{selected.corporate ? "Corporate" : "Standard"}</span>
             </div>
           </div>
           <div className="map-sheet-actions">
-            <button className="map-sheet-btn directions" onClick={() => {
-              (window as any).__parkmeRoute?.(selected.lat, selected.lng);
-            }}>
-              <Icon name="nav" size={15} /> Directions
-            </button>
             <button className="map-sheet-btn reserve" onClick={() => onBook(selected)}>
               <Icon name="car" size={15} /> Reserve now
             </button>
+            {selected.corporate && <button className="map-sheet-btn guide" onClick={() => onBook(selected)}><Icon name="map" size={15} /> Guide</button>}
           </div>
         </div>
       )}
@@ -486,6 +483,15 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
   const [indoorFloor, setIndoorFloor] = useState("1st Floor");
   const [indoorSpot, setIndoorSpot] = useState("");
   const [showIndoor, setShowIndoor] = useState(false);
+  const layout = (spot.layout as SpotLayout | undefined) ?? undefined;
+  const corporateFloors = layout?.floors ?? [];
+  const [corpFloorId, setCorpFloorId] = useState(corporateFloors[0]?.id ?? "");
+  const corpFloor = corporateFloors.find((f) => f.id === corpFloorId) ?? corporateFloors[0];
+  const [corpSpotId, setCorpSpotId] = useState(
+    corpFloor?.spots.find((s) => s.state === "available")?.id ?? corpFloor?.spots[0]?.id ?? "",
+  );
+  const selectedCorpSpot = corpFloor?.spots.find((s) => s.id === corpSpotId);
+  const chosenSpaceLabel = spot.corporate && selectedCorpSpot ? `${corpFloor?.name ?? ""} · ${selectedCorpSpot.label}` : "";
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [complete, setComplete] = useState(false);
@@ -502,7 +508,7 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
     if (!user) { setError("Please log in to book."); return; }
     setSubmitting(true); setError("");
     try {
-      const r = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ parkingSpaceId: spot.id, durationHours: duration, paymentMethod: payment, couponCode: couponApplied ? coupon : undefined }) });
+      const r = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ parkingSpaceId: spot.id, durationHours: duration, paymentMethod: payment, couponCode: couponApplied ? coupon : undefined, spaceLabel: chosenSpaceLabel || undefined }) });
       const d = (await r.json()) as { booking?: { id: string; gateCode: string }; error?: string };
       if (!r.ok || !d.booking) throw new Error(d.error ?? "Booking failed.");
       setBookingId(d.booking.id);
@@ -555,18 +561,48 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
           <section className="booking-section">
             <div className="section-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span><Icon name="map" size={18} /> Choose your space</span>
-              <button onClick={() => setShowIndoor(!showIndoor)} style={{ fontSize: 11, fontWeight: 700, color: "#0fa24b", background: "none", border: "none", cursor: "pointer" }}>
-                {showIndoor ? "Hide" : "Show"} Indoor Map
-              </button>
+              {!spot.corporate && (
+                <button onClick={() => setShowIndoor(!showIndoor)} style={{ fontSize: 11, fontWeight: 700, color: "#0fa24b", background: "none", border: "none", cursor: "pointer" }}>
+                  {showIndoor ? "Hide" : "Show"} Indoor Map
+                </button>
+              )}
             </div>
-            {showIndoor && (
-              <IndoorLotGuide
-                selectedFloor={indoorFloor}
-                setSelectedFloor={setIndoorFloor}
-                selectedSpotCode={indoorSpot}
-                setSelectedSpotCode={setIndoorSpot}
-                interactive={true}
-              />
+            {spot.corporate ? (
+              <div>
+                {corporateFloors.length > 1 && (
+                  <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                    {corporateFloors.map((f) => (
+                      <button key={f.id} onClick={() => { setCorpFloorId(f.id); setCorpSpotId(f.spots.find((s) => s.state === "available")?.id ?? f.spots[0]?.id ?? ""); }} style={{ padding: "8px 14px", borderRadius: 10, border: corpFloorId === f.id ? "2px solid #0fa24b" : "1.5px solid #e0e0e0", background: corpFloorId === f.id ? "#edfcf3" : "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{f.name}</button>
+                    ))}
+                  </div>
+                )}
+                {corpFloor && (
+                  <div style={{ position: "relative", width: "100%", height: 220, background: "#f3f5f3", borderRadius: 12, border: "1px solid #e4e7e4", overflow: "hidden" }}>
+                    {corpFloor.spots.map((s) => {
+                      const stateColor = s.state === "available" ? "#0fa24b" : s.state === "occupied" ? "#c0392b" : s.state === "maintenance" ? "#b8860b" : "#4098df";
+                      const selectable = s.state === "available" || s.state === "reserved";
+                      return (
+                        <button key={s.id} onClick={() => selectable && setCorpSpotId(s.id)} disabled={!selectable} title={`${s.label} — ${s.state}`} style={{ position: "absolute", left: s.x, top: s.y, transform: "translate(-50%,-50%)", width: 38, height: 38, borderRadius: 8, border: corpSpotId === s.id ? "3px solid #111a13" : "1.5px solid rgba(0,0,0,.1)", background: stateColor, color: "#fff", fontSize: 11, fontWeight: 800, cursor: selectable ? "pointer" : "not-allowed", opacity: selectable ? 1 : 0.45 }}>{s.label}</button>
+                      );
+                    })}
+                  </div>
+                )}
+                {selectedCorpSpot && (
+                  <p style={{ fontSize: 12, color: "#374137", marginTop: 10 }}>
+                    Selected: <b>{corpFloor?.name} · {selectedCorpSpot.label}</b> <span style={{ color: selectedCorpSpot.state === "available" ? "#0fa24b" : "#c0392b", fontWeight: 700, textTransform: "capitalize" }}>{selectedCorpSpot.state}</span>
+                  </p>
+                )}
+              </div>
+            ) : (
+              showIndoor && (
+                <IndoorLotGuide
+                  selectedFloor={indoorFloor}
+                  setSelectedFloor={setIndoorFloor}
+                  selectedSpotCode={indoorSpot}
+                  setSelectedSpotCode={setIndoorSpot}
+                  interactive={true}
+                />
+              )
             )}
           </section>
           <section className="coupon-row"><Icon name="sparkle" size={17} /><input value={coupon} onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); }} placeholder="Promo code (try PARKADDIS20)" /><button onClick={() => coupon.trim().toUpperCase() === "PARKADDIS20" && setCouponApplied(true)}>{couponApplied ? "Applied!" : "Apply"}</button></section>
@@ -654,7 +690,7 @@ export default function ParkmeApp() {
   const [spotsLoading, setSpotsLoading] = useState(true);
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
-  const [satellite, setSatellite] = useState(false);
+  const [satellite, setSatellite] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [routeActive, setRouteActive] = useState(false);
@@ -833,7 +869,6 @@ export default function ParkmeApp() {
         );
         if (nearest.length > 0) {
           setSelectedSpotId(nearest[0].id);
-          handleDirections(nearest[0]);
         }
       },
       (err) => {
@@ -1168,18 +1203,23 @@ export default function ParkmeApp() {
                 const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);
                 if (!spot) return null;
                 return (
-                  <div className="mobile-action-bar">
-                    <div className="sheet-handle" />
-                    <div className="mobile-spot-bar">
-                      <div className="mobile-spot-info">
+                  <div className="map-spot-sheet">
+                    <div className="map-sheet-kicker">
+                      <span>{spot.corporate ? "CORPORATE SPOT" : "SELECTED SPOT"}</span>
+                      <button className="map-sheet-close" onClick={() => { (window as any).__parkmeClearRoute?.(); setSelectedSpotId(null); setRouteActive(false); setRouteData(null); }} title="Close">
+                        <Icon name="close" size={14} />
+                      </button>
+                    </div>
+                    <div className="map-sheet-row">
+                      <div className="map-sheet-info">
                         <b>{spot.name}</b>
-                        <span>{spot.price} ETB/hr &middot; {spot.distanceKm != null ? formatDistance(spot.distanceKm) : `${spot.availableSpots} spots`}</span>
+                        <p>{spot.address}</p>
+                        <span>{spot.rating} &#9733; &middot; {spot.price} ETB/hr &middot; {spot.distanceKm != null ? formatDistance(spot.distanceKm) : `${spot.availableSpots} spots`}</span>
                       </div>
-                      <div className="mobile-spot-actions">
-                        <button className="mobile-btn directions" onClick={() => handleDirections(spot)}><Icon name="nav" size={16} /> Directions</button>
-                        <button className="mobile-btn reserve" onClick={() => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(spot); }}><Icon name="car" size={16} /> Reserve</button>
-                      </div>
-                      <button className="mobile-back-btn" onClick={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }}><Icon name="close" size={16} /> Back to map</button>
+                    </div>
+                    <div className="map-sheet-actions">
+                      <button className="map-sheet-btn reserve" onClick={() => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(spot); }}><Icon name="car" size={15} /> Reserve now</button>
+                      {spot.corporate && <button className="map-sheet-btn guide" onClick={() => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(spot); }}><Icon name="map" size={15} /> Guide</button>}
                     </div>
                   </div>
                 );
