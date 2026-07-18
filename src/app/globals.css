@@ -1188,3 +1188,200 @@ input, select, textarea { min-height: 44px; }
   .location-banner { margin: 8px 8px; flex-wrap: wrap; }
   .location-error-toast { top: calc(64px + var(--sat)); font-size: 12px; padding: 8px 14px; }
 }
+
+/* ===== Spot guidance (turn-by-turn + indoor) ===== */
+.guide-to-spot-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0fa24b, #086a32);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(15,162,75,.22);
+}
+.guide-to-spot-btn:hover { filter: brightness(1.05); }
+.spot-guide-wrap { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #cfd3cb; }
+.spot-guide-indoor-toggle {
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #edfcf3;
+  color: #0fa24b;
+  border: 1px solid #bcdcbf;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.spot-guide-steps { list-style: none; margin: 10px 0 0; padding: 0; }
+.spot-guide-step { position: relative; display: flex; gap: 12px; padding: 0 0 18px; }
+.spot-guide-step:last-child { padding-bottom: 0; }
+.spot-guide-step-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #edfcf3;
+  color: #0fa24b;
+  border: 1px solid #bcdcbf;
+}
+.spot-guide-step div { padding-top: 3px; }
+.spot-guide-step b { display: block; font-size: 13px; color: #131614; }
+.spot-guide-step small { font-size: 11.5px; color: #6b7280; line-height: 1.45; }
+.spot-guide-connector {
+  position: absolute;
+  left: 14px;
+  top: 34px;
+  bottom: 2px;
+  width: 2px;
+  background: repeating-linear-gradient(#bcdcbf, #bcdcbf 4px, transparent 4px, transparent 8px);
+}
+.spot-indoor-guide { margin-top: 14px; }
+.spot-indoor-guide-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.spot-indoor-guide-head b { font-size: 14px; color: #131614; }
+.spot-indoor-guide-head small { margin-left: auto; font-size: 11px; color: #8a8f8c; }
+
+.arrival-guide-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  background: rgba(20,30,22,.45);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn .25s ease;
+}
+.arrival-guide-card {
+  width: 100%;
+  max-height: 92%;
+  overflow-y: auto;
+  padding: 18px 18px calc(22px + var(--sat));
+  background: #fff;
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -10px 40px rgba(0,0,0,.25);
+  animation: sheetSlideUp .3s cubic-bezier(.4,0,.2,1);
+}
+.arrival-guide-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.arrival-guide-header h2 { margin: 6px 0 2px; font-size: 19px; letter-spacing: -.03em; }
+.arrival-guide-header p { margin: 0; font-size: 12px; color: #6b7280; }
+.arrival-close { background: #f1f3f1; border: none; border-radius: 50%; width: 32px; height: 32px; display: grid; place-items: center; cursor: pointer; color: #555; flex-shrink: 0; }
+.arrival-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: #edfcf3;
+  color: #0fa24b;
+  border: 1px solid #bcdcbf;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.arrival-guide-card .spot-indoor-guide { margin-top: 18px; }
+
+/* Booking/History row actions */
+.booking-row-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.mini-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.mini-btn.nav { background: #e8f1fd; color: #1a62c0; border-color: #c5dcf6; }
+.mini-btn.guide { background: #edfcf3; color: #0fa24b; border-color: #bcdcbf; }
+.mini-btn:hover { filter: brightness(.97); }
+
+/* ===== Dedicated /guide page ===== */
+.spot-guide-page { min-height: 100vh; background: var(--canvas, #f4f6f4); }
+.spot-guide-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(10px + var(--sat, 0px)) 14px 10px;
+  background: #fff;
+  border-bottom: 1px solid #e6e9e6;
+}
+.spot-guide-topbar .mobile-menu { background: none; border: none; color: #131614; cursor: pointer; }
+.spot-guide-body { padding: 16px 16px calc(40px + var(--sat, 0px)); max-width: 560px; margin: 0 auto; }
+.spot-guide-hero { margin-bottom: 16px; }
+.spot-guide-hero h1 { margin: 10px 0 3px; font-size: 22px; letter-spacing: -.03em; }
+.spot-guide-hero p { margin: 0; font-size: 13px; color: #6b7280; }
+.spot-guide-pills { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.spot-guide-pills span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: #fff;
+  border: 1px solid #e0e3e0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #131614;
+}
+.spot-guide-nav-btn {
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #1a62c0, #0a3f8c);
+  color: #fff;
+  border: none;
+  border-radius: 13px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(26,98,192,.22);
+}
+.spot-guide-nav-btn:hover { filter: brightness(1.05); }
+.spot-guide-section { margin-bottom: 22px; }
+.spot-guide-section h3 { margin: 0 0 10px; font-size: 15px; color: #131614; }
+.spot-guide-checkin {
+  width: 100%;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #0fa24b;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(15,162,75,.22);
+}
+.spot-guide-checkin.done { background: #dcf8e4; color: #086a32; cursor: default; box-shadow: none; }
+.spot-guide-checkin:disabled { cursor: default; }
+
+@keyframes sheetSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

@@ -172,10 +172,50 @@ function CompassIndicator() {
   );
 }
 
-function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () => void }) {
+function SpotIndoorGuide({ spot, initialFloor, initialSpot }: { spot: ApiSpot; initialFloor?: string; initialSpot?: string }) {
+  const [floor, setFloor] = useState(initialFloor ?? "1st Floor");
+  const [spotCode, setSpotCode] = useState(initialSpot ?? "A-1");
+  return (
+    <div className="spot-indoor-guide">
+      <div className="spot-indoor-guide-head"><Icon name="map" size={16} /><b>Indoor lot guide</b><small>{spot.name}</small></div>
+      <IndoorLotGuide
+        selectedFloor={floor}
+        setSelectedFloor={setFloor}
+        selectedSpotCode={spotCode}
+        setSelectedSpotCode={setSpotCode}
+        interactive={false}
+      />
+    </div>
+  );
+}
+
+function SpotGuideSteps({ booking, userLocation }: { booking: Booking; userLocation?: { lat: number; lng: number } | null }) {
+  const steps = [
+    { icon: "gate" as const, title: "Enter through the main gate", text: `Show your gate code ${booking.gateCode} to the attendant or tap at the barrier.` },
+    { icon: "arrow" as const, title: "Follow the ramp to the floor", text: `${booking.spaceLabel.split("·")[0].trim() || "Ground floor"} — drive straight and keep right toward the marked zone.` },
+    { icon: "pin" as const, title: `Park at space ${booking.spaceLabel.split("·")[1]?.trim() || "—"}`, text: "Your spot is highlighted green on the indoor map below. Walkways are marked with arrows." },
+    { icon: "check" as const, title: "Confirm your spot", text: "Tap check-in once parked so we stop the timer billing accurately." },
+  ];
+  return (
+    <ol className="spot-guide-steps">
+      {steps.map((s, i) => (
+        <li className="spot-guide-step" key={i}>
+          <span className="spot-guide-step-icon"><Icon name={s.icon} size={16} /></span>
+          <div><b>{s.title}</b><small>{s.text}</small></div>
+          {i < steps.length - 1 && <span className="spot-guide-connector" />}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function BookingTimerCard({ booking, onOpen, userLocation }: { booking: Booking; onOpen: () => void; userLocation?: { lat: number; lng: number } | null }) {
   const [elapsed, setElapsed] = useState(() => Math.max(0, Math.floor((Date.now() - new Date(booking.startAt).getTime()) / 1000)));
   const [gateOpen, setGateOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [floor, setFloor] = useState("1st Floor");
+  const [spotCode, setSpotCode] = useState(booking.spaceLabel.split("·")[1]?.trim() || "A-1");
   useEffect(() => { const i = window.setInterval(() => setElapsed((v) => v + 1), 1000); return () => window.clearInterval(i); }, []);
   const h = String(Math.floor(elapsed / 3600)).padStart(2, "0");
   const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
@@ -226,6 +266,17 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
       </button>
       {gateOpen && <button className="copy-gate-btn" onClick={() => { navigator.clipboard.writeText(booking.gateCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}><Icon name="copy" size={14} /> {copied ? "Copied!" : "Copy code"}</button>}
       {active && <button className="extend-btn" onClick={() => { if (confirm("Extend this booking by 1 hour?")) fetch(`/api/bookings/${booking.id}/extend`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ addHours: 1 }) }).then(() => onOpen()); }}><Icon name="clock" size={15} /> Extend by 1 hour</button>}
+      <button className="guide-to-spot-btn" onClick={() => setGuideOpen(!guideOpen)}>
+        <Icon name="nav" size={15} /> {guideOpen ? "Hide spot guide" : "Guide me to my spot"}
+      </button>
+      {guideOpen && (
+        <div className="spot-guide-wrap">
+          <SpotGuideSteps booking={booking} userLocation={userLocation} />
+          <button className="spot-guide-indoor-toggle" onClick={() => onOpen()}>
+            <Icon name="map" size={15} /> Open full indoor map
+          </button>
+        </div>
+      )}
       <button className="pass-details" onClick={onOpen}>View parking pass <Icon name="arrow" size={16} /></button>
     </section>
   );
@@ -330,7 +381,7 @@ function CityMap({
   );
 }
 
-function BookingsView({ onBook }: { onBook: () => void }) {
+function BookingsView({ onBook, onGuide, onNavigate }: { onBook: () => void; onGuide: (b: Booking) => void; onNavigate: (b: Booking) => void }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => { fetch("/api/bookings").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { setBookings(d.bookings ?? []); setLoading(false); }).catch(() => setLoading(false)); }, []);
@@ -343,10 +394,10 @@ function BookingsView({ onBook }: { onBook: () => void }) {
     <section className="view-panel">
       <div className="view-header"><h2>My Bookings</h2><button className="add-space" onClick={onBook}><Icon name="plus" size={16} /> New booking</button></div>
       {active.length > 0 && <div className="view-section"><h3>Active Now</h3>{active.map((b) => (
-        <div className="booking-row" key={b.id}><span className="booking-status active"><Icon name="car" size={16} /></span><div><b>{b.spotName}</b><small>{b.spaceLabel} Â· {b.durationHours}h Â· {b.amountEtb} ETB</small></div><StatusDot text={b.status} /></div>
+        <div className="booking-row" key={b.id}><span className="booking-status active"><Icon name="car" size={16} /></span><div><b>{b.spotName}</b><small>{b.spaceLabel} Â· {b.durationHours}h Â· {b.amountEtb} ETB</small></div><StatusDot text={b.status} /><div className="booking-row-actions"><button className="mini-btn nav" onClick={() => onNavigate(b)}><Icon name="nav" size={13} /> Navigate</button><button className="mini-btn guide" onClick={() => onGuide(b)}><Icon name="map" size={13} /> Guide</button></div></div>
       ))}</div>}
       {upcoming.length > 0 && <div className="view-section"><h3>Upcoming</h3>{upcoming.map((b) => (
-        <div className="booking-row" key={b.id}><span className="booking-status upcoming"><Icon name="calendar" size={16} /></span><div><b>{b.spotName}</b><small>{formatDate(new Date(b.startAt))} Â· {formatTime(new Date(b.startAt))} Â· {b.amountEtb} ETB</small></div><span className="booking-ref">{b.reference}</span></div>
+        <div className="booking-row" key={b.id}><span className="booking-status upcoming"><Icon name="calendar" size={16} /></span><div><b>{b.spotName}</b><small>{formatDate(new Date(b.startAt))} Â· {formatTime(new Date(b.startAt))} Â· {b.amountEtb} ETB</small></div><span className="booking-ref">{b.reference}</span><div className="booking-row-actions"><button className="mini-btn nav" onClick={() => onNavigate(b)}><Icon name="nav" size={13} /> Navigate</button><button className="mini-btn guide" onClick={() => onGuide(b)}><Icon name="map" size={13} /> Guide</button></div></div>
       ))}</div>}
       {bookings.length === 0 && <div className="empty-view"><Icon name="receipt" size={40} /><h3>No bookings yet</h3><p>Find and reserve a parking spot to get started.</p><button className="confirm-booking" onClick={onBook}>Find a spot <Icon name="arrow" size={16} /></button></div>}
     </section>
@@ -398,7 +449,7 @@ function WalletView() {
   );
 }
 
-function HistoryView() {
+function HistoryView({ onGuide, onNavigate }: { onGuide: (b: Booking) => void; onNavigate: (b: Booking) => void }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => { fetch("/api/bookings").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { setBookings(d.bookings ?? []); setLoading(false); }).catch(() => setLoading(false)); }, []);
@@ -414,6 +465,7 @@ function HistoryView() {
           <span className="booking-date"><b>{new Date(b.createdAt).getDate()}</b><small>{new Date(b.createdAt).toLocaleDateString("en-US", { month: "short" })}</small></span>
           <div><b>{b.spotName}</b><small>{b.durationHours}h Â· {b.amountEtb} ETB Â· {b.reference}</small></div>
           <span className={`history-status ${b.status}`}>{b.status}</span>
+          <div className="booking-row-actions"><button className="mini-btn nav" onClick={() => onNavigate(b)}><Icon name="nav" size={13} /> Navigate</button><button className="mini-btn guide" onClick={() => onGuide(b)}><Icon name="map" size={13} /> Guide</button></div>
         </div>
       )) : <div className="empty-view"><Icon name="receipt" size={40} /><h3>No history yet</h3><p>Your past parking sessions will appear here.</p></div>}
     </section>
@@ -602,6 +654,8 @@ export default function ParkmeApp() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [routeActive, setRouteActive] = useState(false);
   const [routeData, setRouteData] = useState<{ distance: number; time: number; instructions: any[] } | null>(null);
+  const [arrivedSpotId, setArrivedSpotId] = useState<number | null>(null);
+  const [showArrivalGuide, setShowArrivalGuide] = useState(false);
   const [favorites, setFavorites] = useState<number[]>(() => {
     try { return JSON.parse(localStorage.getItem("parkme_favs") || "[]"); } catch { return []; }
   });
@@ -833,18 +887,55 @@ export default function ParkmeApp() {
     setSelectedSpotId(spot.id);
     setRouteActive(false);
     setRouteData(null);
+    setArrivedSpotId(null);
   }
+
+  function handleGuideBooking(b: Booking) {
+    const spot = spots.find((s) => s.id === b.spotId);
+    router.push(`/guide?booking=${b.id}${spot ? `&spot=${spot.id}` : ""}`);
+  }
+
+  function handleNavigateBooking(b: Booking) {
+    const spot = spots.find((s) => s.id === b.spotId);
+    setView("spots");
+    setSpotView("map");
+    if (spot) {
+      handleDirections(spot);
+    } else {
+      fetch(`/api/spots?q=`).then((r) => r.ok ? r.json() : { spots: [] }).then((d) => {
+        const found = (d.spots ?? []).find((s: ApiSpot) => s.id === b.spotId);
+        if (found) handleDirections(found);
+      }).catch(() => {});
+    }
+  }
+
+  // Arrival detection: when actively routing and within ~40m of the destination, mark arrived
+  useEffect(() => {
+    if (!routeActive || arrivedSpotId === null || !userLocation) return;
+    const dest = spots.find((s) => s.id === arrivedSpotId);
+    if (!dest) return;
+    const d = haversineKm(userLocation.lat, userLocation.lng, dest.lat, dest.lng);
+    if (d < 0.04) {
+      setRouteActive(false);
+      setRouteData(null);
+      setShowArrivalGuide(true);
+      (window as any).__parkmeClearRoute?.();
+    }
+  }, [routeActive, arrivedSpotId, userLocation, spots]);
 
   function handleDirections(spot: ApiSpot) {
     setSelectedSpotId(spot.id);
     setRouteActive(true);
     setRouteData(null);
+    setArrivedSpotId(null);
     if (!userLocation) {
       pendingRouteSpotRef.current = spot;
       setPendingRouteSpot(spot);
+      setArrivedSpotId(spot.id);
       handleLocate();
       return;
     }
+    setArrivedSpotId(spot.id);
     (window as any).__parkmeRoute?.(spot.lat, spot.lng);
   }
 
@@ -957,7 +1048,7 @@ export default function ParkmeApp() {
             {user && (
               <button onClick={() => { setMenuOpen(false); setProfileOpen(true); }}><Icon name="settings" size={20} /><span>Profile & Wallet</span></button>
             )}
-            <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen("driver"); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }} style={{ color: "#e54d3f" }}><Icon name="logout" size={20} /><span>Sign Out</span></button>
+            <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setArrivedSpotId(null); setShowArrivalGuide(false); setGpsLocked(false); setAuthOpen("driver"); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }} style={{ color: "#e54d3f" }}><Icon name="logout" size={20} /><span>Sign Out</span></button>
           </div>
         </aside>
 
@@ -1092,16 +1183,36 @@ export default function ParkmeApp() {
               <button className="spot-list-toggle" onClick={() => setSpotView("list")}><Icon name="grid" size={18} /> {spotsWithDistance.length} spots</button>
             </div>
           )}
-          {view === "bookings" && <div className="view-fade" key="bookings"><BookingsView onBook={() => setView("spots")} /></div>}
+          {showArrivalGuide && arrivedSpotId && (() => {
+            const spot = spotsWithDistance.find((s) => s.id === arrivedSpotId);
+            if (!spot) return null;
+            return (
+              <div className="arrival-guide-overlay">
+                <div className="arrival-guide-card">
+                  <div className="arrival-guide-header">
+                    <div>
+                      <div className="arrival-badge"><Icon name="check" size={14} /> You&apos;ve arrived</div>
+                      <h2>{spot.name}</h2>
+                      <p>{spot.address}</p>
+                    </div>
+                    <button className="arrival-close" onClick={() => { setShowArrivalGuide(false); setArrivedSpotId(null); }}><Icon name="close" size={18} /></button>
+                  </div>
+                  <SpotGuideSteps booking={activeBooking ?? { spaceLabel: "B · 27", gateCode: spot.gateCode ?? "0000" } as Booking} userLocation={userLocation} />
+                  <SpotIndoorGuide spot={spot} />
+                </div>
+              </div>
+            );
+          })()}
+          {view === "bookings" && <div className="view-fade" key="bookings"><BookingsView onBook={() => setView("spots")} onGuide={handleGuideBooking} onNavigate={handleNavigateBooking} /></div>}
           {view === "wallet" && <div className="view-fade" key="wallet">{user ? <WalletView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to access your wallet.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>}</div>}
-          {view === "history" && <div className="view-fade" key="history">{user ? <HistoryView /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to view history.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>}</div>}
-          {view === "spots" && activeBooking && user && <BookingTimerCard booking={activeBooking} onOpen={() => setBookingSpot(spots[0] ?? null)} />}
+          {view === "history" && <div className="view-fade" key="history">{user ? <HistoryView onGuide={handleGuideBooking} onNavigate={handleNavigateBooking} /> : <div className="empty-view"><Icon name="lock" size={40} /><h3>Please log in</h3><p>You need an account to view history.</p><button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Log in <Icon name="arrow" size={16} /></button></div>}</div>}
+          {view === "spots" && activeBooking && user && <BookingTimerCard booking={activeBooking} onOpen={() => { setBookingSpot(spots[0] ?? null); }} userLocation={userLocation} />}
         </div>
       </div>
 
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onAuth={(u) => setUser(u)} initialRole={authOpen} />}
       {bookingSpot && <BookingModal spot={bookingSpot} onClose={() => setBookingSpot(null)} onBooked={() => { fetchSpots(searchQuery); setActiveBooking(null); }} user={user} />}
-      {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setMenuOpen(false); router.push("/host"); }} onLogout={() => { setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen("driver"); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }} />}
+      {profileOpen && user && <ProfileDrawer user={user} onClose={() => setProfileOpen(false)} onOwner={() => { setProfileOpen(false); setMenuOpen(false); router.push("/host"); }}           onLogout={() => { setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setArrivedSpotId(null); setShowArrivalGuide(false); setGpsLocked(false); setAuthOpen("driver"); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }} />}
     </main>
   );
 }

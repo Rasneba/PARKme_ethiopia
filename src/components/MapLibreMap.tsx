@@ -593,7 +593,7 @@ export default function MapLibreMap(
       `}</style>
       <div
         ref={containerRef}
-        style={{ width: "100%", height: "100%", minHeight: "300px", borderRadius: "0" }}
+        style={{ width: "100%", height: "100%", minHeight: "300px", borderRadius: "0", background: "#eef1ee" }}
       />
     </>
   );
