@@ -7,6 +7,7 @@ import type { MapLibreHandle } from "./MapLibreMap";
 import { Icon, type IconName } from "./Icon";
 import { SearchPanel, type ApiSpot } from "./SearchPanel";
 import { formatDistance, formatDuration, greetByHour } from "@/lib/format";
+import IndoorLotGuide from "./IndoorLotGuide";
 
 const MapLibreMap = dynamic(() => import("./MapLibreMap"), { ssr: false });
 
@@ -44,6 +45,21 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("parkme_remember");
+      if (saved) {
+        const { email: savedEmail, password: savedPass, role: savedRole } = JSON.parse(saved);
+        setEmail(savedEmail || "");
+        setPassword(savedPass || "");
+        setRole(savedRole || "driver");
+        setRememberMe(true);
+        if (savedEmail && savedPass) setMode("login");
+      }
+    } catch {}
+  }, []);
 
   function pickRole(r: "driver" | "host" | "corporate") {
     setRole(r);
@@ -60,6 +76,11 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
       const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = (await r.json()) as { user?: User; error?: string };
       if (!r.ok || !data.user) throw new Error(data.error ?? "Failed");
+      if (rememberMe && mode === "login") {
+        localStorage.setItem("parkme_remember", JSON.stringify({ email, password, role }));
+      } else {
+        localStorage.removeItem("parkme_remember");
+      }
       onAuth(data.user);
       onClose();
     } catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
@@ -73,7 +94,7 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
       <div className="overlay auth-overlay" role="dialog" aria-modal="true">
         <div className="booking-modal auth-modal">
           <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button>
-          <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">WELCOME TO PARKME</p><h2>How will you use Parkme?</h2></div></div>
+          <div className="modal-heading"><span className="modal-icon"><Icon name="shield" size={22} /></span><div><p className="eyebrow">WELCOME TO PARKADDIS</p><h2>How will you use ParkAddis?</h2></div></div>
           <div className="auth-role-grid">
             <button className="auth-role-card" onClick={() => pickRole("driver")}>
               <span className="auth-role-emoji" style={{ color: "#0fa24b" }}><Icon name="car" size={32} /></span>
@@ -103,12 +124,18 @@ function AuthModal({ onClose, onAuth, initialRole = "driver" }: { onClose: () =>
           <span className={`modal-icon ${isDriver ? "" : "modal-icon-gold"}`}><Icon name={role === "corporate" ? "building" : isDriver ? "car" : "building"} size={22} /></span>
           <div>
             <p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "CREATE ACCOUNT"} · {role === "corporate" ? "CORPORATE" : isDriver ? "DRIVER" : "HOST"}</p>
-            <h2>{mode === "login" ? "Log in to Parkme" : "Sign up for Parkme"}</h2>
+            <h2>{mode === "login" ? "Log in to ParkAddis" : "Sign up for ParkAddis"}</h2>
           </div>
         </div>
         {mode === "signup" && <div className="auth-field"><label>Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" /></div>}
         <div className="auth-field"><label>Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
         <div className="auth-field"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" /></div>
+        {mode === "login" && (
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, cursor: "pointer", fontSize: 13, color: "#8a8f8c" }}>
+            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ width: 16, height: 16, accentColor: "#0fa24b" }} />
+            Remember me
+          </label>
+        )}
         {error && <p className="booking-error" role="alert">{error}</p>}
         <button className={`confirm-booking ${isDriver ? "" : "btn-gold"}`} disabled={loading} onClick={() => void submit()}>{loading ? "Please wait..." : mode === "login" ? "Log in" : "Create account"} <Icon name="arrow" size={18} /></button>
         <p className="auth-toggle">{mode === "login" ? "Don't have an account?" : "Already have an account?"} <button onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>{mode === "login" ? "Sign up" : "Log in"}</button></p>
@@ -171,11 +198,19 @@ function BookingTimerCard({ booking, onOpen }: { booking: Booking; onOpen: () =>
             <div><h2>{booking.spotName}</h2><p>{booking.spaceLabel}</p></div>
             <div className="parking-mark">P</div>
           </div>
+          {(booking as any).vehicleName || (booking as any).plateNumber ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#f5f6f5", borderRadius: 8, marginTop: 8, fontSize: 12 }}>
+              <Icon name="car" size={14} />
+              <span style={{ fontWeight: 600 }}>{(booking as any).vehicleName || "Vehicle"}</span>
+              {(booking as any).plateNumber && <span style={{ fontWeight: 700, color: "#0fa24b", background: "#edfcf3", padding: "1px 6px", borderRadius: 4, letterSpacing: 1 }}>{(booking as any).plateNumber}</span>}
+            </div>
+          ) : null}
         </div>
         <div style={{ position: "relative", width: 64, height: 64, flexShrink: 0 }}>
           <svg width="64" height="64" viewBox="0 0 48 48" style={{ transform: "rotate(-90deg)" }}>
             <circle cx="24" cy="24" r="22" fill="none" stroke="#e8e8e8" strokeWidth="3" />
-            <circle cx="24" cy="24" r="22" fill="none" stroke={progress > 0.8 ? "#e54d3f" : progress > 0.5 ? "#f7c531" : "#0fa24b"} strokeWidth="3" strokeDasharray={circumference} strokeDashoffset={dashOffset} strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s" }} />
+            <circle cx="24" cy="24" r="22" fill="none" stroke={progress > 0.8 ? "#e54d3f" : progress > 0.5 ? "#f7c531" : "#0fa24b"} strokeWidth="3" strokeDasharray={circumference} strokeDashoffset={dashOffset} strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s", filter: progress > 0.5 ? "drop-shadow(0 0 4px " + (progress > 0.8 ? "#e54d3f" : "#f7c531") + ")" : "drop-shadow(0 0 4px #0fa24b)" }} />
+            <circle cx="24" cy="24" r="22" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="3" strokeDasharray="4 12" strokeDashoffset={dashOffset} strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s linear" }} />
           </svg>
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: progress > 0.8 ? "#e54d3f" : "#131614" }}>
             {Math.round((1 - progress) * booking.durationHours * 100) / 100 > 0 ? `${Math.round((1 - progress) * booking.durationHours * 10) / 10}h` : "0h"}
@@ -209,6 +244,8 @@ function CityMap({
   mapRef,
   onCancel,
   onRouteData,
+  gpsLocked,
+  onGpsUnlock,
 }: {
   spots: ApiSpot[];
   onSelectSpot: (s: ApiSpot) => void;
@@ -222,6 +259,8 @@ function CityMap({
   mapRef: React.MutableRefObject<MapLibreHandle | null>;
   onCancel: () => void;
   onRouteData?: (data: { distance: number; time: number; instructions: any[] } | null) => void;
+  gpsLocked?: boolean;
+  onGpsUnlock?: () => void;
 }) {
   const selected = spots.find((s) => s.id === selectedSpotId);
   return (
@@ -239,6 +278,11 @@ function CityMap({
         <button className={`map-float-btn sat ${satellite ? "active" : ""}`} title="Toggle satellite view" onClick={onToggleSatellite}>
           <Icon name={satellite ? "map" : "home"} size={16} /> {satellite ? "Map" : "Satellite"}
         </button>
+        {gpsLocked && (
+          <button className="map-float-btn gps" title="GPS locked — click to unlock" onClick={onGpsUnlock} style={{ background: "#0fa24b", color: "#fff", boxShadow: "0 2px 12px rgba(15,162,75,.4)" }}>
+            <Icon name="locate" size={16} /> Locked
+          </button>
+        )}
       </div>
       <MapLibreMap
         spots={spots}
@@ -249,6 +293,8 @@ function CityMap({
         userLocation={userLocation}
         mapRef={mapRef}
         onRouteData={onRouteData}
+        gpsLocked={gpsLocked}
+        onGpsUnlock={onGpsUnlock}
       />
       {selected && (
         <div className="map-spot-sheet">
@@ -330,9 +376,9 @@ function WalletView() {
 
   return (
     <section className="view-panel">
-      <div className="view-header"><h2>ParkmeWallet</h2></div>
+      <div className="view-header"><h2>ParkAddisWallet</h2></div>
       <section className="wallet-card">
-        <FlagRibbon /><span>PARKMEWALLET BALANCE</span>
+        <FlagRibbon /><span>PARKADDIS WALLET BALANCE</span>
         <h3>{balance.toLocaleString()} <small>ETB</small></h3>
         <p><i /> Ready to park anywhere</p>
         <button onClick={() => setDepositAmount(depositAmount > 0 ? 0 : 100)}><Icon name="plus" size={17} /> Add money</button>
@@ -380,6 +426,9 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
   const [payment, setPayment] = useState("wallet");
   const [vehicleName, setVehicleName] = useState("");
   const [plateNumber, setPlateNumber] = useState("");
+  const [indoorFloor, setIndoorFloor] = useState("1st Floor");
+  const [indoorSpot, setIndoorSpot] = useState("");
+  const [showIndoor, setShowIndoor] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [complete, setComplete] = useState(false);
@@ -439,22 +488,39 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
             {tier === "daily" && <p style={{ fontSize: 12, color: "#6b7280", textAlign: "center", padding: "6px 0" }}>Full-day pass — park anywhere for 24 hours</p>}
             {tier === "event" && <p style={{ fontSize: 12, color: "#6b7280", textAlign: "center", padding: "6px 0" }}>4-hour event pass with priority entry</p>}
           </section>
-          <section className="booking-section"><div className="section-title"><span><Icon name="wallet" size={18} /> Payment</span></div><div className="payment-options"><button className={payment === "wallet" ? "selected" : ""} onClick={() => setPayment("wallet")}><span className="payment-symbol wallet-symbol"><Icon name="wallet" size={17} /></span><span>ParkmeWallet</span><i className="radio" /></button><button className={payment === "telebirr" ? "selected" : ""} onClick={() => setPayment("telebirr")}><span className="payment-symbol telebirr-symbol">t</span><span>telebirr</span><i className="radio" /></button></div></section>
+          <section className="booking-section"><div className="section-title"><span><Icon name="wallet" size={18} /> Payment</span></div><div className="payment-options"><button className={payment === "wallet" ? "selected" : ""} onClick={() => setPayment("wallet")}><span className="payment-symbol wallet-symbol"><Icon name="wallet" size={17} /></span><span>ParkAddisWallet</span><i className="radio" /></button><button className={payment === "telebirr" ? "selected" : ""} onClick={() => setPayment("telebirr")}><span className="payment-symbol telebirr-symbol">t</span><span>telebirr</span><i className="radio" /></button></div></section>
           <section className="booking-section"><div className="section-title"><span><Icon name="car" size={18} /> Vehicle info</span><small style={{ fontSize: 10, color: "#9ca3af" }}>Optional</small></div>
             <div style={{ display: "flex", gap: 8 }}>
               <input value={vehicleName} onChange={(e) => setVehicleName(e.target.value)} placeholder="e.g. Toyota Corolla" style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 13, background: "#fafbfa", outline: "none" }} />
               <input value={plateNumber} onChange={(e) => setPlateNumber(e.target.value.toUpperCase())} placeholder="AA-1234" style={{ width: 100, padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 13, fontWeight: 700, letterSpacing: 1, background: "#fafbfa", outline: "none", textTransform: "uppercase" }} />
             </div>
           </section>
-          <section className="coupon-row"><Icon name="sparkle" size={17} /><input value={coupon} onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); }} placeholder="Promo code (try PARKME20)" /><button onClick={() => coupon.trim().toUpperCase() === "PARKME20" && setCouponApplied(true)}>{couponApplied ? "Applied!" : "Apply"}</button></section>
-          {couponApplied && <p className="coupon-success"><Icon name="check" size={15} /> PARKME20 saved you 20 ETB</p>}
+          <section className="booking-section">
+            <div className="section-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span><Icon name="map" size={18} /> Choose your space</span>
+              <button onClick={() => setShowIndoor(!showIndoor)} style={{ fontSize: 11, fontWeight: 700, color: "#0fa24b", background: "none", border: "none", cursor: "pointer" }}>
+                {showIndoor ? "Hide" : "Show"} Indoor Map
+              </button>
+            </div>
+            {showIndoor && (
+              <IndoorLotGuide
+                selectedFloor={indoorFloor}
+                setSelectedFloor={setIndoorFloor}
+                selectedSpotCode={indoorSpot}
+                setSelectedSpotCode={setIndoorSpot}
+                interactive={true}
+              />
+            )}
+          </section>
+          <section className="coupon-row"><Icon name="sparkle" size={17} /><input value={coupon} onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); }} placeholder="Promo code (try PARKADDIS20)" /><button onClick={() => coupon.trim().toUpperCase() === "PARKADDIS20" && setCouponApplied(true)}>{couponApplied ? "Applied!" : "Apply"}</button></section>
+          {couponApplied && <p className="coupon-success"><Icon name="check" size={15} /> PARKADDIS20 saved you 20 ETB</p>}
           <div className="booking-total"><span>Total due</span><b>{total} <small>ETB</small></b></div>
           {error && <p className="booking-error" role="alert">{error}</p>}
           <button className="confirm-booking" disabled={submitting} onClick={() => void confirmBooking()}>{submitting ? "Confirming..." : `Confirm & pay ${total} ETB`} <Icon name="arrow" size={18} /></button>
-          <p className="secure-note"><Icon name="shield" size={15} /> Secured by Parkme payments</p>
+          <p className="secure-note"><Icon name="shield" size={15} /> Secured by ParkAddis payments</p>
         </> : <>
           <div className="ticket-celebration"><span><Icon name="sparkle" size={20} /></span><div><p>YOU&apos;RE ALL SET!</p><h2>Parking confirmed</h2></div></div>
-          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PARKME PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{spot.name}</h3><p>{spot.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>{formatTime(new Date())}</b><span>{formatDate(new Date())}</span></div><div><small>DURATION</small><b>{tier === "daily" ? "24 hours" : tier === "event" ? "4 hours" : `${duration} ${duration === 1 ? "hour" : "hours"}`}</b><span style={{ fontSize: 10, color: "#6b7280" }}>{tier === "daily" ? "Daily Pass" : tier === "event" ? "Event Pass" : "Hourly"}</span></div><div><small>SPACE</small><b>{bookingGateCode ? `${bookingGateCode.slice(0, 2)} · ${bookingGateCode.slice(2)}` : "B · 27"}</b></div></div>{(vehicleName || plateNumber) && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#f5f6f5", borderRadius: 8, marginTop: 10 }}><Icon name="car" size={16} /><span style={{ fontSize: 12, fontWeight: 600, color: "#131614" }}>{vehicleName || "Vehicle"}</span>{plateNumber && <span style={{ fontSize: 11, fontWeight: 700, color: "#0fa24b", letterSpacing: 1, background: "#edfcf3", padding: "2px 8px", borderRadius: 4 }}>{plateNumber}</span>}</div>}<div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Check in"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Checked in!" : "CHECK IN AT GATE"}</p><b>{scanned ? `Welcome! Code: ${bookingGateCode}` : "Scan your ticket"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Done" : "Open scanner"}</button></div></div></div>
+          <div className="digital-ticket"><FlagRibbon /><span className="ticket-notch ticket-left" /><span className="ticket-notch ticket-right" /><div className="ticket-topline"><span>PARKADDIS PARKING PASS</span><StatusDot text="Valid today" /></div><h3>{spot.name}</h3><p>{spot.address}</p><div className="ticket-dates"><div><small>ARRIVAL</small><b>{formatTime(new Date())}</b><span>{formatDate(new Date())}</span></div><div><small>DURATION</small><b>{tier === "daily" ? "24 hours" : tier === "event" ? "4 hours" : `${duration} ${duration === 1 ? "hour" : "hours"}`}</b><span style={{ fontSize: 10, color: "#6b7280" }}>{tier === "daily" ? "Daily Pass" : tier === "event" ? "Event Pass" : "Hourly"}</span></div><div><small>SPACE</small><b>{bookingGateCode ? `${bookingGateCode.slice(0, 2)} · ${bookingGateCode.slice(2)}` : "B · 27"}</b></div></div>{(vehicleName || plateNumber) && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#f5f6f5", borderRadius: 8, marginTop: 10 }}><Icon name="car" size={16} /><span style={{ fontSize: 12, fontWeight: 600, color: "#131614" }}>{vehicleName || "Vehicle"}</span>{plateNumber && <span style={{ fontSize: 11, fontWeight: 700, color: "#0fa24b", letterSpacing: 1, background: "#edfcf3", padding: "2px 8px", borderRadius: 4 }}>{plateNumber}</span>}</div>}<div className="ticket-line" /><div className="qr-area"><button className={`qr-code ${scanned ? "scanned" : ""}`} onClick={() => void checkIn()} aria-label="Check in"><span className="qr-corner top-left" /><span className="qr-corner top-right" /><span className="qr-corner bottom-left" /><span className="qr-corner bottom-right" /><i /><i /><i /><i /><i /><i /></button><div><p>{scanned ? "Checked in!" : "CHECK IN AT GATE"}</p><b>{scanned ? `Welcome! Code: ${bookingGateCode}` : "Scan your ticket"}</b><button className="scan-button" onClick={() => void checkIn()}><Icon name="scan" size={16} /> {scanned ? "Done" : "Open scanner"}</button></div></div></div>
           <button className="confirm-booking" onClick={() => { onBooked(); onClose(); }}>Done <Icon name="arrow" size={18} /></button>
         </>}
       </div>
@@ -463,7 +529,15 @@ function BookingModal({ spot, onClose, onBooked, user }: { spot: ApiSpot; onClos
 }
 
 function ProfileDrawer({ user, onClose, onOwner, onLogout }: { user: User; onClose: () => void; onOwner: () => void; onLogout: () => void }) {
-  const [tab, setTab] = useState<"wallet" | "passes">("wallet");
+  const [tab, setTab] = useState<"wallet" | "passes" | "history">("wallet");
+  const [historyBookings, setHistoryBookings] = useState<Booking[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  useEffect(() => {
+    if (tab === "history" && !historyLoaded) {
+      fetch("/api/bookings").then((r) => r.ok ? r.json() : { bookings: [] }).then((d) => { setHistoryBookings((d.bookings ?? []).filter((b: Booking) => b.status === "completed" || b.status === "expired" || b.status === "cancelled")); setHistoryLoaded(true); }).catch(() => setHistoryLoaded(true));
+    }
+  }, [tab, historyLoaded]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -474,11 +548,28 @@ function ProfileDrawer({ user, onClose, onOwner, onLogout }: { user: User; onClo
   return (
     <div className="drawer-overlay" role="dialog" aria-modal="true">
       <aside className="profile-drawer">
-        <div className="drawer-header"><div><p className="eyebrow">YOUR PARKME</p><h2>Account & parking</h2></div><button className="icon-button" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button></div>
+        <div className="drawer-header"><div><p className="eyebrow">YOUR PARKADDIS</p><h2>Account & parking</h2></div><button className="icon-button" onClick={onClose} aria-label="Close"><Icon name="close" size={21} /></button></div>
         <div className="profile-identity"><Avatar name={user.name} /><div><h3>{user.name}</h3><p>{user.email}</p></div><span className="verified"><Icon name="check" size={13} /></span></div>
-        <div className="profile-tabs"><button className={tab === "wallet" ? "active" : ""} onClick={() => setTab("wallet")}>Wallet</button><button className={tab === "passes" ? "active" : ""} onClick={() => setTab("passes")}>Passes</button></div>
+        <div className="profile-tabs"><button className={tab === "wallet" ? "active" : ""} onClick={() => setTab("wallet")}>Wallet</button><button className={tab === "passes" ? "active" : ""} onClick={() => setTab("passes")}>Passes</button><button className={tab === "history" ? "active" : ""} onClick={() => setTab("history")}>History</button></div>
         {tab === "wallet" && <div className="drawer-content"><WalletView /></div>}
         {tab === "passes" && <div className="drawer-content"><BookingsView onBook={() => {}} /></div>}
+        {tab === "history" && (
+          <div className="drawer-content">
+            <section className="view-section"><h3 style={{ fontSize: 13, fontWeight: 700, color: "#8a8f8c", marginBottom: 12 }}>Past Bookings</h3>
+              {historyBookings.length === 0 && !historyLoaded && <p style={{ fontSize: 13, color: "#8a8f8c", textAlign: "center", padding: 20 }}>Loading...</p>}
+              {historyBookings.length === 0 && historyLoaded && <div style={{ textAlign: "center", padding: 30 }}><Icon name="receipt" size={32} /><p style={{ fontSize: 13, color: "#8a8f8c", marginTop: 8 }}>No past bookings yet.</p></div>}
+              {historyBookings.map((b) => (
+                <div key={b.id} className="booking-row">
+                  <span className="booking-status" style={{ background: b.status === "completed" ? "#dcf8e4" : b.status === "cancelled" ? "#fde8e6" : "#fff8e1", color: b.status === "completed" ? "#086a32" : b.status === "cancelled" ? "#c0392b" : "#b8860b" }}>
+                    <Icon name={b.status === "completed" ? "check" : "close"} size={16} />
+                  </span>
+                  <div><b>{b.spotName}</b><small>{b.spaceLabel} · {b.durationHours}h · {b.amountEtb} ETB</small></div>
+                  <span style={{ fontSize: 10, color: "#8a8f8c", fontWeight: 600, textTransform: "uppercase" }}>{b.status}</span>
+                </div>
+              ))}
+            </section>
+          </div>
+        )}
         <div className="drawer-footer">
           {(user.role === "host" || user.role === "corporate" || user.isHost) && <button onClick={onOwner}><Icon name="building" size={18} /> Host dashboard</button>}
           <button><Icon name="settings" size={18} /> Settings</button>
@@ -511,10 +602,15 @@ export default function ParkmeApp() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [routeActive, setRouteActive] = useState(false);
   const [routeData, setRouteData] = useState<{ distance: number; time: number; instructions: any[] } | null>(null);
+  const [favorites, setFavorites] = useState<number[]>(() => {
+    try { return JSON.parse(localStorage.getItem("parkme_favs") || "[]"); } catch { return []; }
+  });
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [pendingRouteSpot, setPendingRouteSpot] = useState<ApiSpot | null>(null);
   const pendingRouteSpotRef = useRef<ApiSpot | null>(null);
   const [locationStatus, setLocationStatus] = useState<"loading" | "granted" | "denied" | "unavailable">("loading");
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [gpsLocked, setGpsLocked] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mapHandleRef = useRef<MapLibreHandle | null>(null);
   const didLocate = useRef(false);
@@ -536,6 +632,22 @@ export default function ParkmeApp() {
     if (cat && cat !== "all") params.set("category", cat);
     const qs = params.toString();
     fetch(`/api/spots${qs ? "?" + qs : ""}`).then((r) => r.ok ? r.json() : { spots: [] }).then((d) => { setSpots(d.spots ?? []); setSpotsLoading(false); }).catch(() => setSpotsLoading(false));
+  }, []);
+
+  // Sensor simulation: periodically toggle spot occupancy for realism
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setSpots((prev) => {
+        if (prev.length === 0) return prev;
+        const idx = Math.floor(Math.random() * prev.length);
+        const spot = prev[idx];
+        const next = { ...spot, availableSpots: Math.max(0, Math.min(spot.totalSpots || 10, spot.availableSpots + (Math.random() > 0.5 ? 1 : -1))) };
+        const copy = [...prev];
+        copy[idx] = next;
+        return copy;
+      });
+    }, 8000);
+    return () => window.clearInterval(interval);
   }, []);
 
   const onSearch = useCallback((q: string) => {
@@ -625,16 +737,26 @@ export default function ParkmeApp() {
     return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId); };
   }, []);
 
+  function toggleFavorite(id: number) {
+    setFavorites((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try { localStorage.setItem("parkme_favs", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
   const spotsWithDistance = useMemo(() => {
-    const enriched = spots.map((s) => ({
+    let enriched = spots.map((s) => ({
       ...s,
       distanceKm: userLocation ? haversineKm(userLocation.lat, userLocation.lng, s.lat, s.lng) : undefined,
     }));
+    if (showFavoritesOnly) enriched = enriched.filter((s) => favorites.includes(s.id));
     enriched.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
     return enriched;
-  }, [spots, userLocation]);
+  }, [spots, userLocation, showFavoritesOnly, favorites]);
 
   function handleNearMe() {
+    setGpsLocked(false);
     setLocationError(null);
     if (!navigator.geolocation) {
       setLocationError("Location is not available on this device.");
@@ -691,6 +813,7 @@ export default function ParkmeApp() {
           setUserLocation(loc);
           saveLocation(loc);
           setLocationStatus("granted");
+          setGpsLocked(true);
           mapHandleRef.current?.flyToNearest(loc.lat, loc.lng);
           const pending = pendingRouteSpotRef.current;
           if (pending) {
@@ -759,8 +882,8 @@ export default function ParkmeApp() {
       <main className="parkme-desktop-redirect">
         <div className="desktop-redirect-card">
           <div className="desktop-redirect-flag"><i /><i /><i /></div>
-          <div className="desktop-redirect-logo"><span className="logo-mark">P</span><div className="logo-text"><b>Park</b><span>me</span></div></div>
-          <h2>Parkme works best on your phone</h2>
+          <div className="desktop-redirect-logo"><span className="logo-mark">P</span><div className="logo-text"><b>Park</b><span>Addis</span></div></div>
+          <h2>ParkAddis works best on your phone</h2>
           <p>Scan the QR code or tap below to open the app on your mobile device.</p>
           <a href="/" className="btn btn-primary btn-lg">Go to home page</a>
         </div>
@@ -773,12 +896,12 @@ export default function ParkmeApp() {
       <main className="parkme-shell parkme-mobile">
         <div className="app-content">
           <div className="mobile-topbar">
-            <div className="mobile-brand"><span>Park</span><b>me</b></div>
+            <div className="mobile-brand"><span>Park</span><b>Addis</b></div>
           </div>
           <div className="workspace locked-workspace">
             <div className="locked-screen">
               <div className="locked-icon"><Icon name="lock" size={48} /></div>
-              <h2>Welcome to Parkme</h2>
+              <h2>Welcome to ParkAddis</h2>
               <p>Sign in to find parking, book spots, and manage your account.</p>
               <button className="confirm-booking" onClick={() => setAuthOpen("driver")}>Sign in <Icon name="arrow" size={16} /></button>
             </div>
@@ -794,7 +917,7 @@ export default function ParkmeApp() {
       <div className="app-content">
         <div className="mobile-topbar">
           <button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Menu"><Icon name="menu" size={22} /></button>
-          <div className="mobile-brand"><span>Park</span><b>me</b></div>
+          <div className="mobile-brand"><span>Park</span><b>Addis</b></div>
           <div style={{ flex: 1 }} />
           {user ? (
             <button className="mobile-profile" onClick={() => setProfileOpen(true)}><Avatar name={user.name} size="sm" /></button>
@@ -806,7 +929,7 @@ export default function ParkmeApp() {
         <div className="mobile-sidebar-overlay" style={{ display: menuOpen ? "block" : "none" }} onClick={() => setMenuOpen(false)} />
         <aside className={`mobile-sidebar ${menuOpen ? "open" : ""}`}>
           <div className="mobile-sidebar-head">
-            <div className="mobile-brand"><span>Park</span><b>me</b></div>
+            <div className="mobile-brand"><span>Park</span><b>Addis</b></div>
             <button onClick={() => setMenuOpen(false)} aria-label="Close"><Icon name="close" size={20} /></button>
           </div>
           {user ? (
@@ -862,6 +985,9 @@ export default function ParkmeApp() {
                 <input value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); clearTimeout(searchTimer.current); searchTimer.current = setTimeout(() => fetchSpots(e.target.value, activeCategory), 300); }} placeholder="Search by name, area..." aria-label="Search parking" />
               </div>
               <div className="category-chips" style={{ padding: "0 14px 10px", display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                <button className={`category-chip ${showFavoritesOnly ? "active" : ""}`} onClick={() => setShowFavoritesOnly(!showFavoritesOnly)} style={{ flexShrink: 0, background: showFavoritesOnly ? "#fde8e6" : undefined, color: showFavoritesOnly ? "#e54d3f" : undefined, borderColor: showFavoritesOnly ? "#e54d3f" : undefined }}>
+                  <span>&#9733; Saved</span>
+                </button>
                 {[{ key: "all", label: "All" }, { key: "ev_charging", label: "EV" }, { key: "cctv", label: "CCTV" }, { key: "24hr", label: "24/7" }, { key: "wheelchair", label: "Accessible" }, { key: "standard", label: "Standard" }].map((cat) => (
                   <button key={cat.key} className={`category-chip ${activeCategory === cat.key ? "active" : ""}`} onClick={() => { setActiveCategory(cat.key); fetchSpots(searchQuery, cat.key); }} style={{ flexShrink: 0 }}>
                     <span>{cat.label}</span>
@@ -877,7 +1003,12 @@ export default function ParkmeApp() {
                         <div className="car-shape"><Icon name="car" size={24} /></div>
                       </div>
                       <div className="spot-list-card-info">
-                        <h4>{spot.name}</h4>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+                          <h4 style={{ flex: 1 }}>{spot.name}</h4>
+                          <button onClick={(e) => { e.stopPropagation(); toggleFavorite(spot.id); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, fontSize: 18, color: favorites.includes(spot.id) ? "#e54d3f" : "#d1d5db", lineHeight: 1, flexShrink: 0 }} title={favorites.includes(spot.id) ? "Remove from saved" : "Save spot"}>
+                            {favorites.includes(spot.id) ? "\u2605" : "\u2606"}
+                          </button>
+                        </div>
                         <p>{spot.address}</p>
                         <div className="spot-list-card-meta">
                           <span>{spot.price} ETB/hr</span>
@@ -894,17 +1025,22 @@ export default function ParkmeApp() {
           )}
           {view === "spots" && spotView === "map" && (
             <div className={`content-grid ${routeActive ? "route-active" : ""}`}>
-              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onGps={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} onRouteData={(d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time, instructions: d.instructions }); else { setRouteData(null); setRouteActive(false); } }} />
+              <CityMap spots={spotsWithDistance} onSelectSpot={(s) => handleSelectSpot(s)} onBook={(s) => { if (!user) { setAuthOpen("driver"); return; } setBookingSpot(s); }} selectedSpotId={selectedSpotId} onNearMe={handleNearMe} onGps={handleLocate} satellite={satellite} onToggleSatellite={() => setSatellite(!satellite)} userLocation={userLocation} mapRef={mapHandleRef} onCancel={() => { setSelectedSpotId(null); setRouteActive(false); setRouteData(null); (window as any).__parkmeClearRoute?.(); }} onRouteData={(d) => { if (d) setRouteData({ distance: d.distance / 1000, time: d.time, instructions: d.instructions }); else { setRouteData(null); setRouteActive(false); } }} gpsLocked={gpsLocked} onGpsUnlock={() => setGpsLocked(false)} />
 
               {routeActive && selectedSpotId && (() => {
                 const spot = spotsWithDistance.find((s) => s.id === selectedSpotId);
                 if (!spot) return null;
                 return (
-                  <div className="route-top-card">
+                  <div className="route-top-card" style={{ backdropFilter: "blur(12px)", background: "rgba(255,255,255,0.92)" }}>
                     <div className="route-panel-header">
-                      <div className="route-panel-info">
-                        <b>Route to {spot.name}</b>
-                        {routeData && <span>{formatDistance(routeData.distance)} &middot; {formatDuration(routeData.time)}</span>}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #dcf8e4, #e8f4fd)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Icon name="nav" size={16} />
+                        </div>
+                        <div className="route-panel-info">
+                          <b>Route to {spot.name}</b>
+                          {routeData && <span>{formatDistance(routeData.distance)} &middot; {formatDuration(routeData.time)}</span>}
+                        </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <CompassIndicator />

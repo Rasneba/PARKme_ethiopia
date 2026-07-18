@@ -3,8 +3,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { Icon } from "@/components/Icon";
 import ParkingLotGrid, { KAZANCHIS_LOT, SpotStatus, ParkingSpot } from "@/components/ParkingLotGrid";
+import IndoorLotGuide from "@/components/IndoorLotGuide";
 
-type Section = "dashboard" | "locations" | "analytics" | "revenue" | "spots" | "guide";
+type Section = "dashboard" | "locations" | "analytics" | "revenue" | "spots" | "guide" | "attendance";
 
 interface ParkingLocation {
   id: string;
@@ -40,12 +41,13 @@ const COLORS = {
   redSoft: "#fde8e6",
 };
 
-const NAV_ITEMS: { key: Section; icon: "grid" | "map" | "clock" | "wallet" | "car" | "nav"; label: string }[] = [
+const NAV_ITEMS: { key: Section; icon: "grid" | "map" | "clock" | "wallet" | "car" | "nav" | "check"; label: string }[] = [
   { key: "dashboard", icon: "grid", label: "Live Dashboard" },
   { key: "spots", icon: "car", label: "Parking Lot" },
   { key: "locations", icon: "map", label: "Locations" },
   { key: "analytics", icon: "clock", label: "Analytics" },
   { key: "revenue", icon: "wallet", label: "Revenue" },
+  { key: "attendance", icon: "check", label: "Attendance" },
   { key: "guide", icon: "nav", label: "Driver Guide" },
 ];
 
@@ -85,6 +87,9 @@ export default function CorporatePage() {
   const [spotFilter, setSpotFilter] = useState<"all" | SpotStatus>("all");
   const [guideSpot, setGuideSpot] = useState<string | undefined>(undefined);
   const [showGuidance, setShowGuidance] = useState(false);
+  const [indoorFloor, setIndoorFloor] = useState("1st Floor");
+  const [indoorSpot, setIndoorSpot] = useState("");
+  const [showIndoor, setShowIndoor] = useState(false);
   const [newLocation, setNewLocation] = useState({ name: "", address: "", lat: "", lng: "" });
   const [apiSpots, setApiSpots] = useState<{ id: number; name: string; address: string; lat: number; lng: number; price: number; availableSpots: number; totalSpots: number }[]>([]);
 
@@ -214,7 +219,7 @@ export default function CorporatePage() {
               <Icon name="menu" size={22} stroke={2} />
             </button>
             <div>
-              <h1>ParkMe Corporate</h1>
+              <h1>ParkAddis Corporate</h1>
               <div className="corp-topbar-sub">Parking Management</div>
             </div>
           </div>
@@ -228,7 +233,7 @@ export default function CorporatePage() {
 
         <div className={`corp-sidebar ${sidebarOpen ? "open" : ""}`}>
           <div className="corp-sidebar-header">
-            <h2>ParkMe</h2>
+            <h2>ParkAddis</h2>
             <p>Corporate Dashboard</p>
           </div>
           <nav className="corp-nav">
@@ -400,6 +405,24 @@ export default function CorporatePage() {
                   </div>
                 </div>
               )}
+
+              <div className="corp-card" style={{ marginTop: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <h3 style={{ margin: 0 }}>Indoor Lot Guide</h3>
+                  <button onClick={() => setShowIndoor(!showIndoor)} style={{ fontSize: 12, fontWeight: 700, color: COLORS.green, background: "none", border: "none", cursor: "pointer" }}>
+                    {showIndoor ? "Hide" : "Show"} Indoor Map
+                  </button>
+                </div>
+                {showIndoor && (
+                  <IndoorLotGuide
+                    selectedFloor={indoorFloor}
+                    setSelectedFloor={setIndoorFloor}
+                    selectedSpotCode={indoorSpot}
+                    setSelectedSpotCode={setIndoorSpot}
+                    interactive={true}
+                  />
+                )}
+              </div>
 
               <div className="corp-card" style={{ marginTop: 12 }}>
                 <h3>Zone Summary</h3>
@@ -592,6 +615,63 @@ export default function CorporatePage() {
                     <div className="corp-txn-amount">+{t.amount} Br</div>
                   </div>
                 ))}
+              </div>
+            </>
+          )}
+          {/* ─── Attendance ─── */}
+          {section === "attendance" && (
+            <>
+              <div className="corp-section-title">Attendant Attendance</div>
+              <div className="corp-cards">
+                <div className="corp-stat-card green"><div className="label">On Duty</div><div className="value">3</div></div>
+                <div className="corp-stat-card blue"><div className="label">Checked In Today</div><div className="value">5</div></div>
+                <div className="corp-stat-card yellow"><div className="label">Late Arrivals</div><div className="value">1</div></div>
+                <div className="corp-stat-card red"><div className="label">Absent</div><div className="value">0</div></div>
+              </div>
+
+              <div className="corp-card">
+                <h3>Today&apos;s Attendance Log</h3>
+                {[
+                  { name: "Abebe Kebede", shift: "Morning (6AM–2PM)", checkIn: "5:58 AM", checkOut: "—", status: "On Duty", avatar: "AK" },
+                  { name: "Fatuma Ahmed", shift: "Morning (6AM–2PM)", checkIn: "6:12 AM", checkOut: "—", status: "On Duty", late: true, avatar: "FA" },
+                  { name: "Dawit Tadesse", shift: "Afternoon (2PM–10PM)", checkIn: "1:55 PM", checkOut: "—", status: "On Duty", avatar: "DT" },
+                  { name: "Sara Mohammed", shift: "Morning (6AM–2PM)", checkIn: "6:01 AM", checkOut: "2:05 PM", status: "Completed", avatar: "SM" },
+                  { name: "Yonas Girma", shift: "Evening (10PM–6AM)", checkIn: "—", checkOut: "—", status: "Scheduled", avatar: "YG" },
+                ].map((a, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${COLORS.border}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: a.status === "On Duty" ? COLORS.greenSoft : a.status === "Completed" ? "#e3f2fd" : COLORS.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: a.status === "On Duty" ? COLORS.greenDark : COLORS.muted }}>{a.avatar}</div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                          {a.name}
+                          {a.late && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "#fff8e1", color: "#b8860b", fontWeight: 700 }}>LATE</span>}
+                        </div>
+                        <div style={{ fontSize: 11, color: COLORS.muted }}>{a.shift}</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: a.status === "On Duty" ? COLORS.greenDark : a.status === "Completed" ? COLORS.blue : COLORS.muted }}>{a.status}</div>
+                      <div style={{ fontSize: 11, color: COLORS.muted }}>In: {a.checkIn} · Out: {a.checkOut}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="corp-card">
+                <h3>Weekly Overview</h3>
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => {
+                  const present = day === "Sun" ? 1 : 5;
+                  const total = 5;
+                  return (
+                    <div key={day} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <span style={{ width: 30, fontSize: 12, fontWeight: 600, color: COLORS.muted }}>{day}</span>
+                      <div style={{ flex: 1, height: 8, background: COLORS.border, borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${(present / total) * 100}%`, height: "100%", background: COLORS.green, borderRadius: 4 }} />
+                      </div>
+                      <span style={{ width: 30, fontSize: 12, fontWeight: 600, textAlign: "right" }}>{present}/{total}</span>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}

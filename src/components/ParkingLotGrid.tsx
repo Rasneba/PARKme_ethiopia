@@ -498,16 +498,18 @@ export default function ParkingLotGrid({
             })()}
             {pathD && (
               <g>
-                <circle r="7" fill="#2196f3" opacity="0.2">
-                  <animateMotion dur="3s" repeatCount="indefinite" path={pathD} rotate="auto" />
-                </circle>
-                <circle r="5" fill="#2196f3" stroke="white" strokeWidth="1.5">
-                  <animateMotion dur="3s" repeatCount="indefinite" path={pathD} rotate="auto" />
-                </circle>
-                <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize="6" fontWeight="bold" fontFamily="sans-serif">
-                  <animateMotion dur="3s" repeatCount="indefinite" path={pathD} rotate="auto" />
-                  C
-                </text>
+                <animateMotion dur="3s" repeatCount="indefinite" path={pathD} rotate="auto" />
+                <rect x="-5" y="-9" width="10" height="18" rx="3" fill="#2196f3" stroke="white" strokeWidth="1.5" />
+                <rect x="-3.5" y="-6" width="7" height="3" rx="0.8" fill="white" opacity="0.35" />
+                <rect x="-3.5" y="2" width="7" height="3" rx="0.8" fill="white" opacity="0.2" />
+                <rect x="-4" y="-9" width="2" height="2.5" rx="0.8" fill="#1a1a1a" />
+                <rect x="2" y="-9" width="2" height="2.5" rx="0.8" fill="#1a1a1a" />
+                <rect x="-4" y="6.5" width="2" height="2.5" rx="0.8" fill="#1a1a1a" />
+                <rect x="2" y="6.5" width="2" height="2.5" rx="0.8" fill="#1a1a1a" />
+                <rect x="-3" y="-9.5" width="2" height="1" rx="0.5" fill="#facc15" />
+                <rect x="1" y="-9.5" width="2" height="1" rx="0.5" fill="#facc15" />
+                <rect x="-3" y="8.5" width="2.5" height="0.8" rx="0.3" fill="#ef4444" />
+                <rect x="0.5" y="8.5" width="2.5" height="0.8" rx="0.3" fill="#ef4444" />
               </g>
             )}
           </svg>

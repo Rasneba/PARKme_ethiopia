@@ -344,41 +344,47 @@ export default function AttendantPage() {
         </div>
 
         {/* Sidebar */}
-        {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 90 }} />}
-        <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 280, maxWidth: "80vw", background: WHITE, zIndex: 100, transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "24px 20px 16px", borderBottom: `1px solid ${GRAY}` }}>
+        {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 90, backdropFilter: "blur(4px)" }} />}
+        <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 280, maxWidth: "80vw", background: "linear-gradient(180deg, #fff 0%, #f5fff6 56%, #fff8df 100%)", zIndex: 100, transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", display: "flex", flexDirection: "column", boxShadow: "8px 0 30px rgba(0,0,0,.15)" }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg, #0fa24b 0 33%, #f7c531 33% 66%, #e54d3f 66%)" }} />
+          <div style={{ padding: "24px 20px 16px", borderBottom: "1px solid #e3e5da" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: GREEN, display: "flex", alignItems: "center", justifyContent: "center", color: WHITE }}><Icon name="shield" size={20} /></div>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg, #0fa24b, #086a32)", display: "flex", alignItems: "center", justifyContent: "center", color: WHITE, boxShadow: "0 4px 12px rgba(15,162,75,.25)" }}><Icon name="shield" size={20} /></div>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>Attendant</div>
-                  <div style={{ fontSize: 11, color: GRAY_MID }}>Kazanchis Lot</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#086a32" }}>Attendant</div>
+                  <div style={{ fontSize: 11, color: "#8a8f8c" }}>Kazanchis Lot</div>
                 </div>
               </div>
               <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: INK }} aria-label="Close menu"><Icon name="close" size={20} /></button>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: GRAY_MID }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8a8f8c" }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: isOnline ? GREEN : RED }} />
               {isOnline ? "Online" : "Offline"} · Active shift
             </div>
           </div>
-          <div style={{ flex: 1, padding: "12px 0" }}>
+          <nav style={{ flex: 1, padding: "8px 0", overflowY: "auto" }}>
             {[
-              { icon: "scan" as const, label: "QR Scanner", action: () => setTab("scanner") },
-              { icon: "check" as const, label: "Booking Validation", action: () => setTab("validation") },
-              { icon: "grid" as const, label: "Spot Management", action: () => setTab("spots") },
-              { icon: "nav" as const, label: "Driver Guide", action: () => setTab("guide") },
-              { icon: "settings" as const, label: "Settings", action: () => {} },
-              { icon: "help" as const, label: "Help", action: () => {} },
-              { icon: "logout" as const, label: "Logout", action: () => { fetch("/api/auth/logout", { method: "POST" }).then(() => { window.location.href = "/app"; }).catch(() => { window.location.href = "/app"; }); } },
-            ].map((item, i) => (
-              <button key={item.label} onClick={() => { item.action(); setSidebarOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "14px 20px", minHeight: 48, background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 500, color: INK, textAlign: "left", borderTop: i === 6 ? `1px solid ${GRAY}` : "none" }}>
-                <Icon name={item.icon} size={18} />
-                {item.label}
+              { icon: "scan" as const, label: "QR Scanner", action: () => setTab("scanner"), active: tab === "scanner" },
+              { icon: "check" as const, label: "Booking Validation", action: () => setTab("validation"), active: tab === "validation" },
+              { icon: "grid" as const, label: "Spot Management", action: () => setTab("spots"), active: tab === "spots" },
+              { icon: "nav" as const, label: "Driver Guide", action: () => setTab("guide"), active: tab === "guide" },
+            ].map((item) => (
+              <button key={item.label} onClick={() => { item.action(); setSidebarOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 16px", minHeight: 48, background: item.active ? "linear-gradient(100deg, #d5f8df, #fff2b8)" : "transparent", color: item.active ? "#086a32" : "#131614", borderLeft: "3px solid " + (item.active ? "#0fa24b" : "transparent"), borderRadius: "0 12px 12px 0", cursor: "pointer", fontSize: 14, fontWeight: item.active ? 700 : 600, textAlign: "left", transition: "all .15s", marginRight: 4 }}>
+                <Icon name={item.icon} size={20} />
+                <span>{item.label}</span>
               </button>
             ))}
+          </nav>
+          <div style={{ padding: "12px 16px", borderTop: "1px solid #e3e5da" }}>
+            <button onClick={() => { window.location.href = "/app"; }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 16px", minHeight: 48, background: "transparent", color: "#8a8f8c", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, textAlign: "left" }}>
+              <Icon name="car" size={20} /> Driver App
+            </button>
+            <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/app"; }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 16px", minHeight: 48, background: "transparent", color: "#e54d3f", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, textAlign: "left" }}>
+              <Icon name="logout" size={20} /> Sign Out
+            </button>
           </div>
-          <div style={{ padding: "16px 20px", borderTop: `1px solid ${GRAY}`, fontSize: 11, color: "#ccc", textAlign: "center" }}>Parkme Ethiopia v1.0</div>
+          <div style={{ padding: "12px 20px", borderTop: "1px solid #e3e5da", fontSize: 11, color: "#ccc", textAlign: "center" }}>Parkme Ethiopia v1.0</div>
         </div>
       </div>
     </>

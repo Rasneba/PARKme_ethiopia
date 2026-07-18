@@ -26,13 +26,17 @@ const RED_PIN = `<svg width="44" height="52" viewBox="0 0 24 24" fill="none" xml
   <circle cx="12" cy="9" r="2.5" fill="white"/>
   <text x="12" y="10" text-anchor="middle" dominant-baseline="middle" fill="#e54d3f" font-size="5" font-weight="900" font-family="Arial">P</text>
 </svg>`;
-const BLUE_DOT = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="16" cy="16" r="14" fill="#4098df" opacity="0.12">
-    <animate attributeName="r" values="10;16;10" dur="2s" repeatCount="indefinite"/>
-    <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite"/>
+const BLUE_DOT = `<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="18" cy="18" r="16" fill="#4098df" opacity="0.15">
+    <animate attributeName="r" values="12;18;12" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.25;0;0.25" dur="2s" repeatCount="indefinite"/>
   </circle>
-  <circle cx="16" cy="16" r="9" fill="#4098df" stroke="white" stroke-width="2.5"/>
-  <circle cx="16" cy="16" r="4" fill="white"/>
+  <circle cx="18" cy="18" r="12" fill="#4098df" opacity="0.08">
+    <animate attributeName="r" values="12;16;12" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    <animate attributeName="opacity" values="0.15;0;0.15" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+  </circle>
+  <circle cx="18" cy="18" r="10" fill="#4098df" stroke="white" stroke-width="2.5"/>
+  <circle cx="18" cy="18" r="4" fill="white"/>
 </svg>`;
 
 const GEBETA_BASE_STYLE_URL = "https://tiles.gebeta.app/styles/standard/style.json";
@@ -147,6 +151,8 @@ export default function MapLibreMap(
     userLocation,
     mapRef: externalMapRef,
     onRouteData,
+    gpsLocked,
+    onGpsUnlock,
   }: {
     spots: any[];
     onSelectSpot: (spot: any) => void;
@@ -156,6 +162,8 @@ export default function MapLibreMap(
     userLocation?: { lat: number; lng: number } | null;
     mapRef?: React.MutableRefObject<MapLibreHandle | null>;
     onRouteData?: (data: { distance: number; time: number; instructions: any[] } | null) => void;
+    gpsLocked?: boolean;
+    onGpsUnlock?: () => void;
   },
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -175,6 +183,10 @@ export default function MapLibreMap(
   useEffect(() => { userLocRef.current = userLocation || null; }, [userLocation]);
   const onRouteDataRef = useRef(onRouteData);
   useEffect(() => { onRouteDataRef.current = onRouteData; }, [onRouteData]);
+  const gpsLockedRef = useRef(gpsLocked);
+  useEffect(() => { gpsLockedRef.current = gpsLocked; }, [gpsLocked]);
+  const onGpsUnlockRef = useRef(onGpsUnlock);
+  useEffect(() => { onGpsUnlockRef.current = onGpsUnlock; }, [onGpsUnlock]);
 
   const clearRoute = useCallback(() => {
     const map = mapRef.current;
@@ -510,6 +522,36 @@ export default function MapLibreMap(
       placeUserMarker(map, userLocation.lat, userLocation.lng);
     }
   }, [userLocation]);
+
+  // ---- GPS LOCK: re-center on user location updates when locked ----
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !gpsLocked || !userLocation) return;
+    map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: Math.max(map.getZoom(), 15), duration: 800 });
+  }, [userLocation, gpsLocked]); // eslint-disable-line
+
+  // ---- GPS LOCK: unlock on user zoom/pan ----
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !gpsLocked) return;
+    let debounce: ReturnType<typeof setTimeout>;
+    function unlock() {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        if (gpsLockedRef.current) {
+          gpsLockedRef.current = false;
+          onGpsUnlockRef.current?.();
+        }
+      }, 300);
+    }
+    map.on("zoomstart", unlock);
+    map.on("dragstart", unlock);
+    return () => {
+      clearTimeout(debounce);
+      map.off("zoomstart", unlock);
+      map.off("dragstart", unlock);
+    };
+  }, [gpsLocked]); // eslint-disable-line
 
   // ---- SELECTED SPOT ----
   useEffect(() => {
