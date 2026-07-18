@@ -493,6 +493,19 @@ export default function MapLibreMap(
           }
         }
       });
+
+      // Force update route line paint properties after style change to ensure visibility
+      map.once("sourcedata", () => {
+        if (map.getSource("route")) {
+          try {
+            const style = map.getStyle();
+            if (style?.layers?.some((l) => l.id === "route-line")) {
+              map.setPaintProperty("route-line", "line-width", 7);
+              map.setPaintProperty("route-line", "line-color", "#1a73e8");
+            }
+          } catch {}
+        }
+      });
     } catch {}
   }, [satellite]);
 

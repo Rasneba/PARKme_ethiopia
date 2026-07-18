@@ -25,10 +25,25 @@ export default function LayoutEditor({
   initialLayout: SpotLayout | null;
   onSaved?: (layout: SpotLayout) => void;
 }) {
+  const defaultLayout: SpotLayout = {
+    floors: [{
+      id: "f1",
+      name: "Ground Floor",
+      spots: [
+        { id: "f1_s1", label: "A-1", x: 60, y: 60, state: "available" },
+        { id: "f1_s2", label: "A-2", x: 160, y: 60, state: "available" },
+        { id: "f1_s3", label: "A-3", x: 260, y: 60, state: "available" },
+        { id: "f1_s4", label: "A-4", x: 360, y: 60, state: "available" },
+        { id: "f1_s5", label: "B-1", x: 60, y: 160, state: "available" },
+        { id: "f1_s6", label: "B-2", x: 160, y: 160, state: "available" },
+        { id: "f1_s7", label: "B-3", x: 260, y: 160, state: "available" },
+        { id: "f1_s8", label: "B-4", x: 360, y: 160, state: "available" },
+      ]
+    }],
+  };
+
   const [layout, setLayout] = useState<SpotLayout>(
-    initialLayout ?? {
-      floors: [{ id: "f1", name: "Ground Floor", spots: [] }],
-    },
+    initialLayout ?? defaultLayout,
   );
   const [activeFloorId, setActiveFloorId] = useState(layout.floors[0]?.id ?? "f1");
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
