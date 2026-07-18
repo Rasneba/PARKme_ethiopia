@@ -245,9 +245,9 @@ export default function CorporatePage() {
             ))}
           </nav>
           <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}` }}>
-            <button className="corp-nav-item" style={{ color: COLORS.muted, marginBottom: 4 }} onClick={() => { window.location.href = "/app"; }}>
-              <Icon name="car" size={20} />
-              Driver App
+            <button className="corp-nav-item" style={{ color: COLORS.muted, marginBottom: 4 }} onClick={() => { window.location.href = "/attendant"; }}>
+              <Icon name="check" size={20} />
+              Attendant
             </button>
             <button className="corp-nav-item" style={{ color: COLORS.red }} onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/app"; }}>
               <Icon name="logout" size={20} />

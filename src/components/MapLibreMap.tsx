@@ -80,9 +80,6 @@ function createInfoHTML(spot: any, isNearest?: boolean, userLoc?: { lat: number;
   const dist = spot.distanceKm != null
     ? `${spot.distanceKm < 1 ? Math.round(spot.distanceKm * 1000) + " m" : spot.distanceKm.toFixed(1) + " km"} away`
     : "";
-  const ghLink = userLoc
-    ? `https://gebeta.app/maps?point=${userLoc.lat},${userLoc.lng}&point=${spot.lat},${spot.lng}`
-    : `https://gebeta.app/maps?point=${spot.lat},${spot.lng}`;
   return `<div style="font-family:Arial,sans-serif;min-width:200px;max-width:260px;padding:4px 0;">
     ${isNearest ? '<div style="display:inline-block;padding:4px 10px;margin-bottom:8px;background:#4098df;color:white;border-radius:6px;font-size:10px;font-weight:800;">NEAREST TO YOU</div>' : ""}
     <b style="font-size:15px;color:#131614;">${spot.name}</b>
@@ -91,11 +88,7 @@ function createInfoHTML(spot: any, isNearest?: boolean, userLoc?: { lat: number;
       <span style="font-weight:800;color:#0fa24b;font-size:14px;">${spot.price} ETB/hr</span>
       <span style="font-size:11px;color:#888;">${dist || spot.availableSpots + " spots"}</span>
     </div>
-    <div style="display:flex;gap:8px;margin-top:10px;">
-      <button onclick="window.__parkmeRoute?.(${spot.lat},${spot.lng})" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:14px;min-height:48px;background:#dcf8e4;color:#086a32;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">&#9654; Directions</button>
-      <button onclick="window.__parkmeSelectSpot?.(${spot.id})" style="flex:1;padding:14px;min-height:48px;background:linear-gradient(135deg,#111a13,#168b45);color:white;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">Select & Reserve</button>
-    </div>
-    ${userLoc ? `<a href="${ghLink}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;color:#888;font-size:10px;text-decoration:underline;">Open full route in Gebeta</a>` : ""}
+    <div style="margin-top:8px;text-align:center;font-size:11px;color:#0fa24b;font-weight:600;">Tap below for directions &amp; booking</div>
   </div>`;
 }
 
@@ -583,22 +576,6 @@ export default function MapLibreMap(
   }, [externalMapRef]);
 
   // ---- GLOBAL CLICK HANDLERS ----
-  useEffect(() => {
-    (window as any).__parkmeSelectSpot = (id: number) => {
-      const spot = spots.find((s) => s.id === id);
-      if (spot) onSelectSpot(spot);
-    };
-    return () => { delete (window as any).__parkmeSelectSpot; };
-  }, [spots, onSelectSpot]);
-
-  useEffect(() => {
-    (window as any).__parkmeBookSpot = (id: number) => {
-      const spot = spots.find((s) => s.id === id);
-      if (spot) onBookSpot(spot);
-    };
-    return () => { delete (window as any).__parkmeBookSpot; };
-  }, [spots, onBookSpot]);
-
   return (
     <>
       <style>{`

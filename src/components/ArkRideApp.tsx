@@ -929,7 +929,15 @@ export default function ParkmeApp() {
         <div className="mobile-sidebar-overlay" style={{ display: menuOpen ? "block" : "none" }} onClick={() => setMenuOpen(false)} />
         <aside className={`mobile-sidebar ${menuOpen ? "open" : ""}`}>
           <div className="mobile-sidebar-head">
-            <div className="mobile-brand"><span>Park</span><b>Addis</b></div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg, #0fa24b, #086a32)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 4px 12px rgba(15,162,75,.25)", flexShrink: 0 }}>
+                <Icon name="shield" size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#086a32" }}>ParkAddis</div>
+                <div style={{ fontSize: 11, color: "#8a8f8c" }}>Parking Made Easy</div>
+              </div>
+            </div>
             <button onClick={() => setMenuOpen(false)} aria-label="Close"><Icon name="close" size={20} /></button>
           </div>
           {user ? (
@@ -945,12 +953,12 @@ export default function ParkmeApp() {
               </button>
             ))}
           </nav>
-          {user && (
-            <div className="mobile-sidebar-footer">
-              <button onClick={() => { setMenuOpen(false); setProfileOpen(true); }}><Icon name="settings" size={18} /><span>Profile & Wallet</span></button>
-              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen("driver"); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }}><Icon name="logout" size={18} /><span>Sign out</span></button>
-            </div>
-          )}
+          <div className="mobile-sidebar-footer">
+            {user && (
+              <button onClick={() => { setMenuOpen(false); setProfileOpen(true); }}><Icon name="settings" size={20} /><span>Profile & Wallet</span></button>
+            )}
+            <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setUser(null); setActiveBooking(null); setBookingSpot(null); setMenuOpen(false); setProfileOpen(false); setView("spots"); setSpotView("map"); setRouteActive(false); setRouteData(null); setSelectedSpotId(null); setAuthOpen("driver"); try { localStorage.removeItem("parkme_loc"); localStorage.removeItem("parkme_loc_accepted"); } catch {} }} style={{ color: "#e54d3f" }}><Icon name="logout" size={20} /><span>Sign Out</span></button>
+          </div>
         </aside>
 
         <div className="workspace">
